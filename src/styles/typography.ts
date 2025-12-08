@@ -174,14 +174,4 @@ export const getTypographyStyle = (styleName: keyof typeof typography) => {
   return typography[styleName];
 };
 
-export const createTailwindTypographyClasses = () => {
-  const classes: Record<string, string> = {};
-
-  Object.entries(typography).forEach(([key, style]) => {
-    classes[key] = `font-['${FONT_FAMILY}'] text-[${style.fontSize}] font-[${style.fontWeight}] leading-[${style.lineHeight}]`;
-  });
-
-  return classes;
-};
-
 export default typography;
