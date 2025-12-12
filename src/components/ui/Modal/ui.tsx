@@ -17,7 +17,7 @@ export default function Modal({ open, onClose, children, width, height, closeOnO
         role="dialog"
         aria-modal
       >
-        {children || '내용내용'}
+        {children}
       </Card>
     </Overlay>
   );

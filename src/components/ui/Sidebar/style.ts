@@ -68,7 +68,7 @@ export const ExpandButton = styled.button<{ $collapsed?: boolean }>`
 
 export const Main = styled.main`
   flex: 1;
-  overflow-y: hidden;
+  overflow-y: auto;
   min-height: 0;
 `;
 
