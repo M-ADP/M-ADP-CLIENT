@@ -1,7 +1,9 @@
+'use client'
+import Sidebar from "@/components/ui/Sidebar/ui";
 export default function Home() {
   return (
     <div>
-      <h1>M-ADP</h1>
+      <Sidebar />
     </div>
   );
 }
