@@ -41,23 +41,6 @@ export const SearchInput = styled.input`
   }
 `;
 
-export const NewProjectButton = styled.button`
-  padding: 12px 24px;
-  background: ${primary.default};
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  font-family: ${FONT_FAMILY};
-  font-weight: ${fontWeights.semibold};
-  font-size: 14px;
-  cursor: pointer;
-  transition: background 0.2s;
-
-  &:hover {
-    opacity: 0.9;
-  }
-`;
-
 export const ProjectGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);
