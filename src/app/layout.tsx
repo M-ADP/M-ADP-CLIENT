@@ -13,9 +13,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body style={{ margin: 0 }}>
+      <body style={{ margin: 0, display: 'flex' }}>
         <Sidebar />
-        {children}
+        <main style={{ flex: 1, minWidth: 0 }}>
+          {children}
+        </main>
       </body>
     </html>
   );

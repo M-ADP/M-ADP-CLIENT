@@ -1,10 +1,8 @@
 import styled from '@emotion/styled';
-import { primary, black } from '@/styles/colors';
+import { black } from '@/styles/colors';
 import { FONT_FAMILY, fontWeights } from '@/styles/typography';
 
 export const PageWrapper = styled.div`
-  margin-left: 17.5rem;
-  min-height: 100vh;
   background-color: #ffffff;
   padding: 5rem 2.25rem;
 `;
