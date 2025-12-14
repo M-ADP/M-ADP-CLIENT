@@ -1,5 +1,5 @@
 import styled from '@emotion/styled';
-import { black, primary } from '@/styles/colors';
+import { black, primary, status } from '@/styles/colors';
 import { FONT_FAMILY, fontWeights } from '@/styles/typography';
 
 export const Card = styled.div`
@@ -70,41 +70,26 @@ export const FooterMessage = styled.span`
   color: ${black[100]};
 `;
 
+const getStatusColor = (variant?: 'healthy' | 'unhealthy' | 'warning') => {
+  if (variant && variant in status) {
+    return status[variant];
+  }
+  return black[75];
+};
+
 export const StatusBadge = styled.span<{ $variant?: 'healthy' | 'unhealthy' | 'warning' }>`
   display: flex;
   align-items: center;
   gap: 0.25rem;
   font-family: ${FONT_FAMILY};
   font-size: 0.75rem;
-  color: ${({ $variant }) => {
-    switch ($variant) {
-      case 'healthy':
-        return '#10b981';
-      case 'unhealthy':
-        return '#ef4444';
-      case 'warning':
-        return '#f59e0b';
-      default:
-        return black[75];
-    }
-  }};
+  color: ${({ $variant }) => getStatusColor($variant)};
 
   &::before {
     content: '';
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: ${({ $variant }) => {
-    switch ($variant) {
-      case 'healthy':
-        return '#10b981';
-      case 'unhealthy':
-        return '#ef4444';
-      case 'warning':
-        return '#f59e0b';
-      default:
-        return black[75];
-    }
-  }};
+    background: ${({ $variant }) => getStatusColor($variant)};
   }
 `;
