@@ -54,7 +54,7 @@ export const NewProjectButton = styled.button`
   transition: background 0.2s;
 
   &:hover {
-    background: ${primary.default};
+    opacity: 0.9;
   }
 `;
 
