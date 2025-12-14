@@ -4,8 +4,10 @@ import { useState } from 'react';
 import * as S from './style';
 import Input from '@/components/ui/Input/ui';
 import Button from '@/components/ui/Button/ui';
+import { useRouter } from 'next/navigation';
 
 export default function AppCreateContainer() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     appName: '',
     cpu: '',
@@ -25,8 +27,7 @@ export default function AppCreateContainer() {
   };
 
   const handleCancel = () => {
-    // TODO: 취소 처리 (이전 페이지로 이동 등)
-    console.log('Cancel');
+    router.back();
   };
 
   return (
