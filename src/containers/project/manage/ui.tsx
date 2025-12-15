@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Input from '@/components/ui/Input/ui';
@@ -95,9 +95,9 @@ export default function ProjectManageContainer() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredProjects = MOCK_PROJECTS.filter((project) =>
+  const filteredProjects = useMemo(() => MOCK_PROJECTS.filter((project) =>
     project.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  ), [searchQuery]);
 
   const handleProjectClick = (projectId: string) => {
     router.push(`/project/manage/${projectId}`);
