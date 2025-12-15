@@ -6,13 +6,29 @@ import {
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
   Filler,
 } from 'chart.js';
 import { Line, Doughnut, Bar } from 'react-chartjs-2';
 import * as S from './style';
 import type { ChartProps } from '@/types/chart';
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler);
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
 
 interface LineChartProps extends ChartProps {
   type: 'line';

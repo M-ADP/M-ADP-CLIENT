@@ -1,28 +1,28 @@
 import type { ChartData } from '@/types/chart';
 
-// 프로젝트 통계 라인 차트 데이터
-export const projectStatsData: ChartData = {
-  labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+// 프로젝트 통계 라인 차트 데이터 (이미지 기반)
+export const projectStatsChartData: ChartData = {
+  labels: Array.from({ length: 12 }, (_, i) => `${i + 1}월`),
   datasets: [
     {
       label: 'DAU',
-      data: [15, 25, 18, 30, 22, 35, 28, 40, 32, 45, 38, 50],
+      data: [15, 12, 17, 20, 16, 18, 15, 20, 18, 22, 16, 19],
       borderColor: '#22c55e',
       backgroundColor: 'rgba(34, 197, 94, 0.1)',
       tension: 0.4,
     },
     {
       label: 'WAU',
-      data: [20, 35, 25, 40, 30, 45, 38, 50, 42, 55, 48, 60],
-      borderColor: '#3b82f6',
-      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+      data: [8, 5, 12, 24, 18, 12, 20, 8, 15, 2, 18, 17],
+      borderColor: '#ef4444',
+      backgroundColor: 'rgba(239, 68, 68, 0.1)',
       tension: 0.4,
     },
     {
       label: 'MAU',
-      data: [10, 20, 15, 25, 18, 30, 22, 35, 28, 40, 32, 45],
-      borderColor: '#f59e0b',
-      backgroundColor: 'rgba(245, 158, 11, 0.1)',
+      data: [10, 11, 20, 18, 16, 14, 10, 16, 14, 26, 3, 5],
+      borderColor: '#3b82f6',
+      backgroundColor: 'rgba(59, 130, 246, 0.1)',
       tension: 0.4,
     },
   ],
@@ -47,6 +47,45 @@ export const trafficStatsData: ChartData = {
       backgroundColor: 'rgba(29, 78, 216, 0.2)',
       fill: true,
       tension: 0.4,
+    },
+  ],
+};
+
+// 바 차트 데이터
+export const barChartData: ChartData = {
+  labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+  datasets: [
+    {
+      label: 'Sales',
+      data: [65, 59, 80, 81],
+      backgroundColor: 'rgba(34, 197, 94, 0.7)',
+      borderColor: '#22c55e',
+    },
+    {
+      label: 'Revenue',
+      data: [28, 48, 40, 79],
+      backgroundColor: 'rgba(59, 130, 246, 0.7)',
+      borderColor: '#3b82f6',
+    },
+  ],
+};
+
+// 도넛 차트 데이터
+export const doughnutChartData: ChartData = {
+  labels: ['Desktop', 'Mobile', 'Tablet'],
+  datasets: [
+    {
+      data: [55, 35, 10],
+      backgroundColor: [
+        '#22c55e',
+        '#3b82f6',
+        '#f59e0b',
+      ],
+      borderColor: [
+        '#16a34a',
+        '#2563eb',
+        '#d97706',
+      ],
     },
   ],
 };

@@ -1,10 +1,10 @@
 import type { CSSProperties } from 'react';
 
 export interface ChartDataset {
-  label: string;
+  label?: string;
   data: number[];
-  borderColor?: string;
-  backgroundColor?: string;
+  borderColor?: string | string[];
+  backgroundColor?: string | string[];
   tension?: number;
   fill?: boolean;
 }
