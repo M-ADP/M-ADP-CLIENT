@@ -25,6 +25,7 @@ export interface ColorPalette {
     healthy: string;
     unhealthy: string;
     warning: string;
+    stopped: string;
   };
 }
 
@@ -58,6 +59,7 @@ export const status = {
   healthy: '#10b981',
   unhealthy: '#ef4444',
   warning: '#f59e0b',
+  stopped: '#6B6B6B',
 } as const;
 
 export const colors: ColorPalette = {

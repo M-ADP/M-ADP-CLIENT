@@ -14,8 +14,7 @@ const MOCK_APPS = [
     port: 8000,
     cpu: '78%',
     ram: '51%',
-    status: 'healthy',
-    statusMessage: '애플리케이션이 정지 상태입니다.',
+    status: 'healthy' as const,
   },
   {
     id: '2',
@@ -25,8 +24,8 @@ const MOCK_APPS = [
     port: 8000,
     cpu: '78%',
     ram: '51%',
-    status: 'unhealthy',
-    statusMessage: '애플리케이션이 정지 상태입니다.',
+    status: 'unhealthy' as const,
+    statusMessage: '애플리케이션에 오류가 발생했습니다.',
   },
   {
     id: '3',
@@ -36,7 +35,7 @@ const MOCK_APPS = [
     port: 8000,
     cpu: '78%',
     ram: '51%',
-    status: 'healthy',
+    status: 'stopped' as const,
     statusMessage: '애플리케이션이 정지 상태입니다.',
   },
   {
@@ -47,8 +46,7 @@ const MOCK_APPS = [
     port: 8000,
     cpu: '78%',
     ram: '51%',
-    status: 'healthy',
-    statusMessage: '애플리케이션이 정지 상태입니다.',
+    status: 'healthy' as const,
   },
 ];
 
@@ -63,7 +61,7 @@ interface ProjectDetailContainerProps {
   projectId: string;
 }
 
-export default function ProjectDetailContainer({ projectId }: ProjectDetailContainerProps) {
+export default function ProjectDetailContainer({ projectId: _projectId }: ProjectDetailContainerProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showLeftGradient, setShowLeftGradient] = useState(false);
   const [showRightGradient, setShowRightGradient] = useState(true);
@@ -103,12 +101,16 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
               title={app.name}
               footer={
                 <>
-                  <FooterMessage>
-                    <Image src="/icons/project/warning.svg" alt="warning" width={12} height={12} />
-                    {app.statusMessage}
-                  </FooterMessage>
-                  <StatusBadge $variant={app.status === 'healthy' ? 'healthy' : 'unhealthy'}>
-                    {app.status === 'healthy' ? 'Healthy' : 'Unhealthy'}
+                  {app.statusMessage && (
+                    <FooterMessage>
+                      <Image src="/icons/project/warning.svg" alt="warning" width={12} height={12} />
+                      {app.statusMessage}
+                    </FooterMessage>
+                  )}
+                  <StatusBadge $variant={app.status}>
+                    {app.status === 'healthy' && 'Healthy'}
+                    {app.status === 'unhealthy' && 'Unhealthy'}
+                    {app.status === 'stopped' && 'Stopped'}
                   </StatusBadge>
                 </>
               }

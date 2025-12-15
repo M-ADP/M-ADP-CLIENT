@@ -70,20 +70,21 @@ export const FooterMessage = styled.span`
   color: ${black[100]};
 `;
 
-const getStatusColor = (variant?: 'healthy' | 'unhealthy' | 'warning') => {
+const getStatusColor = (variant?: 'healthy' | 'unhealthy' | 'warning' | 'stopped') => {
   if (variant && variant in status) {
     return status[variant];
   }
   return black[75];
 };
 
-export const StatusBadge = styled.span<{ $variant?: 'healthy' | 'unhealthy' | 'warning' }>`
+export const StatusBadge = styled.span<{ $variant?: 'healthy' | 'unhealthy' | 'warning' | 'stopped' }>`
   display: flex;
   align-items: center;
   gap: 0.25rem;
   font-family: ${FONT_FAMILY};
   font-size: 0.75rem;
   color: ${({ $variant }) => getStatusColor($variant)};
+  margin-left: auto;
 
   &::before {
     content: '';
