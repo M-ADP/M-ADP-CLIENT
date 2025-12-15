@@ -38,6 +38,17 @@ const MOCK_APPS = [
     status: 'healthy',
     statusMessage: '애플리케이션이 정지 상태입니다.',
   },
+  {
+    id: '4',
+    name: 'Aemaehano',
+    language: 'Python',
+    replicas: 2,
+    port: 8000,
+    cpu: '78%',
+    ram: '51%',
+    status: 'healthy',
+    statusMessage: '애플리케이션이 정지 상태입니다.',
+  },
 ];
 
 const MOCK_FIREWALL_RULES = [

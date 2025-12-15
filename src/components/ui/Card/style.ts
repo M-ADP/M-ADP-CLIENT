@@ -10,6 +10,7 @@ export const Card = styled.div`
   transition: all 0.2s;
   display: flex;
   flex-direction: column;
+  height: 130px;
 
   &:hover {
     border-color: ${primary.default};
@@ -58,7 +59,6 @@ export const CardFooter = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-top: auto;
-  padding-top: 2.75rem;
 `;
 
 export const FooterMessage = styled.span`

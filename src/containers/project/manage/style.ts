@@ -1,5 +1,5 @@
 import styled from '@emotion/styled';
-import { black, primary } from '@/styles/colors';
+import { black, primary, status } from '@/styles/colors';
 import { FONT_FAMILY, fontWeights } from '@/styles/typography';
 
 export const PageWrapper = styled.div`
@@ -47,29 +47,6 @@ export const ProjectGrid = styled.div`
   gap: 1.25rem;
 `;
 
-export const ProjectCard = styled.div`
-  border: 1px solid ${black[50]};
-  border-radius: 12px;
-  padding: 1.25rem 1.5rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-height: 140px;
-
-  &:hover {
-    border-color: ${primary.default};
-    box-shadow: 0 4px 12px rgba(3, 9, 130, 0.1);
-  }
-`;
-
-export const CardHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-`;
-
 export const ProjectName = styled.h3`
   font-family: ${FONT_FAMILY};
   font-weight: ${fontWeights.semibold};
@@ -113,5 +90,5 @@ export const WarningMessage = styled.div`
 `;
 
 export const WarningIcon = styled.span`
-  color: #f59e0b;
+  color: ${status.warning};
 `;

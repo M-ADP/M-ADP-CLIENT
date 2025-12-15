@@ -41,10 +41,22 @@ export const SectionTitle = styled.h2`
 `;
 
 export const AppGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  flex-direction: row;
   gap: 1.5rem;
   margin-bottom: 3rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  & > * {
+    min-width: 340px;
+    flex-shrink: 0;
+  }
 `;
 
 export const AppCard = styled.div`
@@ -144,7 +156,7 @@ export const ChartCard = styled.div`
   background: #1e293b;
   border-radius: 8px;
   padding: 0.75rem;
-  height: 120px;
+  height: 160px;
   display: flex;
   flex-direction: column;
 `;
