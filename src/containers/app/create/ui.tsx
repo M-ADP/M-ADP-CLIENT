@@ -22,8 +22,6 @@ export default function AppCreateContainer() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: 애플리케이션 생성 API 호출
-    console.log('Application create:', formData);
   };
 
   const handleCancel = () => {

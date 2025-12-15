@@ -22,8 +22,6 @@ export default function ProjectCreateContainer() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: 프로젝트 생성 API 호출
-    console.log('Project create:', formData);
   };
 
   const handleCancel = () => {
