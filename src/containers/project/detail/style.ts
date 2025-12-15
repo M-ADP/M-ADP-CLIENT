@@ -40,11 +40,39 @@ export const SectionTitle = styled.h2`
   margin: 0 0 1.5rem 0;
 `;
 
+export const AppGridWrapper = styled.div<{ $showLeftGradient: boolean; $showRightGradient: boolean }>`
+  position: relative;
+  margin-bottom: 3rem;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 60px;
+    pointer-events: none;
+    z-index: 1;
+    transition: opacity 0.2s ease;
+  }
+
+  &::before {
+    left: 0;
+    background: linear-gradient(to right, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0));
+    opacity: ${({ $showLeftGradient }) => ($showLeftGradient ? 1 : 0)};
+  }
+
+  &::after {
+    right: 0;
+    background: linear-gradient(to left, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0));
+    opacity: ${({ $showRightGradient }) => ($showRightGradient ? 1 : 0)};
+  }
+`;
+
 export const AppGrid = styled.div`
   display: flex;
   flex-direction: row;
   gap: 1.5rem;
-  margin-bottom: 3rem;
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -54,7 +82,7 @@ export const AppGrid = styled.div`
   }
 
   & > * {
-    min-width: 340px;
+    min-width: 350px;
     flex-shrink: 0;
   }
 `;

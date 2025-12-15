@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef, useEffect, useState } from 'react';
 import Image from 'next/image';
 import Card, { MetaItem, FooterMessage, StatusBadge } from '@/components/ui/Card/ui';
 import * as S from './style';
@@ -63,6 +64,27 @@ interface ProjectDetailContainerProps {
 }
 
 export default function ProjectDetailContainer({ projectId }: ProjectDetailContainerProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [showLeftGradient, setShowLeftGradient] = useState(false);
+  const [showRightGradient, setShowRightGradient] = useState(true);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (scrollRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+        setShowLeftGradient(scrollLeft > 0);
+        setShowRightGradient(scrollLeft < scrollWidth - clientWidth - 1);
+      }
+    };
+
+    const scrollElement = scrollRef.current;
+    if (scrollElement) {
+      handleScroll();
+      scrollElement.addEventListener('scroll', handleScroll);
+      return () => scrollElement.removeEventListener('scroll', handleScroll);
+    }
+  }, []);
+
   return (
     <S.PageWrapper>
       <S.PageHeader>
@@ -73,42 +95,44 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
       </S.PageHeader>
 
       <S.SectionTitle>앱 배포 목록</S.SectionTitle>
-      <S.AppGrid>
-        {MOCK_APPS.map((app) => (
-          <Card
-            key={app.id}
-            title={app.name}
-            footer={
-              <>
-                <FooterMessage>
-                  <Image src="/icons/project/warning.svg" alt="warning" width={12} height={12} />
-                  {app.statusMessage}
-                </FooterMessage>
-                <StatusBadge $variant={app.status === 'healthy' ? 'healthy' : 'unhealthy'}>
-                  {app.status === 'healthy' ? 'Healthy' : 'Unhealthy'}
-                </StatusBadge>
-              </>
-            }
-          >
-            <MetaItem>
-              <Image src="/icons/project/code.svg" alt="language" width={14} height={14} />
-              {app.language}
-            </MetaItem>
-            <MetaItem>
-              <Image src="/icons/project/pods.svg" alt="replicas" width={14} height={14} />
-              {app.replicas}
-            </MetaItem>
-            <MetaItem>
-              <Image src="/icons/project/port.svg" alt="port" width={14} height={14} />
-              {app.port}
-            </MetaItem>
-            <MetaItem>
-              <Image src="/icons/project/gauge.svg" alt="usage" width={14} height={14} />
-              CPU: {app.cpu} · RAM: {app.ram}
-            </MetaItem>
-          </Card>
-        ))}
-      </S.AppGrid>
+      <S.AppGridWrapper $showLeftGradient={showLeftGradient} $showRightGradient={showRightGradient}>
+        <S.AppGrid ref={scrollRef}>
+          {MOCK_APPS.map((app) => (
+            <Card
+              key={app.id}
+              title={app.name}
+              footer={
+                <>
+                  <FooterMessage>
+                    <Image src="/icons/project/warning.svg" alt="warning" width={12} height={12} />
+                    {app.statusMessage}
+                  </FooterMessage>
+                  <StatusBadge $variant={app.status === 'healthy' ? 'healthy' : 'unhealthy'}>
+                    {app.status === 'healthy' ? 'Healthy' : 'Unhealthy'}
+                  </StatusBadge>
+                </>
+              }
+            >
+              <MetaItem>
+                <Image src="/icons/project/code.svg" alt="language" width={14} height={14} />
+                {app.language}
+              </MetaItem>
+              <MetaItem>
+                <Image src="/icons/project/pods.svg" alt="replicas" width={14} height={14} />
+                {app.replicas}
+              </MetaItem>
+              <MetaItem>
+                <Image src="/icons/project/port.svg" alt="port" width={14} height={14} />
+                {app.port}
+              </MetaItem>
+              <MetaItem>
+                <Image src="/icons/project/gauge.svg" alt="usage" width={14} height={14} />
+                CPU: {app.cpu} · RAM: {app.ram}
+              </MetaItem>
+            </Card>
+          ))}
+        </S.AppGrid>
+      </S.AppGridWrapper>
 
       <S.ChartSection>
         <S.ChartGrid>
