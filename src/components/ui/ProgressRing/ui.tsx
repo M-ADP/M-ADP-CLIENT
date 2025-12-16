@@ -17,7 +17,7 @@ export default function ProgressRing({
 }: ProgressRingProps) {
   const normalizedRadius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * normalizedRadius;
-  const progress = Math.min(value / max, 1);
+  const progress = Math.max(0, Math.min(value / max, 1));
   const strokeDashoffset = circumference * (1 - progress);
 
   return (

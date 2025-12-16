@@ -34,7 +34,7 @@ export const ProgressBarContainer = styled.div`
 
 export const ProgressBarFill = styled.div<{ progress: number; color?: string }>`
   height: 100%;
-  width: ${({ progress }) => Math.min(progress, 100)}%;
+  width: ${({ progress }) => Math.max(0, Math.min(progress, 100))}%;
   background-color: ${({ color }) => color || '#3b82f6'};
   border-radius: 3px;
   transition: width 0.3s ease;
