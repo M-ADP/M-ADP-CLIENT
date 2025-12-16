@@ -57,6 +57,10 @@ export default function Sidebar() {
     return pathname === path;
   };
 
+  if (pathname?.startsWith('/login')) {
+    return null;
+  }
+
   return (
     <S.Container $collapsed={isCollapsed}>
       <S.Header>

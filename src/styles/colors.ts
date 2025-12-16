@@ -21,6 +21,12 @@ export interface ColorPalette {
   gradient: {
     primary: string;
   };
+  status: {
+    healthy: string;
+    unhealthy: string;
+    warning: string;
+    stopped: string;
+  };
 }
 
 export const primary = {
@@ -49,11 +55,19 @@ export const gradient = {
   primary: 'linear-gradient(135deg, #030982 0%, #1174F7 33%, #00C2FF 67%, #95E8FF 100%)',
 } as const;
 
+export const status = {
+  healthy: '#10b981',
+  unhealthy: '#ef4444',
+  warning: '#f59e0b',
+  stopped: '#6B6B6B',
+} as const;
+
 export const colors: ColorPalette = {
   primary,
   black,
   background,
   gradient,
+  status,
 };
 
 export const COLORS = {
