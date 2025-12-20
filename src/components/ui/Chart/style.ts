@@ -1,5 +1,5 @@
 import styled from '@emotion/styled';
-import { background } from '@/styles/colors';
+import { background, black } from '@/styles/colors';
 
 export const ChartContainer = styled.div<{ width?: number | string; height?: number | string }>`
   background-color: ${background.secondary};
@@ -17,7 +17,7 @@ export const ChartHeader = styled.div`
 `;
 
 export const ChartTitle = styled.h3`
-  color: white;
+  color: ${black[50]};
   font-size: 18px;
   font-weight: 500;
   margin: 0;

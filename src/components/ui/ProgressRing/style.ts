@@ -1,4 +1,5 @@
 import styled from '@emotion/styled';
+import { black } from '@/styles/colors';
 
 export const ProgressContainer = styled.div`
   display: flex;
@@ -27,14 +28,14 @@ export const ProgressLabel = styled.div`
 `;
 
 export const ProgressValue = styled.div`
-  color: white;
+  color: ${black[50]};
   font-size: 24px;
   font-weight: 600;
   line-height: 1;
 `;
 
 export const ProgressUnit = styled.div`
-  color: #9ca3af;
+  color: ${black[75]};
   font-size: 12px;
   margin-top: 2px;
 `;

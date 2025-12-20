@@ -1,5 +1,5 @@
 import styled from '@emotion/styled';
-import { background } from '@/styles/colors';
+import { background, black } from '@/styles/colors';
 
 export const ChartContainer = styled.div`
   background-color: ${background.secondary};
@@ -17,7 +17,7 @@ export const ChartHeader = styled.div`
 `;
 
 export const ChartTitle = styled.h3`
-  color: white;
+  color: ${black[50]};
   font-size: 18px;
   font-weight: 500;
   margin: 0;
@@ -26,13 +26,13 @@ export const ChartTitle = styled.h3`
 export const MenuButton = styled.button`
   background: none;
   border: none;
-  color: #9ca3af;
+  color: ${black[75]};
   font-size: 20px;
   cursor: pointer;
   padding: 4px;
 
   &:hover {
-    color: white;
+    color: ${black[50]};
   }
 `;
 
@@ -61,12 +61,12 @@ export const LegendDot = styled.div<{ color: string }>`
 `;
 
 export const LegendLabel = styled.span`
-  color: #9ca3af;
+  color: ${black[75]};
   font-size: 14px;
 `;
 
 export const LegendValue = styled.span`
-  color: white;
+  color: ${black[50]};
   font-size: 14px;
   margin-left: 8px;
 `;
