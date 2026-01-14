@@ -13,7 +13,7 @@ function ProgressBar({
   className,
   style,
 }: ProgressBarProps) {
-  const progress = (value / max) * 100;
+  const progress = max > 0 ? (value / max) * 100 : 0;
 
   return (
     <S.ProgressContainer className={className} style={style}>

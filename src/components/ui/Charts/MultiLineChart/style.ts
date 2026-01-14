@@ -61,7 +61,7 @@ export const MenuButton = styled.button`
 export const ChartContent = styled.div<{
   aspectRatio?: string;
 }>`
-  height: calc(100% - 120px);
+  height: ${({ aspectRatio }) => (aspectRatio ? 'auto' : 'calc(100% - 120px)')};
   margin-bottom: 20px;
   width: 100%;
   position: relative;

@@ -46,7 +46,7 @@ function ProgressRing({
 
       <S.ProgressLabel>
         <S.ProgressValue>
-          {label || `${Math.round(value)}`}
+          {label || `${Math.min(100, Math.max(0, Math.round(value)))}`}
         </S.ProgressValue>
         <S.ProgressUnit>{unit}</S.ProgressUnit>
       </S.ProgressLabel>
