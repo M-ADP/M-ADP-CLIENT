@@ -12,30 +12,24 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import * as S from './style';
-import type { ChartData } from '@/types/chart';
+import { MultiLineChartProps } from '@/types/chart';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Filler);
 
-interface MultiLineChartProps {
-  title: string;
-  data: ChartData;
-  legendData?: Array<{
-    label: string;
-    color: string;
-    value: string;
-  }>;
-  showMenu?: boolean;
-  yAxisMax?: number;
-  yAxisUnit?: string;
-}
-
-export default function MultiLineChart({
+function MultiLineChart({
   title,
   data,
   legendData,
   showMenu = true,
   yAxisMax = 40,
-  yAxisUnit = 'k'
+  yAxisUnit = 'k',
+  width,
+  height,
+  minWidth,
+  maxWidth,
+  aspectRatio,
+  className,
+  style,
 }: MultiLineChartProps) {
   const chartOptions = {
     responsive: true,
@@ -64,6 +58,8 @@ export default function MultiLineChart({
           font: {
             size: 11,
           },
+          maxRotation: 0,
+          minRotation: 0,
         },
       },
       y: {
@@ -75,10 +71,11 @@ export default function MultiLineChart({
           font: {
             size: 11,
           },
-          callback: function(value: any) {
+          callback: function (value: number | string) {
             return value + yAxisUnit;
           },
           stepSize: 10,
+          padding: 10,
         },
         beginAtZero: true,
         max: yAxisMax,
@@ -122,13 +119,20 @@ export default function MultiLineChart({
   const finalLegendData = legendData || defaultLegendData;
 
   return (
-    <S.ChartContainer>
+    <S.ChartContainer
+      width={width}
+      height={height}
+      minWidth={minWidth}
+      maxWidth={maxWidth}
+      className={className}
+      style={style}
+    >
       <S.ChartHeader>
         <S.ChartTitle>{title}</S.ChartTitle>
         {showMenu && <S.MenuButton>⋯</S.MenuButton>}
       </S.ChartHeader>
 
-      <S.ChartContent>
+      <S.ChartContent aspectRatio={aspectRatio}>
         <Line data={enhancedData} options={chartOptions} />
       </S.ChartContent>
 
@@ -144,3 +148,5 @@ export default function MultiLineChart({
     </S.ChartContainer>
   );
 }
+
+export default MultiLineChart;

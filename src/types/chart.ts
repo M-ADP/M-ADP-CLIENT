@@ -1,21 +1,10 @@
 import type { CSSProperties } from 'react';
+import type { ChartData as ChartJSData, ChartOptions, ChartType, ChartData } from 'chart.js';
 
-export interface ChartDataset {
-  label?: string;
-  data: number[];
-  borderColor?: string | string[];
-  backgroundColor?: string | string[];
-  tension?: number;
-  fill?: boolean;
-}
-
-export interface ChartData {
-  labels: string[];
-  datasets: ChartDataset[];
-}
+export type { ChartData };
 
 export interface ChartProps {
-  data?: ChartData;
+  data?: ChartJSData;
   title?: string;
   width?: number | string;
   height?: number | string;
@@ -36,3 +25,58 @@ export interface ProgressRingProps {
   className?: string;
   style?: CSSProperties;
 }
+
+export interface ProgressBarProps {
+  label?: string;
+  value: number;
+  max?: number;
+  color?: string;
+  unit?: string;
+  height?: number;
+  className?: string;
+  style?: CSSProperties;
+}
+
+export interface MultiLineChartProps {
+  title: string;
+  data: ChartData<'line'>;
+  legendData?: Array<{
+    label: string;
+    color: string;
+    value: string;
+  }>;
+  showMenu?: boolean;
+  yAxisMax?: number;
+  yAxisUnit?: string;
+  width?: number | string;
+  height?: number | string;
+  minWidth?: number | string;
+  maxWidth?: number | string;
+  aspectRatio?: string;
+  className?: string;
+  style?: CSSProperties;
+}
+
+export interface BaseChartProps<T extends ChartType> extends Omit<ChartProps, 'data'> {
+  minWidth?: number | string;
+  maxWidth?: number | string;
+  aspectRatio?: string;
+  options?: ChartOptions<T>;
+}
+
+export interface LineChartProps extends BaseChartProps<'line'> {
+  type: 'line';
+  data: ChartData<'line'>;
+}
+
+export interface DoughnutChartProps extends BaseChartProps<'doughnut'> {
+  type: 'doughnut';
+  data: ChartData<'doughnut'>;
+}
+
+export interface BarChartProps extends BaseChartProps<'bar'> {
+  type: 'bar';
+  data: ChartData<'bar'>;
+}
+
+export type ChartComponentProps = LineChartProps | DoughnutChartProps | BarChartProps;

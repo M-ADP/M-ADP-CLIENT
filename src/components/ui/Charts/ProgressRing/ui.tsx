@@ -3,7 +3,7 @@
 import * as S from './style';
 import type { ProgressRingProps } from '@/types/chart';
 
-export default function ProgressRing({
+function ProgressRing({
   value,
   max = 100,
   size = 120,
@@ -53,3 +53,5 @@ export default function ProgressRing({
     </S.ProgressContainer>
   );
 }
+
+export default ProgressRing;

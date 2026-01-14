@@ -1,11 +1,33 @@
 import styled from '@emotion/styled';
 import { background, black } from '@/styles/colors';
 
-export const ChartContainer = styled.div`
+export const ChartContainer = styled.div<{
+  width?: number | string;
+  height?: number | string;
+  minWidth?: number | string;
+  maxWidth?: number | string;
+}>`
   background-color: ${background.secondary};
   border-radius: 12px;
   padding: 24px;
-  height: 400px;
+  width: ${({ width }) => {
+    if (typeof width === 'number') return `${width}px`;
+    return width || '100%';
+  }};
+  height: ${({ height }) => {
+    if (typeof height === 'number') return `${height}px`;
+    return height || '400px';
+  }};
+  min-width: ${({ minWidth }) => {
+    if (typeof minWidth === 'number') return `${minWidth}px`;
+    return minWidth || '300px';
+  }};
+  max-width: ${({ maxWidth }) => {
+    if (typeof maxWidth === 'number') return `${maxWidth}px`;
+    return maxWidth || '100%';
+  }};
+  box-sizing: border-box;
+  overflow: hidden;
   position: relative;
 `;
 
@@ -36,9 +58,20 @@ export const MenuButton = styled.button`
   }
 `;
 
-export const ChartContent = styled.div`
+export const ChartContent = styled.div<{
+  aspectRatio?: string;
+}>`
   height: calc(100% - 120px);
   margin-bottom: 20px;
+  width: 100%;
+  position: relative;
+  aspect-ratio: ${({ aspectRatio }) => aspectRatio || 'auto'};
+
+  /* Ensure chart doesn't overflow */
+  canvas {
+    max-width: 100% !important;
+    height: auto !important;
+  }
 `;
 
 export const ChartLegend = styled.div`

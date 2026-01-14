@@ -25,11 +25,11 @@ export const ProgressValue = styled.div`
   font-weight: 600;
 `;
 
-export const ProgressBarContainer = styled.div`
+export const ProgressBarContainer = styled.div<{ height?: number }>`
   width: 100%;
-  height: 6px;
+  height: ${({ height }) => height || 6}px;
   background-color: rgba(150, 150, 150, 0.2); /* black[75] with opacity */
-  border-radius: 3px;
+  border-radius: ${({ height }) => (height ? height / 2 : 3)}px;
   overflow: hidden;
 `;
 
