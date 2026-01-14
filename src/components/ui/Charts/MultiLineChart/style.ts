@@ -70,7 +70,7 @@ export const ChartContent = styled.div<{
   /* Ensure chart doesn't overflow */
   canvas {
     max-width: 100% !important;
-    height: auto !important;
+    height: 100% !important;
   }
 `;
 

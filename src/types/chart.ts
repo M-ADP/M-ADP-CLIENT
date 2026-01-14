@@ -31,7 +31,6 @@ export interface ProgressBarProps {
   value: number;
   max?: number;
   color?: string;
-  unit?: string;
   height?: number;
   className?: string;
   style?: CSSProperties;
