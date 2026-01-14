@@ -9,12 +9,12 @@ export const Container = styled.aside<{ $collapsed?: boolean }>`
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
-  position: fixed;
+  position: sticky;
   top: 0;
   left: 0;
   transition: width 0.3s ease;
-  overflow: hidden;
   z-index: 100;
+  flex-shrink: 0;
 `;
 
 export const Header = styled.header`
@@ -40,8 +40,8 @@ export const Brand = styled.span`
 `;
 
 export const ExpandButton = styled.button<{ $collapsed?: boolean }>`
-  position: fixed;
-  left: ${({ $collapsed }) => ($collapsed ? '68px' : '268px')};
+  position: absolute;
+  right: -12px;
   top: 30px;
   width: 24px;
   height: 24px;
