@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import type { ChartData as ChartJSData, ChartOptions, ChartType, ChartData } from 'chart.js';
 
 export type { ChartData };
@@ -79,3 +79,19 @@ export interface BarChartProps extends BaseChartProps<'bar'> {
 }
 
 export type ChartComponentProps = LineChartProps | DoughnutChartProps | BarChartProps;
+export interface ChartGridProps {
+  children: ReactNode;
+  columns?: number;
+  gap?: string;
+  responsive?: boolean;
+  className?: string;
+  style?: CSSProperties;
+}
+
+export interface ChartGridItemProps {
+  children: ReactNode;
+  colspan?: number;
+  minWidth?: string;
+  className?: string;
+  style?: CSSProperties;
+}

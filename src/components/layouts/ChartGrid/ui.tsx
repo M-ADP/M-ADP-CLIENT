@@ -1,24 +1,7 @@
 'use client';
 
 import * as S from './style';
-import type { ReactNode } from 'react';
-
-interface ChartGridProps {
-  children: ReactNode;
-  columns?: number;
-  gap?: string;
-  responsive?: boolean;
-  className?: string;
-  style?: React.CSSProperties;
-}
-
-interface ChartGridItemProps {
-  children: ReactNode;
-  colspan?: number;
-  minWidth?: string;
-  className?: string;
-  style?: React.CSSProperties;
-}
+import type { ChartGridProps, ChartGridItemProps } from '@/types/chart';
 
 export function ChartGrid({
   children,
