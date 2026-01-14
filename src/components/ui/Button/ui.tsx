@@ -3,7 +3,7 @@
 import * as S from './style';
 import type { ButtonProps } from '@/types/button';
 
-export default function Button({ variant = 'confirm', onClick, disabled = false, className, children }: ButtonProps) {
+export default function Button({ variant = 'confirm', onClick, disabled = false, className, children, type = 'button' }: ButtonProps) {
   const defaultText = variant === 'confirm' ? '확인' : '취소';
 
   return (
@@ -12,6 +12,7 @@ export default function Button({ variant = 'confirm', onClick, disabled = false,
       onClick={onClick}
       disabled={disabled}
       className={className}
+      type={type}
     >
       {children || defaultText}
     </S.StyledButton>
