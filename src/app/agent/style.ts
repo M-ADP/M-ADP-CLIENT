@@ -1,0 +1,89 @@
+import styled from '@emotion/styled';
+import { colors } from '@/styles/colors';
+import { typography } from '@/styles/typography';
+
+export const Container = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background-color: #ffffff;
+`;
+
+export const LogoSection = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  margin-bottom: 60px;
+`;
+
+export const LogoTitle = styled.span`
+  font-family: 'IBM Plex Sans KR', sans-serif;
+  font-weight: 700;
+  font-size: 80px;
+  line-height: normal;
+  color: ${colors.black[300]};
+  margin: 0;
+`;
+
+export const SearchContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 800px;
+  height: 52px;
+  padding: 0 20px;
+  background: #ffffff;
+  border: 1px solid ${colors.black[50]};
+  border-radius: 26px;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
+
+  &:focus-within {
+    border-color: ${colors.primary.default};
+  }
+`;
+
+export const InputWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+`;
+
+export const IconCircle = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  
+  &.send-button {
+    background: ${colors.primary.default};
+    cursor: pointer;
+    border: 1px solid ${colors.primary.default};
+  }
+`;
+
+export const SearchInput = styled.input`
+  border: none;
+  background: transparent;
+  width: 100%;
+  padding: 0;
+  font-family: ${typography.text16Medium.fontFamily};
+  font-size: ${typography.text16Medium.fontSize};
+  font-weight: ${typography.text16Medium.fontWeight};
+  line-height: ${typography.text16Medium.lineHeight};
+  color: ${colors.black[75]};
+  outline: none;
+
+  &::placeholder {
+    color: ${colors.black[75]};
+  }
+`;
