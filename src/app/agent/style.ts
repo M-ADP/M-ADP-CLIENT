@@ -132,7 +132,8 @@ export const UserMessageCard = styled.div`
   border: 1px solid #e2e8f0;
   border-radius: 14px;
   padding: 15px 21px;
-  width: 800px;
+  width: 100%;
+  max-width: 800px;
   box-sizing: border-box;
   background-color: #ffffff;
   color: ${colors.primary.default};
@@ -146,7 +147,8 @@ export const AIMessageCard = styled.div`
   background: #ffffff;
   border-radius: 14px;
   padding: 22px;
-  width: 800px;
+  width: 100%;
+  max-width: 800px;
   box-sizing: border-box;
   box-shadow: 14px 27px 45px 4px rgba(112, 144, 176, 0.2);
   color: #1b2559;

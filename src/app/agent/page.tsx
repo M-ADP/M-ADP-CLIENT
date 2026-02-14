@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { colors } from '@/styles/colors';
 import * as S from './style';
 
+// 현재 특별한 백엔드 개발 진행이 없어 멋대로 고정된 입출력을 사용함
 const USER_MESSAGE = "최애의 사인 프로젝트의 CPU 사용량을 알고 싶어";
 const AI_MESSAGE = "좋습니다, 다음은 최애의 사인 프로젝트의 CPU 사용량 입니다.";
 
@@ -31,6 +32,7 @@ export default function AgentPage() {
 
   const handleSearch = (e?: React.FormEvent) => {
     e?.preventDefault();
+    if (!inputValue.trim()) return;
     if (!isChatStarted) {
       setIsChatStarted(true);
     }
@@ -38,7 +40,7 @@ export default function AgentPage() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
       handleSearch();
     }
   };
