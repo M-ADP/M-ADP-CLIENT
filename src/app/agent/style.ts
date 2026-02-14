@@ -2,14 +2,16 @@ import styled from '@emotion/styled';
 import { colors } from '@/styles/colors';
 import { typography } from '@/styles/typography';
 
-export const Container = styled.div`
+export const Container = styled.div<{ isChat?: boolean }>`
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: ${({ isChat }) => (isChat ? 'space-between' : 'center')};
   width: 100%;
   height: 100%;
   background-color: #ffffff;
+  padding: ${({ isChat }) => (isChat ? '40px 0' : '0')};
+  box-sizing: border-box;
 `;
 
 export const LogoSection = styled.div`
@@ -41,6 +43,7 @@ export const SearchContainer = styled.div`
   border-radius: 26px;
   box-sizing: border-box;
   transition: border-color 0.2s ease;
+  margin-bottom: 20px;
 
   &:focus-within {
     border-color: ${colors.primary.default};
@@ -86,4 +89,66 @@ export const SearchInput = styled.input`
   &::placeholder {
     color: ${colors.black[75]};
   }
+`;
+
+export const ChatArea = styled.div`
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1240px;
+  height: 100%;
+  overflow-y: auto;
+  padding: 20px;
+  gap: 20px;
+  flex: 1;
+`;
+
+export const MessageRow = styled.div`
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  width: 100%;
+  justify-content: center;
+`;
+
+export const Avatar = styled.div<{ color?: string }>`
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: ${({ color }) => color || '#e2e8f0'};
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+`;
+
+export const UserMessageCard = styled.div`
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 15px 21px;
+  width: 800px;
+  box-sizing: border-box;
+  background-color: #ffffff;
+  color: ${colors.primary.default};
+  font-family: ${typography.text18Regular.fontFamily};
+  font-size: ${typography.text18Regular.fontSize};
+  font-weight: ${typography.text18Regular.fontWeight};
+  line-height: ${typography.text18Regular.lineHeight};
+`;
+
+export const AIMessageCard = styled.div`
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 22px;
+  width: 800px;
+  box-sizing: border-box;
+  box-shadow: 14px 27px 45px 4px rgba(112, 144, 176, 0.2);
+  color: #1b2559;
+  font-family: ${typography.text18Regular.fontFamily};
+  font-size: ${typography.text18Regular.fontSize};
+  font-weight: ${typography.text18Regular.fontWeight};
+  line-height: ${typography.text18Regular.lineHeight};
+  white-space: pre-wrap;
+  min-height: 100px;
 `;
