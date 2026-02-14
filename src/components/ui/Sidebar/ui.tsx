@@ -17,7 +17,7 @@ const PRIMARY_NAV = [
       { key: 'project-manage', label: '프로젝트 관리', path: '/project/manage' },
     ],
   },
-  { key: 'report', label: '분석', icon: '/icons/sidebar/analytics.svg', path: '/report' },
+  { key: 'cloud-database', label: '클라우드 데이터베이스', icon: '/icons/sidebar/cloud-db.svg', path: '/cloud-database' },
 ];
 
 const SECONDARY_NAV = [
