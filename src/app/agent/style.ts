@@ -121,6 +121,11 @@ export const Avatar = styled.div<{ color?: string }>`
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  font-family: ${typography.text16Regular.fontFamily};
+  font-size: ${typography.text16Regular.fontSize};
+  font-weight: ${typography.text16Regular.fontWeight};
+  line-height: ${typography.text16Regular.lineHeight};
+  color: #ffffff;
 `;
 
 export const UserMessageCard = styled.div`

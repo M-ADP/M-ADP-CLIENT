@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { colors } from '@/styles/colors';
 import * as S from './style';
 
 const USER_MESSAGE = "최애의 사인 프로젝트의 CPU 사용량을 알고 싶어";
@@ -32,8 +33,8 @@ export default function AgentPage() {
     e?.preventDefault();
     if (!isChatStarted) {
       setIsChatStarted(true);
-      setInputValue("");
     }
+    setInputValue("");
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -60,11 +61,8 @@ export default function AgentPage() {
       {isChatStarted && (
         <S.ChatArea>
           <S.MessageRow>
-            <S.Avatar>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="#333333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z" stroke="#333333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+            <S.Avatar color={colors.primary.default}>
+              N
             </S.Avatar>
             <S.UserMessageCard>
               {USER_MESSAGE}
