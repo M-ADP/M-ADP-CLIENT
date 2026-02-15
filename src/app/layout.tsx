@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Sidebar from "@/components/ui/Sidebar/ui";
-
 import EmotionRegistry from './registry';
 
 export const metadata: Metadata = {
