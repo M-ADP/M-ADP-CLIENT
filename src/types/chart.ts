@@ -45,6 +45,10 @@ export interface MultiLineChartProps {
     value: string;
   }>;
   showMenu?: boolean;
+  startDate?: string;
+  endDate?: string;
+  onStartDateChange?: (date: string) => void;
+  onEndDateChange?: (date: string) => void;
   yAxisMax?: number;
   yAxisUnit?: string;
   width?: number | string;

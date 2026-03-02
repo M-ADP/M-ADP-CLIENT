@@ -7,7 +7,7 @@ function ProgressBar({
   label,
   value,
   max = 100,
-  color = '#3b82f6',
+  color = '#0075FF',
   height = 8,
   className,
   style,
