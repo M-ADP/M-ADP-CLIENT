@@ -11,24 +11,28 @@ export const HeroContainer = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 16px;
+  padding: 20px;
   box-shadow: 0 1px 1px 0 rgba(0, 0, 0, 0.25);
   backdrop-filter: blur(60px);
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(90deg, rgba(8, 10, 20, 0.88) 0%, rgba(8, 10, 20, 0.62) 28%, rgba(8, 10, 20, 0.12) 58%, rgba(8, 10, 20, 0) 78%);
+  }
 `;
 
 export const BackgroundImage = styled.div`
   position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 60%;
-  background-image: url('/images/jellyfish.png');
+  inset: 0;
+  background-image: url('/assets/hepari.png');
   background-size: cover;
   background-position: center right;
   background-repeat: no-repeat;
-  z-index: 1;
-  mask-image: linear-gradient(to right, transparent, black 40%);
-  -webkit-mask-image: linear-gradient(to right, transparent, black 40%);
+  z-index: 0;
 `;
 
 export const ContentWrapper = styled.div`
