@@ -1,13 +1,14 @@
 import styled from '@emotion/styled';
-import { FONT_FAMILY } from '@/styles/typography';
+import { FONT_FAMILY, fontWeights } from '@/styles/typography';
+import { black, primary } from '@/styles/colors';
 
-export const Overlay = styled.div`
+export const Overlay = styled.div<{ $position?: 'center' | 'right' }>`
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.55);
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: ${({ $position }) => ($position === 'right' ? 'stretch' : 'center')};
+  justify-content: ${({ $position }) => ($position === 'right' ? 'flex-end' : 'center')};
   z-index: 1000;
 `;
 

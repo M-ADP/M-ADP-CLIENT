@@ -5,11 +5,11 @@ import { Overlay, Card } from './style';
 import type { ModalProps } from '@/types/modal';
 import { getSize } from '@/utils/size';
 
-export default function Modal({ open, onClose, children, width, height, closeOnOverlay = true }: ModalProps) {
+export default function Modal({ open, onClose, children, width, height, closeOnOverlay = true, position = 'center' }: ModalProps) {
   if (!open) return null;
 
   const content = (
-    <Overlay onClick={closeOnOverlay ? onClose : undefined}>
+    <Overlay onClick={closeOnOverlay ? onClose : undefined} $position={position}>
       <Card
         width={getSize(width)}
         height={getSize(height)}
