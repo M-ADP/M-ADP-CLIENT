@@ -12,5 +12,5 @@ export const postAuthCode = (payload: AuthCodePayload) => {
     return api('/auth/code', {
         method: 'POST',
         body: JSON.stringify(payload),
-    }) as Promise<AuthResponse>;
+    }, false) as Promise<AuthResponse>;
 };
