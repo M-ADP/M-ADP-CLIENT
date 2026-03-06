@@ -4,6 +4,12 @@ import { useEffect, Suspense, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGoogleAuthMutation } from '@/services/login/login.mutation';
 import { useAuthStore } from '@/store/authStore';
+import { jwtDecode } from 'jwt-decode';
+import * as S from './style';
+
+interface DecodedToken {
+    role?: string;
+}
 
 function AuthCallbackContent() {
     const router = useRouter();
@@ -20,7 +26,6 @@ function AuthCallbackContent() {
 
         const errorMatch = hash.match(/#error=(.+)/);
         if (errorMatch) {
-            alert('해당 계정으로 로그인을 할 수 없습니다.');
             router.replace('/login');
             return;
         }
@@ -40,17 +45,21 @@ function AuthCallbackContent() {
 
                 if (response.access_token) {
                     localStorage.setItem('token', response.access_token);
-                }
 
-                if (response.role === 'PARTIAL_AUTH') {
-                    setStep('github');
-                    router.replace('/login');
+                    const decoded = jwtDecode<DecodedToken>(response.access_token);
+                    const role = decoded.role;
+
+                    if (role === 'PARTIAL_AUTH') {
+                        setStep('github');
+                        router.replace('/login');
+                    } else {
+                        router.replace('/');
+                    }
                 } else {
                     router.replace('/');
                 }
             } catch (error) {
                 console.error('인증 처리 중 에러가 발생했습니다:', error);
-                alert('로그인 처리 중 오류가 발생했습니다.');
                 setPageError(true);
             }
         };
@@ -60,25 +69,25 @@ function AuthCallbackContent() {
 
     if (pageError) {
         return (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontSize: '1.2rem' }}>
-                인증에 실패했습니다. 다시 로그인해주세요.
-            </div>
+            <S.Container>
+                <S.ErrorText>인증에 실패했습니다. 다시 로그인해주세요.</S.ErrorText>
+            </S.Container>
         );
     }
 
     return (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontSize: '1.2rem' }}>
-            인증 정보를 처리 중입니다... 잠시만 기다려주세요.
-        </div>
+        <S.Container>
+            <S.Loader />
+        </S.Container>
     );
 }
 
 export default function AuthCallbackPage() {
     return (
         <Suspense fallback={
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontSize: '1.2rem' }}>
-                로딩 중...
-            </div>
+            <S.Container>
+                <S.Loader />
+            </S.Container>
         }>
             <AuthCallbackContent />
         </Suspense>

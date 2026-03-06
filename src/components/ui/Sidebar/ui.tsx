@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import * as S from './style';
@@ -33,12 +33,18 @@ const SECONDARY_NAV = [
 export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { setStep } = useAuthStore();
+  const { step, setStep } = useAuthStore();
   const { user, setUser } = useUserStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedMenu, setExpandedMenu] = useState<string | null>('project');
 
   useUserProfileQuery();
+
+  useEffect(() => {
+    if (pathname !== '/login' && step === 'github') {
+      setStep('google');
+    }
+  }, [pathname, step, setStep]);
 
   const handleLogout = async () => {
     try {

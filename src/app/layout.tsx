@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Sidebar from "@/components/ui/Sidebar/ui";
+import MainLayout from "@/components/layout/MainLayout";
 import QueryProvider from "@/components/providers/QueryProvider";
 
 export const metadata: Metadata = {
@@ -14,12 +14,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body style={{ margin: 0, display: 'flex' }}>
+      <body style={{ margin: 0 }}>
         <QueryProvider>
-          <Sidebar />
-          <main style={{ flex: 1, minWidth: 0 }}>
+          <MainLayout>
             {children}
-          </main>
+          </MainLayout>
         </QueryProvider>
       </body>
     </html>
