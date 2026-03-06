@@ -40,10 +40,14 @@ function AuthCallbackContent() {
 
                 if (response.access_token) {
                     localStorage.setItem('token', response.access_token);
-                    setStep('github');
                 }
 
-                router.replace('/login');
+                if (response.role === 'PARTIAL_AUTH') {
+                    setStep('github');
+                    router.replace('/login');
+                } else {
+                    router.replace('/');
+                }
             } catch (error) {
                 console.error('인증 처리 중 에러가 발생했습니다:', error);
                 alert('로그인 처리 중 오류가 발생했습니다.');

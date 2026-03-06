@@ -4,6 +4,10 @@ import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import * as S from './style';
+import { useUserStore } from '@/store/userStore';
+import { useUserProfileQuery } from '@/services/user/user.query';
+import { useAuthStore } from '@/store/authStore';
+import { postLogout } from '@/services/login/login.api';
 
 const PRIMARY_NAV = [
   { key: 'dashboard', label: '대시보드', icon: '/icons/sidebar/dashboard.svg', path: '/' },
@@ -29,8 +33,25 @@ const SECONDARY_NAV = [
 export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
+  const { setStep } = useAuthStore();
+  const { user, setUser } = useUserStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedMenu, setExpandedMenu] = useState<string | null>('project');
+
+  useUserProfileQuery();
+
+  const handleLogout = async () => {
+    try {
+      await postLogout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      localStorage.removeItem('token');
+      setUser(null);
+      setStep('google');
+      router.push('/login');
+    }
+  };
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
@@ -135,13 +156,19 @@ export default function Sidebar() {
         </S.Section>
       </S.Main>
 
-      {!isCollapsed && (
+      {!isCollapsed && user && (
         <S.Footer>
           <S.ProfileInner>
-            <S.Avatar>N</S.Avatar>
+            <S.Avatar>
+              {user.profile ? (
+                <Image src={user.profile} alt="profile" width={32} height={32} style={{ borderRadius: '50%' }} />
+              ) : (
+                user.nickname?.[0] || 'U'
+              )}
+            </S.Avatar>
             <S.ProfileText>
-              <S.ProfileSub>부산소프트웨어마이스터고</S.ProfileSub>
-              <S.ProfileName>류승찬</S.ProfileName>
+              <S.ProfileName>{user.nickname || '익명'}</S.ProfileName>
+              <S.LogoutButton onClick={handleLogout}>로그아웃</S.LogoutButton>
             </S.ProfileText>
           </S.ProfileInner>
           <S.Caret>
