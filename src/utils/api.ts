@@ -4,7 +4,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 let isRefreshing = false;
 
-export const api = async (endpoint: string, options: RequestInit = {}, requireAuth: boolean = true): Promise<any> => {
+export const api = async <T = unknown>(endpoint: string, options: RequestInit = {}, requireAuth: boolean = true): Promise<T> => {
     const token = useAuthStore.getState().token;
 
     const headers = {
@@ -54,9 +54,9 @@ export const api = async (endpoint: string, options: RequestInit = {}, requireAu
 
                 const contentType = retryResponse.headers.get('content-type');
                 if (contentType && contentType.includes('application/json')) {
-                    return retryResponse.json();
+                    return retryResponse.json() as T;
                 }
-                return retryResponse.text();
+                return retryResponse.text() as T;
             } else {
                 isRefreshing = false;
                 useAuthStore.getState().clearToken();
@@ -78,8 +78,8 @@ export const api = async (endpoint: string, options: RequestInit = {}, requireAu
 
     const contentType = response.headers.get('content-type');
     if (contentType && contentType.includes('application/json')) {
-        return response.json();
+        return response.json() as T;
     }
 
-    return response.text();
+    return response.text() as T;
 };
