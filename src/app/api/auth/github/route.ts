@@ -28,9 +28,6 @@ export async function GET(request: Request) {
 
         const responseBody = await response.text();
 
-        console.log('[API Proxy] 백엔드 응답 상태:', response.status);
-        console.log('[API Proxy] 백엔드 응답 본문 전체:', responseBody);
-
         if (response.ok) {
             try {
                 const data = JSON.parse(responseBody);
