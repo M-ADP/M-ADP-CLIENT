@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
 import Image from 'next/image';
 import * as S from './style';
 import SocialLoginButton from '@/components/ui/SocialLoginButton/ui';
@@ -18,6 +17,7 @@ export default function LoginContainer() {
 
 function LoginContainerInner() {
   const { step } = useAuthStore();
+  const token = useAuthStore((state) => state.token);
   const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
   const handleGoogleLogin = () => {
@@ -26,7 +26,6 @@ function LoginContainerInner() {
 
   const handleGithubLogin = async () => {
     try {
-      const token = localStorage.getItem('token');
 
       const response = await fetch(`/api/auth/github`, {
         method: 'GET',

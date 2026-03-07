@@ -1,9 +1,11 @@
+import { useAuthStore } from '@/store/authStore';
+
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 let isRefreshing = false;
 
 export const api = async (endpoint: string, options: RequestInit = {}, requireAuth: boolean = true): Promise<any> => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const token = useAuthStore.getState().token;
 
     const headers = {
         'Content-Type': 'application/json',
@@ -28,7 +30,7 @@ export const api = async (endpoint: string, options: RequestInit = {}, requireAu
             if (reissueRes.ok) {
                 const data = await reissueRes.json();
                 if (data.key) {
-                    localStorage.setItem('token', data.key);
+                    useAuthStore.getState().setToken(data.key);
                 }
 
                 const retryHeaders = {
@@ -57,7 +59,7 @@ export const api = async (endpoint: string, options: RequestInit = {}, requireAu
                 return retryResponse.text();
             } else {
                 isRefreshing = false;
-                localStorage.removeItem('token');
+                useAuthStore.getState().clearToken();
                 if (typeof window !== 'undefined') {
                     window.location.href = '/login';
                 }

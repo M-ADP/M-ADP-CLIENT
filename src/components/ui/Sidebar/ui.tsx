@@ -33,7 +33,7 @@ const SECONDARY_NAV = [
 export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { step, setStep } = useAuthStore();
+  const { step, setStep, clearToken } = useAuthStore();
   const { user, setUser } = useUserStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedMenu, setExpandedMenu] = useState<string | null>('project');
@@ -52,7 +52,7 @@ export default function Sidebar() {
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {
-      localStorage.removeItem('token');
+      clearToken();
       setUser(null);
       setStep('google');
       router.push('/login');

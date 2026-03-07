@@ -14,6 +14,7 @@ interface DecodedToken {
 function AuthCallbackContent() {
     const router = useRouter();
     const setStep = useAuthStore((state) => state.setStep);
+    const setToken = useAuthStore((state) => state.setToken);
     const googleAuthMutation = useGoogleAuthMutation();
     const [pageError, setPageError] = useState(false);
     const hasFetched = useRef(false);
@@ -44,7 +45,7 @@ function AuthCallbackContent() {
                 const response = await googleAuthMutation.mutateAsync({ code });
 
                 if (response.access_token) {
-                    localStorage.setItem('token', response.access_token);
+                    setToken(response.access_token);
 
                     const decoded = jwtDecode<DecodedToken>(response.access_token);
                     const role = decoded.role;
