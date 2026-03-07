@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { postAuthCode, AuthCodePayload } from './login.api';
 
-export const useGoogleAuthMutation = () => {
+export const useAuthCodeMutation = () => {
     return useMutation({
         mutationFn: (payload: AuthCodePayload) => postAuthCode(payload),
     });

@@ -2,7 +2,7 @@
 
 import { useEffect, Suspense, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useGoogleAuthMutation } from '@/services/login/login.mutation';
+import { useAuthCodeMutation } from '@/services/login/login.mutation';
 import { useAuthStore } from '@/store/authStore';
 import { jwtDecode } from 'jwt-decode';
 import * as S from './style';
@@ -15,7 +15,7 @@ function AuthCallbackContent() {
     const router = useRouter();
     const setStep = useAuthStore((state) => state.setStep);
     const setToken = useAuthStore((state) => state.setToken);
-    const googleAuthMutation = useGoogleAuthMutation();
+    const authCodeMutation = useAuthCodeMutation();
     const [pageError, setPageError] = useState(false);
     const hasFetched = useRef(false);
 
@@ -42,7 +42,7 @@ function AuthCallbackContent() {
 
         const processAuth = async () => {
             try {
-                const response = await googleAuthMutation.mutateAsync({ code });
+                const response = await authCodeMutation.mutateAsync({ code });
 
                 if (response.access_token) {
                     setToken(response.access_token);
