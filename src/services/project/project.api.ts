@@ -111,3 +111,33 @@ export interface ProjectDetailResponse {
 export const getProjectById = (projectId: string) => {
     return api<ProjectDetailResponse>(`/projects/${projectId}`);
 };
+
+export const deleteProject = (projectId: string) => {
+    return api(`/projects/${projectId}`, {
+        method: 'DELETE',
+    });
+};
+
+export interface UpdateProjectNamePayload {
+    name: string;
+}
+
+export interface UpdateProjectResourcePayload {
+    max_cpu?: number | null;
+    max_memory?: number | null;
+    max_disk?: number | null;
+}
+
+export const updateProjectName = (projectId: string, payload: UpdateProjectNamePayload) => {
+    return api(`/projects/${projectId}/name`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+    });
+};
+
+export const updateProjectResource = (projectId: string, payload: UpdateProjectResourcePayload) => {
+    return api(`/projects/${projectId}/resource`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+    });
+};

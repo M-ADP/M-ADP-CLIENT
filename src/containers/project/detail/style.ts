@@ -13,9 +13,16 @@ export const PageHeader = styled.div`
 
 export const TitleRow = styled.div`
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 1rem;
 `;
+
+export const HeaderButtonGroup = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+`;
+
 
 export const PageTitle = styled.h1`
   font-family: ${FONT_FAMILY};
@@ -287,3 +294,33 @@ export const TableCell = styled.td`
   color: ${black[300]};
   border-bottom: 1px solid ${black[50]};
 `;
+
+export const ModalContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+`;
+
+export const ModalTitle = styled.h3`
+  font-family: ${FONT_FAMILY};
+  font-weight: ${fontWeights.semibold};
+  font-size: 1.25rem;
+  color: ${black[300]};
+  margin: 0;
+`;
+
+export const ModalText = styled.p`
+  font-family: ${FONT_FAMILY};
+  font-size: 0.875rem;
+  color: ${black[75]};
+  margin: 0;
+`;
+
+export const ModalButtonGroup = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+`;
+

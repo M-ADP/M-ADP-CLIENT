@@ -1,20 +1,37 @@
 'use client';
 
 import { useRef, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Card, { MetaItem, FooterMessage, StatusBadge } from '@/components/ui/Card/ui';
+import Modal from '@/components/ui/Modal/ui';
+import Button from '@/components/ui/Button/ui';
+import Input from '@/components/ui/Input/ui';
 import * as S from './style';
 import { useProjectDetailQuery } from '@/services/project/project.query';
+import { useDeleteProjectMutation, useUpdateProjectNameMutation, useUpdateProjectResourceMutation } from '@/services/project/project.mutation';
 
 interface ProjectDetailContainerProps {
   projectId: string;
 }
 
 export default function ProjectDetailContainer({ projectId }: ProjectDetailContainerProps) {
+  const router = useRouter();
   const { data: project, isLoading, isError } = useProjectDetailQuery(projectId);
+  const deleteProjectMutation = useDeleteProjectMutation();
+  const updateNameMutation = useUpdateProjectNameMutation();
+  const updateResourceMutation = useUpdateProjectResourceMutation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showLeftGradient, setShowLeftGradient] = useState(false);
   const [showRightGradient, setShowRightGradient] = useState(true);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    cpu: '',
+    memory: '',
+    disk: '',
+  });
 
   useEffect(() => {
     const handleScroll = () => {
@@ -32,6 +49,71 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
       return () => scrollElement.removeEventListener('scroll', handleScroll);
     }
   }, []);
+
+  const handleOpenEditModal = () => {
+    if (project) {
+      setEditForm({
+        name: project.name,
+        cpu: '',
+        memory: '',
+        disk: '',
+      });
+    }
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setEditForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleEditSubmit = async () => {
+    try {
+      if (editForm.name && editForm.name !== project?.name) {
+        await updateNameMutation.mutateAsync({
+          projectId,
+          payload: { name: editForm.name },
+        });
+      }
+
+      const resourcePayload: { max_cpu?: number; max_memory?: number; max_disk?: number } = {};
+      if (editForm.cpu) resourcePayload.max_cpu = Number(editForm.cpu);
+      if (editForm.memory) resourcePayload.max_memory = Number(editForm.memory);
+      if (editForm.disk) resourcePayload.max_disk = Number(editForm.disk);
+
+      if (Object.keys(resourcePayload).length > 0) {
+        await updateResourceMutation.mutateAsync({
+          projectId,
+          payload: resourcePayload,
+        });
+      }
+
+      alert('프로젝트가 수정되었습니다.');
+      setIsEditModalOpen(false);
+    } catch (error) {
+      if (error instanceof Error) {
+        alert(error.message);
+      } else {
+        alert('프로젝트 수정에 실패했습니다.');
+      }
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteProjectMutation.mutateAsync(projectId);
+      alert('프로젝트가 삭제되었습니다.');
+      router.push('/project/manage');
+    } catch (error) {
+      if (error instanceof Error) {
+        alert(error.message);
+      } else {
+        alert('프로젝트 삭제에 실패했습니다.');
+      }
+    } finally {
+      setIsDeleteModalOpen(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -57,12 +139,22 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
     }
   };
 
+  const isEditPending = updateNameMutation.isPending || updateResourceMutation.isPending;
+
   return (
     <S.PageWrapper>
       <S.PageHeader>
         <S.TitleRow>
           <S.PageTitle>{project.name}</S.PageTitle>
           <S.ProjectId>({project.id})</S.ProjectId>
+          <S.HeaderButtonGroup>
+            <Button variant="confirm" onClick={handleOpenEditModal}>
+              수정
+            </Button>
+            <Button variant="cancel" onClick={() => setIsDeleteModalOpen(true)}>
+              삭제
+            </Button>
+          </S.HeaderButtonGroup>
         </S.TitleRow>
       </S.PageHeader>
 
@@ -158,6 +250,64 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
           </S.PortSection>
         </S.RightPanel>
       </S.ChartSection>
+
+      <Modal open={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} width={480} height="auto">
+        <S.ModalContent>
+          <S.ModalTitle>프로젝트 수정</S.ModalTitle>
+          <Input
+            label="프로젝트 명"
+            name="name"
+            value={editForm.name}
+            onChange={handleEditChange}
+            placeholder="프로젝트 이름"
+          />
+          <Input
+            label="CPU (0.1v ~ 4.0v)"
+            name="cpu"
+            value={editForm.cpu}
+            onChange={handleEditChange}
+            placeholder="예: 0.3"
+          />
+          <Input
+            label="MEMORY (32MB ~ 4096MB)"
+            name="memory"
+            value={editForm.memory}
+            onChange={handleEditChange}
+            placeholder="예: 4096"
+          />
+          <Input
+            label="DISK (32MB ~ 50GB)"
+            name="disk"
+            value={editForm.disk}
+            onChange={handleEditChange}
+            placeholder="예: 4096"
+          />
+          <S.ModalText>※ 변경할 항목만 입력해주세요. 비워두면 기존 값이 유지됩니다.</S.ModalText>
+          <S.ModalButtonGroup>
+            <Button variant="cancel" onClick={() => setIsEditModalOpen(false)}>
+              취소
+            </Button>
+            <Button variant="confirm" onClick={handleEditSubmit} disabled={isEditPending}>
+              {isEditPending ? '저장 중...' : '저장'}
+            </Button>
+          </S.ModalButtonGroup>
+        </S.ModalContent>
+      </Modal>
+
+      <Modal open={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} width={400} height="auto">
+        <S.ModalContent>
+          <S.ModalTitle>프로젝트 삭제</S.ModalTitle>
+          <S.ModalText>정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.</S.ModalText>
+          <S.ModalButtonGroup>
+            <Button variant="cancel" onClick={() => setIsDeleteModalOpen(false)}>
+              취소
+            </Button>
+            <Button variant="confirm" onClick={handleDelete} disabled={deleteProjectMutation.isPending}>
+              {deleteProjectMutation.isPending ? '삭제 중...' : '삭제'}
+            </Button>
+          </S.ModalButtonGroup>
+        </S.ModalContent>
+      </Modal>
     </S.PageWrapper>
   );
 }
