@@ -6,7 +6,7 @@ export interface AppCreatePayload {
     cpu?: number;
     memory?: number;
     disk?: number;
-    project_id: string;
+    project_id: number;
 }
 
 export interface AppCreateResponse {

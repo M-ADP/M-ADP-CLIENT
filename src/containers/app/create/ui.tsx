@@ -41,7 +41,7 @@ export default function AppCreateContainer() {
     try {
       const result = await createAppMutation.mutateAsync({
         name: formData.appName.trim(),
-        project_id: projectId,
+        project_id: Number(projectId),
         ...(formData.port && { port: Number(formData.port) }),
         ...(formData.cpu && { cpu: Number(formData.cpu) }),
         ...(formData.memory && { memory: Number(formData.memory) }),
