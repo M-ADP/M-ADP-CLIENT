@@ -23,3 +23,44 @@ export const postCreateProject = (payload: ProjectCreatePayload) => {
         body: JSON.stringify(payload),
     });
 };
+
+export interface DeploymentSummary {
+    running: number;
+    warning: number;
+}
+
+export interface DeploymentStatus {
+    state: string;
+    message: string;
+}
+
+export interface ProjectListItem {
+    id: string;
+    name: string;
+    my_role: string;
+    domain: string;
+    deployment_summary: DeploymentSummary;
+    deployment_status: DeploymentStatus;
+}
+
+export interface ProjectListResponse {
+    message: string;
+    data: {
+        items: ProjectListItem[];
+        has_next: boolean;
+    };
+}
+
+export interface ProjectListParams {
+    cursor?: string | null;
+    limit?: number;
+}
+
+export const getProjects = (params?: ProjectListParams) => {
+    const searchParams = new URLSearchParams();
+    if (params?.cursor) searchParams.set('cursor', params.cursor);
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+
+    const query = searchParams.toString();
+    return api<ProjectListResponse>(`/projects${query ? `?${query}` : ''}`);
+};
