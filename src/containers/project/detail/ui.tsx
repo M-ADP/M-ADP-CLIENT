@@ -1,8 +1,10 @@
 'use client';
 
 import { useRef, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Card, { MetaItem, FooterMessage, StatusBadge } from '@/components/ui/Card/ui';
+import Button from '@/components/ui/Button/ui';
 import * as S from './style';
 
 const MOCK_APPS = [
@@ -61,7 +63,8 @@ interface ProjectDetailContainerProps {
   projectId: string;
 }
 
-export default function ProjectDetailContainer({ projectId: _projectId }: ProjectDetailContainerProps) {
+export default function ProjectDetailContainer({ projectId }: ProjectDetailContainerProps) {
+  const router = useRouter();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showLeftGradient, setShowLeftGradient] = useState(false);
   const [showRightGradient, setShowRightGradient] = useState(true);
@@ -92,7 +95,12 @@ export default function ProjectDetailContainer({ projectId: _projectId }: Projec
         </S.TitleRow>
       </S.PageHeader>
 
-      <S.SectionTitle>앱 배포 목록</S.SectionTitle>
+      <S.SectionRow>
+        <S.SectionTitle>앱 배포 목록</S.SectionTitle>
+        <Button variant="confirm" onClick={() => router.push(`/app/create?projectId=${projectId}`)}>
+          새 앱
+        </Button>
+      </S.SectionRow>
       <S.AppGridWrapper $showLeftGradient={showLeftGradient} $showRightGradient={showRightGradient}>
         <S.AppGrid ref={scrollRef}>
           {MOCK_APPS.map((app) => (

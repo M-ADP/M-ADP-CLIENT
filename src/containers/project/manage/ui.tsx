@@ -10,7 +10,7 @@ import * as S from './style';
 
 const MOCK_PROJECTS = [
   {
-    id: 'b7e23ec2-8aaf-4c2b-9c3d-1e2f3a4b5c6d',
+    id: 251207218102272,
     name: 'TestProject',
     deployments: 'Running 2',
     warning: 'Warning 1',
@@ -99,7 +99,7 @@ export default function ProjectManageContainer() {
     project.name.toLowerCase().includes(searchQuery.toLowerCase())
   ), [searchQuery]);
 
-  const handleProjectClick = (projectId: string) => {
+  const handleProjectClick = (projectId: string | number) => {
     router.push(`/project/manage/${projectId}`);
   };
 
