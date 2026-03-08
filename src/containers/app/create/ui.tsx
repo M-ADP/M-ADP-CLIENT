@@ -61,7 +61,7 @@ export default function AppCreateContainer() {
           placeholder="예: 4"
         />
         <S.NoticeText>
-          {`※ MEMORY는 MB 단위, DISK는 GB 단위로 입력해주세요.\n※ 이후 DISK는 증가만 가능하며 감소는 불가합니다.`}
+          {`※ MEMORY는 MB 단위, DISK는 MB 단위로 입력해주세요.\n※ 이후 DISK는 증가만 가능하며 감소는 불가합니다.`}
         </S.NoticeText>
         <S.ButtonGroup>
           <Button variant="confirm" type="submit">
