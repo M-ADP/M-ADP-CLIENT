@@ -14,8 +14,6 @@ const nextConfig: NextConfig = {
   },
 };
 
-if (process.env.NODE_ENV === 'development') {
-  setupDevPlatform();
-}
-
 export default nextConfig;
+
+import('@opennextjs/cloudflare').then(m => m.initOpenNextCloudflareForDev());
