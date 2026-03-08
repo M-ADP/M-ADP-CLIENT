@@ -6,9 +6,9 @@ export const SocialLoginButtonWrapper = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
-  padding: 0.9rem 2.3rem;
-  border-radius: 4.5rem;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 2rem;
   border: none;
   cursor: pointer;
   transition: opacity 0.2s, transform 0.1s;
@@ -34,6 +34,6 @@ export const IconWrapper = styled.div`
 export const ButtonText = styled.span`
   font-family: ${FONT_FAMILY};
   font-weight: ${fontWeights.medium};
-  font-size: 2rem;
+  font-size: 1.1rem;
   line-height: 120%;
 `;
