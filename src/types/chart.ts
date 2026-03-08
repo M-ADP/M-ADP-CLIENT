@@ -19,6 +19,11 @@ export interface ProgressRingProps {
   size?: number;
   strokeWidth?: number;
   color?: string;
+  gradientStops?: Array<{
+    offset: number;
+    color: string;
+    opacity?: number;
+  }>;
   backgroundColor?: string;
   label?: string;
   unit?: string;

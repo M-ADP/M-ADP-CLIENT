@@ -154,6 +154,30 @@ export const SubNavItem = styled.div`
   }
 `;
 
+export const DeepNavContainer = styled.div`
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+
+  &[data-open='true'] {
+    max-height: 280px;
+    opacity: 1;
+  }
+`;
+
+export const DeepNavItem = styled.div<{ $clickable?: boolean }>`
+  padding: 9px 16px 9px 68px;
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  cursor: ${({ $clickable }) => ($clickable ? 'pointer' : 'default')};
+
+  &:hover {
+    background: ${({ $clickable }) => ($clickable ? colors.black[50] : 'transparent')};
+  }
+`;
+
 export const NavLabel = styled.span<{ $active?: boolean }>`
   font-family: ${({ $active }) => $active ? typography.text14Semibold.fontFamily : typography.text14Medium.fontFamily};
   font-size: ${({ $active }) => $active ? typography.text14Semibold.fontSize : typography.text14Medium.fontSize};

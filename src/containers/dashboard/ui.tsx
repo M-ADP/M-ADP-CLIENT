@@ -2,8 +2,8 @@
 
 import React, { useMemo, useState } from 'react';
 import * as S from './style';
-import { WelcomeHero } from '@/components/ui/WelcomeHero/ui';
-import { NuriSummary } from '@/components/ui/NuriSummary/ui';
+import { WelcomeHeroCard } from '@/components/dashboard/WelcomeHeroCard/ui';
+import { SummaryMetricsCard } from '@/components/dashboard/SummaryMetricsCard/ui';
 import { ResourceAllocation } from '@/components/ui/ResourceAllocation/ui';
 import MultiLineChart from '@/components/ui/Charts/MultiLineChart/ui';
 import { mockDashboardData, mockChartData } from './data';
@@ -60,12 +60,12 @@ export default function DashboardContainer() {
     <S.DashboardLayout>
 
       <S.TopSection>
-        <WelcomeHero userName={mockDashboardData.userName} />
-        <NuriSummary metrics={mockDashboardData.nuriSummary} />
+        <WelcomeHeroCard userName={mockDashboardData.userName} />
+        <SummaryMetricsCard title="누리 요약" metrics={mockDashboardData.summaryMetrics} />
       </S.TopSection>
 
       <S.BottomSection>
-        <div style={{ flex: 1, minHeight: 0 }}>
+        <S.ChartArea>
           <MultiLineChart
             title="최애의 사인"
             data={chartData}
@@ -77,7 +77,7 @@ export default function DashboardContainer() {
             yAxisMax={600}
             yAxisUnit=""
           />
-        </div>
+        </S.ChartArea>
         <ResourceAllocation projects={mockDashboardData.projectResources} />
       </S.BottomSection>
 

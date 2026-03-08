@@ -51,3 +51,8 @@ export const BottomSection = styled.div`
     flex-direction: column;
   }
 `;
+
+export const ChartArea = styled.div`
+  flex: 1;
+  min-height: 0;
+`;

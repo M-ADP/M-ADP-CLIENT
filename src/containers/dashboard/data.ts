@@ -3,7 +3,7 @@ import { ChartData } from 'chart.js';
 
 export const mockDashboardData: DashboardData = {
   userName: '류승찬',
-  nuriSummary: [
+  summaryMetrics: [
     { id: 'visitors', label: '방문자', value: '145 명', percentage: 70 },
     { id: 'cpu', label: 'CPU', value: '70%', percentage: 70 },
     { id: 'mem', label: 'MEM', value: '70%', percentage: 70 },

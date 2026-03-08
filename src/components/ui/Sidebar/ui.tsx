@@ -5,16 +5,46 @@ import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import * as S from './style';
 
-const PRIMARY_NAV = [
+interface DetailNavItem {
+  key: string;
+  label: string;
+}
+
+interface SidebarChildItem {
+  key: string;
+  label: string;
+  path: string;
+  detailChildren?: DetailNavItem[];
+}
+
+interface SidebarItem {
+  key: string;
+  label: string;
+  icon: string;
+  path: string;
+  children?: SidebarChildItem[];
+}
+
+const PRIMARY_NAV: SidebarItem[] = [
   { key: 'dashboard', label: '대시보드', icon: '/icons/sidebar/dashboard.svg', path: '/' },
   {
     key: 'project',
     label: '프로젝트',
-    icon: '/icons/sidebar/dashboard.svg',
+    icon: '/icons/sidebar/chat.svg',
     path: '/project',
     children: [
       { key: 'project-create', label: '프로젝트 생성', path: '/project/create' },
-      { key: 'project-manage', label: '프로젝트 관리', path: '/project/manage' },
+      {
+        key: 'project-manage',
+        label: '프로젝트명',
+        path: '/project/manage',
+        detailChildren: [
+          { key: 'project-info', label: '프로젝트명' },
+          { key: 'project-app', label: '앱' },
+          { key: 'project-nuri', label: '누리' },
+          { key: 'project-favorite', label: '최애의 사인' },
+        ],
+      },
     ],
   },
   { key: 'report', label: '분석', icon: '/icons/sidebar/analytics.svg', path: '/report' },
@@ -57,6 +87,10 @@ export default function Sidebar() {
     return pathname === path;
   };
 
+  const currentProjectId = pathname?.match(/^\/project\/manage\/([^/]+)/)?.[1] ?? null;
+  const inProjectDetail = Boolean(currentProjectId);
+  const inAppManage = Boolean(pathname?.match(/^\/project\/manage\/[^/]+\/app(?:\/|$)/));
+
   if (pathname?.startsWith('/login')) {
     return null;
   }
@@ -87,7 +121,7 @@ export default function Sidebar() {
                     if (item.children) {
                       toggleMenu(item.key);
                     } else {
-                      handleNavigation(item.path!);
+                      handleNavigation(item.path);
                     }
                   }}
                 >
@@ -105,11 +139,45 @@ export default function Sidebar() {
                 </S.NavItem>
                 {!isCollapsed && item.children && (
                   <S.SubNavContainer data-open={expandedMenu === item.key ? 'true' : 'false'}>
-                    {item.children.map((child) => (
-                      <S.SubNavItem key={child.key} onClick={() => handleNavigation(child.path!)}>
-                        <S.NavLabel $active={pathname === child.path}>{child.label}</S.NavLabel>
-                      </S.SubNavItem>
-                    ))}
+                    {item.children.map((child) => {
+                      const childActive = pathname === child.path || (child.key === 'project-manage' && inProjectDetail);
+
+                      return (
+                        <div key={child.key}>
+                          <S.SubNavItem onClick={() => handleNavigation(child.path)}>
+                            <S.NavLabel $active={childActive}>{child.label}</S.NavLabel>
+                          </S.SubNavItem>
+
+                          {child.detailChildren && (
+                            <S.DeepNavContainer data-open={inProjectDetail ? 'true' : 'false'}>
+                              {child.detailChildren.map((detail) => {
+                                const detailActive = detail.key === 'project-app'
+                                  ? inAppManage
+                                  : detail.key === 'project-info'
+                                    ? inProjectDetail && !inAppManage
+                                    : false;
+                                const detailPath = detail.key === 'project-app'
+                                  ? (currentProjectId ? `/project/manage/${currentProjectId}/app` : null)
+                                  : detail.key === 'project-info'
+                                    ? (currentProjectId ? `/project/manage/${currentProjectId}` : null)
+                                    : null;
+                                return (
+                                  <S.DeepNavItem
+                                    key={detail.key}
+                                    $clickable={Boolean(detailPath)}
+                                    onClick={() => {
+                                      if (detailPath) handleNavigation(detailPath);
+                                    }}
+                                  >
+                                    <S.NavLabel $active={detailActive}>{detail.label}</S.NavLabel>
+                                  </S.DeepNavItem>
+                                );
+                              })}
+                            </S.DeepNavContainer>
+                          )}
+                        </div>
+                      );
+                    })}
                   </S.SubNavContainer>
                 )}
               </div>

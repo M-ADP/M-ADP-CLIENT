@@ -28,7 +28,7 @@ export const ProgressLabel = styled.div`
 `;
 
 export const ProgressValue = styled.div`
-  color: ${black[50]};
+  color: ${black[300]};
   font-size: 24px;
   font-weight: 600;
   line-height: 1;

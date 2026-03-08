@@ -1,4 +1,4 @@
-export interface NuriMetric {
+export interface SummaryMetric {
   id: string;
   label: string;
   value: string;
@@ -20,6 +20,6 @@ export interface ProjectResource {
 
 export interface DashboardData {
   userName: string;
-  nuriSummary: NuriMetric[];
+  summaryMetrics: SummaryMetric[];
   projectResources: ProjectResource[];
 }

@@ -1,17 +1,18 @@
 import React from 'react';
 import * as S from './style';
-import { NuriMetric } from '@/types/dashboard';
-import ProgressBar from '../Charts/ProgressBar/ui';
+import { SummaryMetric } from '@/types/dashboard';
+import ProgressBar from '@/components/ui/Charts/ProgressBar/ui';
 
-interface NuriSummaryProps {
-  metrics: NuriMetric[];
+interface SummaryMetricsCardProps {
+  title: string;
+  metrics: SummaryMetric[];
 }
 
-export const NuriSummary: React.FC<NuriSummaryProps> = ({ metrics }) => {
+export const SummaryMetricsCard: React.FC<SummaryMetricsCardProps> = ({ title, metrics }) => {
   return (
     <S.SummaryContainer>
       <S.SummaryHeader>
-        <S.SummaryTitle>누리 요약</S.SummaryTitle>
+        <S.SummaryTitle>{title}</S.SummaryTitle>
         <S.MenuButton>⋯</S.MenuButton>
       </S.SummaryHeader>
 

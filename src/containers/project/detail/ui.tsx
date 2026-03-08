@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Card, { MetaItem, FooterMessage, StatusBadge } from '@/components/ui/Card/ui';
 import * as S from './style';
@@ -61,7 +62,8 @@ interface ProjectDetailContainerProps {
   projectId: string;
 }
 
-export default function ProjectDetailContainer({ projectId: _projectId }: ProjectDetailContainerProps) {
+export default function ProjectDetailContainer({ projectId }: ProjectDetailContainerProps) {
+  const router = useRouter();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showLeftGradient, setShowLeftGradient] = useState(false);
   const [showRightGradient, setShowRightGradient] = useState(true);
@@ -99,6 +101,7 @@ export default function ProjectDetailContainer({ projectId: _projectId }: Projec
             <Card
               key={app.id}
               title={app.name}
+              onClick={() => router.push(`/project/manage/${projectId}/app`)}
               footer={
                 <>
                   {app.statusMessage && (
