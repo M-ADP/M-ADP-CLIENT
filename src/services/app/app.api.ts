@@ -9,8 +9,12 @@ export interface AppCreatePayload {
     project_id: string;
 }
 
+export interface AppCreateResponse {
+    appId: string;
+}
+
 export const postCreateApp = (payload: AppCreatePayload) => {
-    return api('/apps', {
+    return api<AppCreateResponse>('/apps', {
         method: 'POST',
         body: JSON.stringify(payload),
     });

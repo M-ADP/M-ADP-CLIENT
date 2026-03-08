@@ -39,7 +39,7 @@ export default function AppCreateContainer() {
     }
 
     try {
-      await createAppMutation.mutateAsync({
+      const result = await createAppMutation.mutateAsync({
         name: formData.appName.trim(),
         project_id: projectId,
         ...(formData.port && { port: Number(formData.port) }),
@@ -49,7 +49,7 @@ export default function AppCreateContainer() {
       });
 
       alert('애플리케이션이 생성되었습니다.');
-      router.push(`/app/manage/${projectId}`);
+      router.push(`/app/manage/${result.appId}`);
     } catch (error) {
       if (error instanceof Error) {
         alert(error.message);
