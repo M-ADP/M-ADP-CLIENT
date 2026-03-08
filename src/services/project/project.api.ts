@@ -141,3 +141,35 @@ export const updateProjectResource = (projectId: string, payload: UpdateProjectR
         body: JSON.stringify(payload),
     });
 };
+
+export interface ProjectMemberResponse {
+    user_id: string;
+    username: string;
+    profile_image: string | null;
+    role: 'OWNER' | 'VIEWER';
+    joined_at: string;
+}
+
+export interface CursorPageProjectMemberResponse {
+    items: ProjectMemberResponse[];
+    has_next: boolean;
+}
+
+export interface ProjectMembersListResponse {
+    message: string;
+    data: CursorPageProjectMemberResponse;
+}
+
+export interface ProjectMembersParams {
+    cursor?: string | null;
+    limit?: number;
+}
+
+export const getProjectMembers = (projectId: string, params?: ProjectMembersParams) => {
+    const searchParams = new URLSearchParams();
+    if (params?.cursor) searchParams.set('cursor', params.cursor);
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+
+    const query = searchParams.toString();
+    return api<ProjectMembersListResponse>(`/projects/${projectId}/members${query ? `?${query}` : ''}`);
+};

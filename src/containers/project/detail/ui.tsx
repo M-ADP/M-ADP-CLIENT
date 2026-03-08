@@ -8,7 +8,7 @@ import Modal from '@/components/ui/Modal/ui';
 import Button from '@/components/ui/Button/ui';
 import Input from '@/components/ui/Input/ui';
 import * as S from './style';
-import { useProjectDetailQuery } from '@/services/project/project.query';
+import { useProjectDetailQuery, useProjectMembersQuery } from '@/services/project/project.query';
 import { useDeleteProjectMutation, useUpdateProjectNameMutation, useUpdateProjectResourceMutation } from '@/services/project/project.mutation';
 
 interface ProjectDetailContainerProps {
@@ -18,6 +18,7 @@ interface ProjectDetailContainerProps {
 export default function ProjectDetailContainer({ projectId }: ProjectDetailContainerProps) {
   const router = useRouter();
   const { data: project, isLoading, isError } = useProjectDetailQuery(projectId);
+  const { data: membersData } = useProjectMembersQuery(projectId, { limit: 100 });
   const deleteProjectMutation = useDeleteProjectMutation();
   const updateNameMutation = useUpdateProjectNameMutation();
   const updateResourceMutation = useUpdateProjectResourceMutation();
@@ -26,6 +27,8 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
   const [showRightGradient, setShowRightGradient] = useState(true);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [inviteSearchQuery, setInviteSearchQuery] = useState('');
   const [editForm, setEditForm] = useState({
     name: '',
     cpu: '',
@@ -153,6 +156,9 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
             </Button>
             <Button variant="cancel" onClick={() => setIsDeleteModalOpen(true)}>
               삭제
+            </Button>
+            <Button variant="confirm" onClick={() => setIsInviteModalOpen(true)}>
+              사용자 초대
             </Button>
           </S.HeaderButtonGroup>
         </S.TitleRow>
@@ -304,6 +310,45 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
             </Button>
             <Button variant="confirm" onClick={handleDelete} disabled={deleteProjectMutation.isPending}>
               {deleteProjectMutation.isPending ? '삭제 중...' : '삭제'}
+            </Button>
+          </S.ModalButtonGroup>
+        </S.ModalContent>
+      </Modal>
+
+      <Modal open={isInviteModalOpen} onClose={() => setIsInviteModalOpen(false)} width={480} height="auto">
+        <S.ModalContent>
+          <S.ModalTitle>사용자 초대</S.ModalTitle>
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%' }}>
+            <Input
+              name="inviteSearch"
+              placeholder="사용자명을 입력해주세요."
+              value={inviteSearchQuery}
+              onChange={(e) => setInviteSearchQuery(e.target.value)}
+              width="100%"
+            />
+          </div>
+
+          <S.MemberList>
+            {membersData?.items.filter(member =>
+              member.username.toLowerCase().includes(inviteSearchQuery.toLowerCase())
+            ).map((member) => (
+              <S.MemberItem key={member.user_id}>
+                <S.MemberInfoWrapper>
+                  <S.AvatarImage $imageUrl={member.profile_image || undefined} />
+                  <S.MemberName>{member.username}</S.MemberName>
+                  {member.role === 'OWNER' && <S.OwnerBadge>오너</S.OwnerBadge>}
+                </S.MemberInfoWrapper>
+                {member.role !== 'OWNER' && <S.KickButton>추방</S.KickButton>}
+              </S.MemberItem>
+            )) || <p>멤버를 불러오는 중입니다.</p>}
+          </S.MemberList>
+
+          <S.ModalButtonGroup>
+            <Button variant="cancel" onClick={() => setIsInviteModalOpen(false)}>
+              뒤로가기
+            </Button>
+            <Button variant="confirm" onClick={() => alert('초대 기능은 아직 준비 중입니다.')}>
+              초대
             </Button>
           </S.ModalButtonGroup>
         </S.ModalContent>

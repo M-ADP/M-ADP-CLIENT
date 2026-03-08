@@ -324,3 +324,82 @@ export const ModalButtonGroup = styled.div`
   margin-top: 0.5rem;
 `;
 
+export const MemberList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  max-height: 240px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: ${black[50]};
+    border-radius: 3px;
+  }
+`;
+
+export const MemberItem = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+`;
+
+export const MemberInfoWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+`;
+
+export const AvatarImage = styled.div<{ $imageUrl?: string }>`
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: ${black[50]};
+  background-image: ${({ $imageUrl }) => ($imageUrl ? `url(${$imageUrl})` : 'none')};
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+`;
+
+export const MemberName = styled.span`
+  font-family: ${FONT_FAMILY};
+  font-weight: ${fontWeights.medium};
+  font-size: 14px;
+  color: ${black[300]};
+`;
+
+export const OwnerBadge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  background-color: #fef08a; /* Yellow-200 equivalent */
+  color: #a16207; /* Yellow-700 equivalent */
+  font-family: ${FONT_FAMILY};
+  font-weight: ${fontWeights.semibold};
+  font-size: 11px;
+  border-radius: 12px;
+`;
+
+export const KickButton = styled.button`
+  background: none;
+  border: none;
+  padding: 6px 12px;
+  color: #ef4444; /* Status Error Red */
+  font-family: ${FONT_FAMILY};
+  font-weight: ${fontWeights.medium};
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #fef2f2; /* Red-50 */
+  }
+`;
+
