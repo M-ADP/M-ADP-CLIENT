@@ -10,7 +10,7 @@ import * as S from './style';
 
 const MOCK_PROJECTS = [
   {
-    id: 251207218102272,
+    id: 275601592156160,
     name: 'TestProject',
     deployments: 'Running 2',
     warning: 'Warning 1',
