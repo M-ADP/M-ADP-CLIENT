@@ -10,7 +10,8 @@ export interface AppCreatePayload {
 }
 
 export interface AppCreateResponse {
-    appId: string;
+    message?: string;
+    data?: number;
 }
 
 export const postCreateApp = (payload: AppCreatePayload) => {

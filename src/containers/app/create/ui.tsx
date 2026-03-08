@@ -48,8 +48,12 @@ export default function AppCreateContainer() {
         ...(formData.disk && { disk: Number(formData.disk) }),
       });
 
-      alert('애플리케이션이 생성되었습니다.');
-      router.push(`/app/manage/${result.appId}`);
+      alert(result.message || '애플리케이션이 생성되었습니다.');
+      if (result.data) {
+        router.push(`/app/manage/${result.data}`);
+      } else {
+        alert("애플리케이션 생성에 실패했습니다.")
+      }
     } catch (error) {
       if (error instanceof Error) {
         alert(error.message);
