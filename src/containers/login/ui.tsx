@@ -4,6 +4,7 @@ import Image from 'next/image';
 import * as S from './style';
 import SocialLoginButton from '@/components/ui/SocialLoginButton/ui';
 import { useAuthStore } from '@/store/authStore';
+import Cookies from 'js-cookie';
 
 import { Suspense } from 'react';
 
@@ -17,7 +18,7 @@ export default function LoginContainer() {
 
 function LoginContainerInner() {
   const { step } = useAuthStore();
-  const token = useAuthStore((state) => state.token);
+  const token = Cookies.get('token');
   const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
   const handleGoogleLogin = () => {

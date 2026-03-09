@@ -4,6 +4,7 @@ import { useEffect, Suspense, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthCodeMutation } from '@/services/login/login.mutation';
 import { useAuthStore } from '@/store/authStore';
+import Cookies from 'js-cookie';
 import { jwtDecode } from 'jwt-decode';
 import * as S from './style';
 
@@ -14,7 +15,6 @@ interface DecodedToken {
 function AuthCallbackContent() {
     const router = useRouter();
     const setStep = useAuthStore((state) => state.setStep);
-    const setToken = useAuthStore((state) => state.setToken);
     const authCodeMutation = useAuthCodeMutation();
     const [pageError, setPageError] = useState(false);
     const hasFetched = useRef(false);
@@ -45,7 +45,7 @@ function AuthCallbackContent() {
                 const response = await authCodeMutation.mutateAsync({ code });
 
                 if (response.access_token) {
-                    setToken(response.access_token);
+                    Cookies.set('token', response.access_token, { path: '/' });
 
                     const decoded = jwtDecode<DecodedToken>(response.access_token);
                     const role = decoded.role;

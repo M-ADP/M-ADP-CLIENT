@@ -1,4 +1,5 @@
 import { useAuthStore } from '@/store/authStore';
+import Cookies from 'js-cookie';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -13,12 +14,12 @@ const refreshToken = async (): Promise<string | null> => {
     if (reissueRes.ok) {
         const data = await reissueRes.json();
         if (data.key) {
-            useAuthStore.getState().setToken(data.key);
+            Cookies.set('token', data.key, { path: '/' });
             return data.key;
         }
     }
 
-    useAuthStore.getState().clearToken();
+    Cookies.remove('token');
     if (typeof window !== 'undefined') {
         window.location.href = '/login';
     }
@@ -43,7 +44,7 @@ const parseResponse = async <T>(response: Response): Promise<T> => {
 };
 
 export const api = async <T = unknown>(endpoint: string, options: RequestInit = {}, requireAuth: boolean = true): Promise<T> => {
-    const token = useAuthStore.getState().token;
+    const token = Cookies.get('token');
 
     const headers = {
         'Content-Type': 'application/json',
