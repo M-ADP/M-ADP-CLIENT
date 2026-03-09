@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import * as S from './style';
@@ -80,12 +80,18 @@ export default function Sidebar() {
   const handleLogout = async () => {
     try {
       await postLogout();
-    } catch {
+    catch (error) {
+      console.error('Logout failed:', error);
     } finally {
       clearToken();
       setUser(null);
       setStep('google');
       router.push('/login');
+
+  const toggleSidebar = () => {
+    setIsCollapsed(!isCollapsed);
+    if (!isCollapsed) {
+      setExpandedMenu(null);
     }
   };
 
@@ -232,19 +238,19 @@ export default function Sidebar() {
         </S.Section>
       </S.Main>
 
-      {!isCollapsed && (
+      {!isCollapsed && user && (
         <S.Footer>
           <S.ProfileInner>
             <S.Avatar>
-              {user?.profile ? (
+              {user.profile ? (
                 <Image src={user.profile} alt="profile" width={32} height={32} style={{ borderRadius: '50%' }} />
               ) : (
-                user?.nickname?.[0] || 'N'
+                user.nickname?.[0] || 'U'
               )}
             </S.Avatar>
             <S.ProfileText>
-              {user?.nickname ? <S.ProfileName>{user.nickname}</S.ProfileName> : <S.ProfileName>류승찬</S.ProfileName>}
-              {user ? <S.LogoutButton onClick={handleLogout}>로그아웃</S.LogoutButton> : <S.ProfileSub>부산소프트웨어마이스터고</S.ProfileSub>}
+              <S.ProfileName>{user.nickname || '익명'}</S.ProfileName>
+              <S.LogoutButton onClick={handleLogout}>로그아웃</S.LogoutButton>
             </S.ProfileText>
           </S.ProfileInner>
           <S.Caret>

@@ -32,6 +32,13 @@ export const ProjectId = styled.span`
   color: ${black[75]};
 `;
 
+export const SectionRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+`;
+
 export const SectionTitle = styled.h2`
   font-family: ${FONT_FAMILY};
   font-weight: ${fontWeights.semibold};
@@ -46,6 +53,7 @@ export const SectionRow = styled.div`
   justify-content: space-between;
   margin-bottom: 1.5rem;
 `;
+
 
 export const AppGridWrapper = styled.div<{ $showLeftGradient: boolean; $showRightGradient: boolean }>`
   position: relative;
