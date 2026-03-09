@@ -103,7 +103,7 @@ export const IconWrapper = styled.span<{ $active?: boolean }>`
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  
+
   img {
     filter: ${({ $active }) =>
     $active
@@ -270,4 +270,23 @@ export const Caret = styled.span`
   align-items: center;
   justify-content: center;
   cursor: pointer;
+`;
+
+export const LogoutButton = styled.button`
+  font-family: ${typography.text14Regular.fontFamily};
+  font-size: ${typography.text14Regular.fontSize};
+  font-weight: ${typography.text14Regular.fontWeight};
+  line-height: ${typography.text14Regular.lineHeight};
+  color: ${colors.black[100]};
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  transition: color 0.3s;
+
+  &:hover {
+    color: ${colors.primary.default};
+    text-decoration: underline;
+  }
 `;

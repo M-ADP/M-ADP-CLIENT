@@ -1,9 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import * as S from './style';
+import { useUserStore } from '@/store/userStore';
+import { useUserProfileQuery } from '@/services/user/user.query';
+import { useAuthStore } from '@/store/authStore';
+import { postLogout } from '@/services/login/login.api';
 
 interface DetailNavItem {
   key: string;
@@ -48,6 +52,7 @@ const PRIMARY_NAV: SidebarItem[] = [
     ],
   },
   { key: 'report', label: '분석', icon: '/icons/sidebar/analytics.svg', path: '/report' },
+  { key: 'agent', label: 'ChatOps', icon: '/icons/sidebar/chat.svg', path: '/agent' },
 ];
 
 const SECONDARY_NAV = [
@@ -59,19 +64,43 @@ const SECONDARY_NAV = [
 export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
+  const { step, setStep, clearToken } = useAuthStore();
+  const { user, setUser } = useUserStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedMenu, setExpandedMenu] = useState<string | null>('project');
 
-  const toggleSidebar = () => {
-    setIsCollapsed(!isCollapsed);
-    if (!isCollapsed) {
-      setExpandedMenu(null);
+  useUserProfileQuery();
+
+  useEffect(() => {
+    if (pathname !== '/login' && step === 'github') {
+      setStep('google');
     }
+  }, [pathname, step, setStep]);
+
+  const handleLogout = async () => {
+    try {
+      await postLogout();
+    } catch {
+    } finally {
+      clearToken();
+      setUser(null);
+      setStep('google');
+      router.push('/login');
+    }
+  };
+
+  const toggleSidebar = () => {
+    setIsCollapsed((prev) => {
+      if (!prev) {
+        setExpandedMenu(null);
+      }
+      return !prev;
+    });
   };
 
   const toggleMenu = (key: string) => {
     if (isCollapsed) return;
-    setExpandedMenu(expandedMenu === key ? null : key);
+    setExpandedMenu((prev) => (prev === key ? null : key));
   };
 
   const handleNavigation = (path: string, hasChildren?: boolean) => {
@@ -91,7 +120,7 @@ export default function Sidebar() {
   const inProjectDetail = Boolean(currentProjectId);
   const inAppManage = Boolean(pathname?.match(/^\/project\/manage\/[^/]+\/app(?:\/|$)/));
 
-  if (pathname?.startsWith('/login')) {
+  if (pathname?.startsWith('/login') || pathname?.startsWith('/oauth2/callback')) {
     return null;
   }
 
@@ -206,10 +235,16 @@ export default function Sidebar() {
       {!isCollapsed && (
         <S.Footer>
           <S.ProfileInner>
-            <S.Avatar>N</S.Avatar>
+            <S.Avatar>
+              {user?.profile ? (
+                <Image src={user.profile} alt="profile" width={32} height={32} style={{ borderRadius: '50%' }} />
+              ) : (
+                user?.nickname?.[0] || 'N'
+              )}
+            </S.Avatar>
             <S.ProfileText>
-              <S.ProfileSub>부산소프트웨어마이스터고</S.ProfileSub>
-              <S.ProfileName>류승찬</S.ProfileName>
+              {user?.nickname ? <S.ProfileName>{user.nickname}</S.ProfileName> : <S.ProfileName>류승찬</S.ProfileName>}
+              {user ? <S.LogoutButton onClick={handleLogout}>로그아웃</S.LogoutButton> : <S.ProfileSub>부산소프트웨어마이스터고</S.ProfileSub>}
             </S.ProfileText>
           </S.ProfileInner>
           <S.Caret>
