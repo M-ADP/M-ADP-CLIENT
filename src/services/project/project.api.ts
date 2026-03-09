@@ -173,3 +173,20 @@ export const getProjectMembers = (projectId: string, params?: ProjectMembersPara
     const query = searchParams.toString();
     return api<ProjectMembersListResponse>(`/projects/${projectId}/members${query ? `?${query}` : ''}`);
 };
+
+export interface AddProjectMemberPayload {
+    user_id: string;
+}
+
+export const addProjectMember = (projectId: string, payload: AddProjectMemberPayload) => {
+    return api(`/projects/${projectId}/members`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    });
+};
+
+export const removeProjectMember = (projectId: string, targetUserId: string) => {
+    return api(`/projects/${projectId}/members/${targetUserId}`, {
+        method: 'DELETE',
+    });
+};

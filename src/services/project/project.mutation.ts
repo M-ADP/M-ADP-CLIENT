@@ -4,9 +4,12 @@ import {
     deleteProject,
     updateProjectName,
     updateProjectResource,
+    addProjectMember,
+    removeProjectMember,
     ProjectCreatePayload,
     UpdateProjectNamePayload,
     UpdateProjectResourcePayload,
+    AddProjectMemberPayload,
 } from './project.api';
 
 export const useCreateProjectMutation = () => {
@@ -44,6 +47,28 @@ export const useUpdateProjectResourceMutation = () => {
             updateProjectResource(projectId, payload),
         onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: ['project', variables.projectId] });
+        },
+    });
+};
+
+export const useAddProjectMemberMutation = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ projectId, payload }: { projectId: string; payload: AddProjectMemberPayload }) =>
+            addProjectMember(projectId, payload),
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['projectMembers', variables.projectId] });
+        },
+    });
+};
+
+export const useRemoveProjectMemberMutation = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ projectId, targetUserId }: { projectId: string; targetUserId: string }) =>
+            removeProjectMember(projectId, targetUserId),
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['projectMembers', variables.projectId] });
         },
     });
 };

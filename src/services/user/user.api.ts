@@ -13,3 +13,15 @@ export const getMyUserProfile = (userId?: number) => {
         method: 'GET',
     }) as Promise<UserProfile>;
 };
+
+export interface UserProfileById {
+    user_id: number;
+    nickname: string;
+    profile: string;
+}
+
+export const getUserByProfileId = (userId: string) => {
+    return api<UserProfileById>(`/user/profile/id/${userId}`, {
+        method: 'GET',
+    });
+};

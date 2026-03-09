@@ -1,5 +1,5 @@
 import styled from '@emotion/styled';
-import { black, primary } from '@/styles/colors';
+import { black, primary, gray } from '@/styles/colors';
 import { FONT_FAMILY, fontWeights } from '@/styles/typography';
 
 export const PageWrapper = styled.div`
@@ -322,6 +322,14 @@ export const ModalButtonGroup = styled.div`
   justify-content: flex-end;
   gap: 0.75rem;
   margin-top: 0.5rem;
+`;
+
+export const SearchPreviewBox = styled.div`
+  background: ${gray[50]};
+  border: 1px solid ${gray[200]};
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 24px;
 `;
 
 export const MemberList = styled.div`
