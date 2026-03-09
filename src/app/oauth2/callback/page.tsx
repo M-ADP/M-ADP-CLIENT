@@ -5,12 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthCodeMutation } from '@/services/login/login.mutation';
 import { useAuthStore } from '@/store/authStore';
 import Cookies from 'js-cookie';
-import { jwtDecode } from 'jwt-decode';
 import * as S from './style';
-
-interface DecodedToken {
-    role?: string;
-}
 
 function AuthCallbackContent() {
     const router = useRouter();
@@ -47,10 +42,9 @@ function AuthCallbackContent() {
                 if (response.access_token) {
                     Cookies.set('token', response.access_token, { path: '/' });
 
-                    const decoded = jwtDecode<DecodedToken>(response.access_token);
-                    const role = decoded.role;
+                    const isAuthenticated = response.is_authenticated === 'true' || response.is_authenticated === true;
 
-                    if (role === 'PARTIAL_AUTH') {
+                    if (!isAuthenticated) {
                         setStep('github');
                         router.replace('/login');
                     } else {
