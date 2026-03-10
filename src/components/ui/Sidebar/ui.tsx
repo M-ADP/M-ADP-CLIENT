@@ -34,7 +34,7 @@ const PRIMARY_NAV: SidebarItem[] = [
   {
     key: 'project',
     label: '프로젝트',
-    icon: '/icons/sidebar/chat.svg',
+    icon: '/icons/sidebar/dashboard.svg',
     path: '/project',
     children: [
       { key: 'project-create', label: '프로젝트 생성', path: '/project/create' },
