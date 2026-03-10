@@ -31,7 +31,10 @@ function LoginContainerInner() {
         const decoded: any = jwtDecode(token);
         const isExpired = decoded.exp * 1000 < Date.now();
         if (!isExpired) {
-          router.replace('/');
+          // PARTIAL_AUTH이면 깃허브 연동이 필요한 상태이므로 홈으로 보내지 않음
+          if (decoded.role !== 'PARTIAL_AUTH') {
+            router.replace('/');
+          }
         }
       } catch (e) {
         // Invalid token format

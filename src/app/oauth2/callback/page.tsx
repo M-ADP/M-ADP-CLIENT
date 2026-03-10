@@ -42,7 +42,8 @@ function AuthCallbackContent() {
                 if (response.access_token) {
                     Cookies.set('token', response.access_token, { path: '/' });
 
-                    const isAuthenticated = response.is_authenticated === 'true' || response.is_authenticated === true;
+                    // is_authenticated가 'true' 문자열인 경우만 참으로 인정
+                    const isAuthenticated = response.is_authenticated === 'true';
 
                     if (!isAuthenticated) {
                         setStep('github');
