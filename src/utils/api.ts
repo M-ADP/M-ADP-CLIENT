@@ -63,45 +63,68 @@ export const api = async <T = unknown>(endpoint: string, options: RequestInit = 
         headers.Authorization = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
-        ...options,
-        headers,
-        credentials: 'include',
-    });
+    let response: Response;
+    try {
+        response = await fetch(`${BASE_URL}${endpoint}`, {
+            ...options,
+            headers,
+            credentials: 'include',
+        });
+    } catch (error) {
+        // 백엔드에서 401 시 CORS 헤더를 누락하여 브라우저가 TypeError(Failed to fetch)를 던지는 경우를 대비한 우회(편법) 처리
+        if (error instanceof TypeError) {
+            console.error('>>> [api.ts] 네트워크 에러(CORS 차단 등) 감지됨. 401 만료로 가정하고 토큰 갱신 시도');
+            try {
+                const newToken = await getRefreshedToken();
+                if (!newToken) {
+                    throw new Error('인증 갱신에 실패했습니다.');
+                }
+
+                const retryResponse = await fetch(`${BASE_URL}${endpoint}`, {
+                    ...options,
+                    headers: {
+                        ...options.headers,
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${newToken}`,
+                    },
+                    credentials: 'include',
+                });
+
+                if (!retryResponse.ok) {
+                    const errorData = await retryResponse.json().catch(() => ({}));
+                    throw new Error(errorData.message || 'API 요청에 실패했습니다.');
+                }
+                return parseResponse<T>(retryResponse);
+            } catch (retryError) {
+                throw error;
+            }
+        }
+        throw error;
+    }
 
     if (response.status === 401) {
-        console.error('>>> [api.ts] 401 Error Detected! Calling getRefreshedToken()');
-        try {
-            const newToken = await getRefreshedToken();
-            console.error('>>> [api.ts] getRefreshedToken() finished with:', newToken);
+        const newToken = await getRefreshedToken();
 
-            if (!newToken) {
-                console.error('>>> [api.ts] newToken is empty, throwing error');
-                throw new Error('인증 갱신에 실패했습니다.');
-            }
-
-            console.error('>>> [api.ts] retrying original request with new token');
-            const retryResponse = await fetch(`${BASE_URL}${endpoint}`, {
-                ...options,
-                headers: {
-                    ...options.headers,
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${newToken}`,
-                },
-                credentials: 'include',
-            });
-
-            if (!retryResponse.ok) {
-                console.error('>>> [api.ts] retryResponse not ok:', retryResponse.status);
-                const errorData = await retryResponse.json().catch(() => ({}));
-                throw new Error(errorData.message || 'API 요청에 실패했습니다.');
-            }
-
-            return parseResponse<T>(retryResponse);
-        } catch (e) {
-            console.error('>>> [api.ts] Error during refresh token flow:', e);
-            throw e;
+        if (!newToken) {
+            throw new Error('인증 갱신에 실패했습니다.');
         }
+
+        const retryResponse = await fetch(`${BASE_URL}${endpoint}`, {
+            ...options,
+            headers: {
+                ...options.headers,
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${newToken}`,
+            },
+            credentials: 'include',
+        });
+
+        if (!retryResponse.ok) {
+            const errorData = await retryResponse.json().catch(() => ({}));
+            throw new Error(errorData.message || 'API 요청에 실패했습니다.');
+        }
+
+        return parseResponse<T>(retryResponse);
     }
 
     if (!response.ok) {
