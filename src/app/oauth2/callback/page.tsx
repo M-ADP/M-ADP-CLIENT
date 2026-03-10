@@ -4,17 +4,12 @@ import { useEffect, Suspense, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthCodeMutation } from '@/services/login/login.mutation';
 import { useAuthStore } from '@/store/authStore';
-import { jwtDecode } from 'jwt-decode';
+import Cookies from 'js-cookie';
 import * as S from './style';
-
-interface DecodedToken {
-    role?: string;
-}
 
 function AuthCallbackContent() {
     const router = useRouter();
     const setStep = useAuthStore((state) => state.setStep);
-    const setToken = useAuthStore((state) => state.setToken);
     const authCodeMutation = useAuthCodeMutation();
     const [pageError, setPageError] = useState(false);
     const hasFetched = useRef(false);
@@ -45,12 +40,12 @@ function AuthCallbackContent() {
                 const response = await authCodeMutation.mutateAsync({ code });
 
                 if (response.access_token) {
-                    setToken(response.access_token);
+                    Cookies.set('token', response.access_token, { path: '/' });
 
-                    const decoded = jwtDecode<DecodedToken>(response.access_token);
-                    const role = decoded.role;
+                    // is_authenticated가 'true' 문자열인 경우만 참으로 인정
+                    const isAuthenticated = response.is_authenticated === 'true';
 
-                    if (role === 'PARTIAL_AUTH') {
+                    if (!isAuthenticated) {
                         setStep('github');
                         router.replace('/login');
                     } else {

@@ -1,24 +1,33 @@
 import { useAuthStore } from '@/store/authStore';
+import Cookies from 'js-cookie';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 let refreshPromise: Promise<string | null> | null = null;
 
 const refreshToken = async (): Promise<string | null> => {
-    const reissueRes = await fetch(`${BASE_URL}/auth/reissue`, {
-        method: 'POST',
-        credentials: 'include',
-    });
+    console.error('>>> [api.ts] refreshToken() called! BASE_URL is:', BASE_URL);
+    try {
+        const reissueRes = await fetch(`${BASE_URL}/auth/reissue`, {
+            method: 'POST',
+            credentials: 'include',
+        });
+        console.error('>>> [api.ts] reissue API response ok:', reissueRes.ok, 'status:', reissueRes.status);
 
-    if (reissueRes.ok) {
-        const data = await reissueRes.json();
-        if (data.key) {
-            useAuthStore.getState().setToken(data.key);
-            return data.key;
+        if (reissueRes.ok) {
+            const data = await reissueRes.json();
+            // 백엔드 명세에 따라 key 또는 access_token 확인
+            const token = data.key || data.access_token;
+            if (token) {
+                Cookies.set('token', token, { path: '/' });
+                return token;
+            }
         }
+    } catch (error) {
+        console.error('Token refresh network error:', error);
     }
 
-    useAuthStore.getState().clearToken();
+    Cookies.remove('token', { path: '/' });
     if (typeof window !== 'undefined') {
         window.location.href = '/login';
     }
@@ -43,29 +52,69 @@ const parseResponse = async <T>(response: Response): Promise<T> => {
 };
 
 export const api = async <T = unknown>(endpoint: string, options: RequestInit = {}, requireAuth: boolean = true): Promise<T> => {
-    const token = useAuthStore.getState().token;
+    const token = Cookies.get('token');
 
-    const headers = {
+    const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        ...(requireAuth && token && { Authorization: `Bearer ${token}` }),
-        ...options.headers,
+        ...((options.headers as Record<string, string>) || {}),
     };
 
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
-        ...options,
-        headers,
-        credentials: 'include',
-    });
+    if (requireAuth && token && !headers.Authorization) {
+        headers.Authorization = `Bearer ${token}`;
+    }
 
-    if (response.status === 401 && requireAuth) {
+    let response: Response;
+    try {
+        response = await fetch(`${BASE_URL}${endpoint}`, {
+            ...options,
+            headers,
+            credentials: 'include',
+        });
+    } catch (error) {
+        // 백엔드에서 401 시 CORS 헤더를 누락하여 브라우저가 TypeError(Failed to fetch)를 던지는 경우를 대비한 우회(편법) 처리
+        if (error instanceof TypeError) {
+            console.error('>>> [api.ts] 네트워크 에러(CORS 차단 등) 감지됨. 401 만료로 가정하고 토큰 갱신 시도');
+            try {
+                const newToken = await getRefreshedToken();
+                if (!newToken) {
+                    throw new Error('인증 갱신에 실패했습니다.');
+                }
+
+                const retryResponse = await fetch(`${BASE_URL}${endpoint}`, {
+                    ...options,
+                    headers: {
+                        ...options.headers,
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${newToken}`,
+                    },
+                    credentials: 'include',
+                });
+
+                if (!retryResponse.ok) {
+                    const errorData = await retryResponse.json().catch(() => ({}));
+                    throw new Error(errorData.message || 'API 요청에 실패했습니다.');
+                }
+                return parseResponse<T>(retryResponse);
+            } catch (retryError) {
+                throw error;
+            }
+        }
+        throw error;
+    }
+
+    if (response.status === 401) {
         const newToken = await getRefreshedToken();
+
+        if (!newToken) {
+            throw new Error('인증 갱신에 실패했습니다.');
+        }
 
         const retryResponse = await fetch(`${BASE_URL}${endpoint}`, {
             ...options,
             headers: {
+                ...options.headers,
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${newToken}`,
-                ...options.headers,
             },
             credentials: 'include',
         });

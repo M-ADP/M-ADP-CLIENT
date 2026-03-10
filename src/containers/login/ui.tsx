@@ -4,6 +4,10 @@ import Image from 'next/image';
 import * as S from './style';
 import SocialLoginButton from '@/components/ui/SocialLoginButton/ui';
 import { useAuthStore } from '@/store/authStore';
+import Cookies from 'js-cookie';
+import { jwtDecode } from 'jwt-decode';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { Suspense } from 'react';
 
@@ -16,9 +20,27 @@ export default function LoginContainer() {
 }
 
 function LoginContainerInner() {
+  const router = useRouter();
   const { step } = useAuthStore();
-  const token = useAuthStore((state) => state.token);
+  const token = Cookies.get('token');
   const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+  useEffect(() => {
+    if (token) {
+      try {
+        const decoded: any = jwtDecode(token);
+        const isExpired = decoded.exp * 1000 < Date.now();
+        if (!isExpired) {
+          // PARTIAL_AUTH이면 깃허브 연동이 필요한 상태이므로 홈으로 보내지 않음
+          if (decoded.role !== 'PARTIAL_AUTH') {
+            router.replace('/');
+          }
+        }
+      } catch (e) {
+        // Invalid token format
+      }
+    }
+  }, [token, router]);
 
   const handleGoogleLogin = () => {
     window.location.href = `${baseUrl}/auth/oauth2/authorization/google`;

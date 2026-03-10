@@ -8,6 +8,7 @@ import { useUserStore } from '@/store/userStore';
 import { useUserProfileQuery } from '@/services/user/user.query';
 import { useAuthStore } from '@/store/authStore';
 import { postLogout } from '@/services/login/login.api';
+import Cookies from 'js-cookie';
 
 const PRIMARY_NAV = [
   { key: 'dashboard', label: '대시보드', icon: '/icons/sidebar/dashboard.svg', path: '/' },
@@ -34,7 +35,7 @@ const SECONDARY_NAV = [
 export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { step, setStep, clearToken } = useAuthStore();
+  const { step, setStep } = useAuthStore();
   const { user, setUser } = useUserStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedMenu, setExpandedMenu] = useState<string | null>('project');
@@ -53,7 +54,7 @@ export default function Sidebar() {
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {
-      clearToken();
+      Cookies.remove('token', { path: '/' });
       setUser(null);
       setStep('google');
       router.push('/login');

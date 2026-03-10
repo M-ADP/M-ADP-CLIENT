@@ -3,11 +3,12 @@ import { getMyUserProfile, UserProfile } from './user.api';
 import { useUserStore } from '@/store/userStore';
 import { useAuthStore } from '@/store/authStore';
 import { useEffect } from 'react';
+import Cookies from 'js-cookie';
 
 export const useUserProfileQuery = () => {
     const setUser = useUserStore((state) => state.setUser);
     const step = useAuthStore((state: { step: string }) => state.step);
-    const token = useAuthStore((state) => state.token);
+    const token = Cookies.get('token');
 
     const query = useQuery<UserProfile>({
         queryKey: ['userProfile'],
