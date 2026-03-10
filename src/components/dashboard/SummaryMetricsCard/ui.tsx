@@ -1,4 +1,3 @@
-import React from 'react';
 import * as S from './style';
 import { SummaryMetric } from '@/types/dashboard';
 import ProgressBar from '@/components/ui/Charts/ProgressBar/ui';
@@ -8,7 +7,7 @@ interface SummaryMetricsCardProps {
   metrics: SummaryMetric[];
 }
 
-export const SummaryMetricsCard: React.FC<SummaryMetricsCardProps> = ({ title, metrics }) => {
+export const SummaryMetricsCard = ({ title, metrics }: SummaryMetricsCardProps) => {
   return (
     <S.SummaryContainer>
       <S.SummaryHeader>

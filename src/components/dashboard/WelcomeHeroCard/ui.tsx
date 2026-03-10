@@ -1,11 +1,10 @@
-import React from 'react';
 import * as S from './style';
 
 interface WelcomeHeroCardProps {
   userName: string;
 }
 
-export const WelcomeHeroCard: React.FC<WelcomeHeroCardProps> = ({ userName }) => {
+export const WelcomeHeroCard = ({ userName }: WelcomeHeroCardProps) => {
   return (
     <S.HeroContainer>
       <S.BackgroundImage />

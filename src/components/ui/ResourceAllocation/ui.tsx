@@ -1,4 +1,3 @@
-import React from 'react';
 import * as S from './style';
 import { ProjectResource } from '@/types/dashboard';
 import ProgressBar from '../Charts/ProgressBar/ui';
@@ -7,7 +6,7 @@ interface ResourceAllocationProps {
   projects: ProjectResource[];
 }
 
-export const ResourceAllocation: React.FC<ResourceAllocationProps> = ({ projects }) => {
+export const ResourceAllocation = ({ projects }: ResourceAllocationProps) => {
   return (
     <S.AllocationContainer>
       <S.AllocationList>
