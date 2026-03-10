@@ -10,7 +10,7 @@ import {
   Tooltip,
   Filler,
 } from 'chart.js';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Line } from 'react-chartjs-2';
 import * as S from './style';
 import { MultiLineChartProps } from '@/types/chart';
@@ -37,6 +37,9 @@ function MultiLineChart({
   style,
 }: MultiLineChartProps) {
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const labels = data.labels ?? [];
+  const hasChartData =
+    labels.length > 0 && data.datasets.some((dataset) => dataset.data.length > 0);
 
   const chartOptions = {
     responsive: true,
@@ -170,7 +173,11 @@ function MultiLineChart({
       </S.ChartHeader>
 
       <S.ChartContent aspectRatio={aspectRatio}>
-        <Line data={enhancedData} options={chartOptions} />
+        {hasChartData ? (
+          <Line data={enhancedData} options={chartOptions} />
+        ) : (
+          <S.EmptyState>데이터가 없습니다.</S.EmptyState>
+        )}
       </S.ChartContent>
     </S.ChartContainer>
   );

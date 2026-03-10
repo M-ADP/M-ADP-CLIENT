@@ -77,6 +77,17 @@ export const ChartContent = styled.div<{
   }
 `;
 
+export const EmptyState = styled.div`
+  width: 100%;
+  height: 100%;
+  min-height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${black[100]};
+  font-size: 14px;
+`;
+
 export const ChartLegend = styled.div`
   display: flex;
   gap: 16px;
