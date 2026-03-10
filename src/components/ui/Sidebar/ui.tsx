@@ -54,7 +54,7 @@ export default function Sidebar() {
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {
-      Cookies.remove('token');
+      Cookies.remove('token', { path: '/' });
       setUser(null);
       setStep('google');
       router.push('/login');

@@ -6,7 +6,7 @@ export interface AuthCodePayload {
 
 export interface AuthResponse {
     access_token?: string;
-    is_authenticated?: string | boolean;
+    is_authenticated?: string;
 }
 
 export const postAuthCode = (payload: AuthCodePayload) => {

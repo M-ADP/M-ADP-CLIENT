@@ -6,20 +6,24 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 let refreshPromise: Promise<string | null> | null = null;
 
 const refreshToken = async (): Promise<string | null> => {
-    const reissueRes = await fetch(`${BASE_URL}/auth/reissue`, {
-        method: 'POST',
-        credentials: 'include',
-    });
+    try {
+        const reissueRes = await fetch(`${BASE_URL}/auth/reissue`, {
+            method: 'POST',
+            credentials: 'include',
+        });
 
-    if (reissueRes.ok) {
-        const data = await reissueRes.json();
-        if (data.key) {
-            Cookies.set('token', data.key, { path: '/' });
-            return data.key;
+        if (reissueRes.ok) {
+            const data = await reissueRes.json();
+            if (data.key) {
+                Cookies.set('token', data.key, { path: '/' });
+                return data.key;
+            }
         }
+    } catch (error) {
+        console.error('Token refresh network error:', error);
     }
 
-    Cookies.remove('token');
+    Cookies.remove('token', { path: '/' });
     if (typeof window !== 'undefined') {
         window.location.href = '/login';
     }
