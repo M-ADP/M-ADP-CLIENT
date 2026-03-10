@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import * as S from './style';
@@ -80,18 +80,12 @@ export default function Sidebar() {
   const handleLogout = async () => {
     try {
       await postLogout();
-    catch (error) {
-      console.error('Logout failed:', error);
+    } catch {
     } finally {
       clearToken();
       setUser(null);
       setStep('google');
       router.push('/login');
-
-  const toggleSidebar = () => {
-    setIsCollapsed(!isCollapsed);
-    if (!isCollapsed) {
-      setExpandedMenu(null);
     }
   };
 
@@ -161,17 +155,11 @@ export default function Sidebar() {
                   }}
                 >
                   <S.IconWrapper $active={active}>
-                    <Image
-                      src={item.icon}
-                      alt={item.label}
-                      width={20}
-                      height={20}
-                    />
+                    <Image src={item.icon} alt={item.label} width={20} height={20} />
                   </S.IconWrapper>
-                  {!isCollapsed && (
-                    <S.NavLabel $active={active}>{item.label}</S.NavLabel>
-                  )}
+                  {!isCollapsed && <S.NavLabel $active={active}>{item.label}</S.NavLabel>}
                 </S.NavItem>
+
                 {!isCollapsed && item.children && (
                   <S.SubNavContainer data-open={expandedMenu === item.key ? 'true' : 'false'}>
                     {item.children.map((child) => {
@@ -196,12 +184,15 @@ export default function Sidebar() {
                                   : detail.key === 'project-info'
                                     ? (currentProjectId ? `/project/manage/${currentProjectId}` : null)
                                     : null;
+
                                 return (
                                   <S.DeepNavItem
                                     key={detail.key}
                                     $clickable={Boolean(detailPath)}
                                     onClick={() => {
-                                      if (detailPath) handleNavigation(detailPath);
+                                      if (detailPath) {
+                                        handleNavigation(detailPath);
+                                      }
                                     }}
                                   >
                                     <S.NavLabel $active={detailActive}>{detail.label}</S.NavLabel>
@@ -224,11 +215,7 @@ export default function Sidebar() {
 
         <S.Section>
           {SECONDARY_NAV.map((item) => (
-            <S.NavItem
-              key={item.key}
-              $collapsed={isCollapsed}
-              onClick={() => handleNavigation(item.path)}
-            >
+            <S.NavItem key={item.key} $collapsed={isCollapsed} onClick={() => handleNavigation(item.path)}>
               <S.IconWrapper>
                 <Image src={item.icon} alt={item.label} width={20} height={20} />
               </S.IconWrapper>
@@ -238,19 +225,23 @@ export default function Sidebar() {
         </S.Section>
       </S.Main>
 
-      {!isCollapsed && user && (
+      {!isCollapsed && (
         <S.Footer>
           <S.ProfileInner>
             <S.Avatar>
-              {user.profile ? (
+              {user?.profile ? (
                 <Image src={user.profile} alt="profile" width={32} height={32} style={{ borderRadius: '50%' }} />
               ) : (
-                user.nickname?.[0] || 'U'
+                user?.nickname?.[0] || 'N'
               )}
             </S.Avatar>
             <S.ProfileText>
-              <S.ProfileName>{user.nickname || '익명'}</S.ProfileName>
-              <S.LogoutButton onClick={handleLogout}>로그아웃</S.LogoutButton>
+              <S.ProfileName>{user?.nickname || '류승찬'}</S.ProfileName>
+              {user ? (
+                <S.LogoutButton onClick={handleLogout}>로그아웃</S.LogoutButton>
+              ) : (
+                <S.ProfileSub>부산소프트웨어마이스터고</S.ProfileSub>
+              )}
             </S.ProfileText>
           </S.ProfileInner>
           <S.Caret>
