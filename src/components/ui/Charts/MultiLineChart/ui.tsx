@@ -10,6 +10,7 @@ import {
   Tooltip,
   Filler,
 } from 'chart.js';
+import { useState } from 'react';
 import { Line } from 'react-chartjs-2';
 import * as S from './style';
 import { MultiLineChartProps } from '@/types/chart';
@@ -21,6 +22,10 @@ function MultiLineChart({
   data,
   legendData,
   showMenu = true,
+  startDate = '2025-01-01',
+  endDate = '2025-01-02',
+  onStartDateChange,
+  onEndDateChange,
   yAxisMax = 40,
   yAxisUnit = 'k',
   width,
@@ -31,6 +36,11 @@ function MultiLineChart({
   className,
   style,
 }: MultiLineChartProps) {
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const labels = data.labels ?? [];
+  const hasChartData =
+    labels.length > 0 && data.datasets.some((dataset) => dataset.data.length > 0);
+
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -109,11 +119,10 @@ function MultiLineChart({
     })),
   };
 
-  // 범례 데이터가 없으면 데이터셋에서 자동 생성
   const defaultLegendData = data.datasets.map(dataset => ({
     label: dataset.label || '',
     color: dataset.borderColor as string,
-    value: '98,733', // 기본값
+    value: '98,733',
   }));
 
   const finalLegendData = legendData || defaultLegendData;
@@ -128,23 +137,48 @@ function MultiLineChart({
       style={style}
     >
       <S.ChartHeader>
-        <S.ChartTitle>{title}</S.ChartTitle>
-        {showMenu && <S.MenuButton>⋯</S.MenuButton>}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <S.ChartTitle>{title}</S.ChartTitle>
+          <S.ChartLegend>
+            {finalLegendData.map((item, index) => (
+              <S.LegendItem key={index}>
+                <S.LegendDot color={item.color} />
+                <S.LegendLabel>{item.label}</S.LegendLabel>
+                <S.LegendValue>{item.value}</S.LegendValue>
+              </S.LegendItem>
+            ))}
+          </S.ChartLegend>
+        </div>
+        <S.HeaderRight style={{ alignSelf: 'flex-start', position: 'relative' }}>
+          <S.DateRange onClick={() => setShowDatePicker(!showDatePicker)}>
+            {startDate.replace(/-/g, '.')} ~ {endDate.replace(/-/g, '.')} ▼
+          </S.DateRange>
+          {showDatePicker && (
+            <S.DatePickerPopup>
+              <S.DateInput
+                type="date"
+                value={startDate}
+                onChange={(e) => onStartDateChange?.(e.target.value)}
+              />
+              <span>~</span>
+              <S.DateInput
+                type="date"
+                value={endDate}
+                onChange={(e) => onEndDateChange?.(e.target.value)}
+              />
+            </S.DatePickerPopup>
+          )}
+          {showMenu && <S.MenuButton>⋯</S.MenuButton>}
+        </S.HeaderRight>
       </S.ChartHeader>
 
       <S.ChartContent aspectRatio={aspectRatio}>
-        <Line data={enhancedData} options={chartOptions} />
+        {hasChartData ? (
+          <Line data={enhancedData} options={chartOptions} />
+        ) : (
+          <S.EmptyState>데이터가 없습니다.</S.EmptyState>
+        )}
       </S.ChartContent>
-
-      <S.ChartLegend>
-        {finalLegendData.map((item, index) => (
-          <S.LegendItem key={index}>
-            <S.LegendDot color={item.color} />
-            <S.LegendLabel>{item.label}</S.LegendLabel>
-            <S.LegendValue>{item.value}</S.LegendValue>
-          </S.LegendItem>
-        ))}
-      </S.ChartLegend>
     </S.ChartContainer>
   );
 }

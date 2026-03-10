@@ -107,6 +107,7 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
             <Card
               key={app.id}
               title={app.name}
+              onClick={() => router.push(`/project/manage/${projectId}/app`)}
               footer={
                 <>
                   {app.statusMessage && (

@@ -13,7 +13,7 @@ export const GridContainer = styled.div<{
   width: 100%;
 
   ${({ responsive = true }) => responsive && `
-    /* Responsive breakpoints */
+
     @media (max-width: 1200px) {
       grid-template-columns: 1fr;
     }
@@ -38,7 +38,7 @@ export const GridItem = styled.div<{
   min-width: ${({ minWidth = '300px' }) => minWidth};
   width: 100%;
 
-  /* Ensure proper sizing */
+
   > * {
     width: 100%;
     height: 100%;

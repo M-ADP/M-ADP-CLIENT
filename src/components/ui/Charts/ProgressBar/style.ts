@@ -1,5 +1,5 @@
 import styled from '@emotion/styled';
-import { black, primary } from '@/styles/colors';
+import { black } from '@/styles/colors';
 
 export const ProgressContainer = styled.div`
   display: flex;
@@ -28,7 +28,7 @@ export const ProgressValue = styled.div`
 export const ProgressBarContainer = styled.div<{ height?: number }>`
   width: 100%;
   height: ${({ height }) => height || 6}px;
-  background-color: rgba(150, 150, 150, 0.2); /* black[75] with opacity */
+  background-color: #2D2E5F;
   border-radius: ${({ height }) => (height ? height / 2 : 3)}px;
   overflow: hidden;
 `;
@@ -36,7 +36,7 @@ export const ProgressBarContainer = styled.div<{ height?: number }>`
 export const ProgressBarFill = styled.div<{ progress: number; color?: string }>`
   height: 100%;
   width: ${({ progress }) => Math.max(0, Math.min(progress, 100))}%;
-  background-color: ${({ color }) => color || primary[10]};
+  background-color: ${({ color }) => color || '#0075FF'};
   border-radius: 3px;
   transition: width 0.3s ease;
 `;

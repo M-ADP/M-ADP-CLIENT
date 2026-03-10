@@ -19,6 +19,11 @@ export interface ProgressRingProps {
   size?: number;
   strokeWidth?: number;
   color?: string;
+  gradientStops?: Array<{
+    offset: number;
+    color: string;
+    opacity?: number;
+  }>;
   backgroundColor?: string;
   label?: string;
   unit?: string;
@@ -45,6 +50,10 @@ export interface MultiLineChartProps {
     value: string;
   }>;
   showMenu?: boolean;
+  startDate?: string;
+  endDate?: string;
+  onStartDateChange?: (date: string) => void;
+  onEndDateChange?: (date: string) => void;
   yAxisMax?: number;
   yAxisUnit?: string;
   width?: number | string;

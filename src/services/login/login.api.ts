@@ -1,7 +1,7 @@
 import { api } from '@/utils/api';
 
 export interface AuthCodePayload {
-    code: string;
+  code: string;
 }
 
 export interface AuthResponse {
