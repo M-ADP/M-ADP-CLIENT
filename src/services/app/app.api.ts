@@ -66,3 +66,26 @@ export const getAppResourceStatus = (projectId: string, appName: string) => {
         method: 'GET',
     });
 };
+
+export interface AppDeploymentInfo {
+    app_id?: number;
+    port?: number;
+    resource_use_percentage?: number;
+    github_repository_url?: string;
+    status?: string;
+}
+
+export interface AppDeploymentInfoResponse {
+    message?: string;
+    data?: AppDeploymentInfo;
+}
+
+export const getAppDetails = (projectId: string, appName: string) => {
+    const query = new URLSearchParams({
+        project_id: projectId,
+        app_name: appName,
+    }).toString();
+    return api<AppDeploymentInfoResponse>(`/apps/details?${query}`, {
+        method: 'GET',
+    });
+};

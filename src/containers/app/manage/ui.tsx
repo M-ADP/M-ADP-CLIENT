@@ -8,12 +8,11 @@ import MultiLineChart from '@/components/ui/Charts/MultiLineChart/ui';
 import ProgressBar from '@/components/ui/Charts/ProgressBar/ui';
 import ProgressRing from '@/components/ui/Charts/ProgressRing/ui';
 import * as S from './style';
-import { useAppResourceStatusQuery } from '@/services/app/app.query';
+import { useAppDetailsQuery, useAppResourceStatusQuery } from '@/services/app/app.query';
 import {
   APP_NAME,
   latestLogs,
   resourceMetrics,
-  summaryMetrics,
   trafficChartData,
   userStatsChartData,
   userStatsChartOptions,
@@ -44,9 +43,19 @@ const toRatioPercent = (used: string | undefined, total: string | undefined) => 
   return clampPercent(Math.round((usedNumber / totalNumber) * 100));
 };
 
+const formatStatusLabel = (status: string | undefined) => {
+  if (!status) return '';
+  const normalized = status.trim().toLowerCase();
+  if (normalized === 'healthy' || normalized === 'running') return 'Healthy';
+  if (normalized === 'unhealthy' || normalized === 'error' || normalized === 'failed') return 'Unhealthy';
+  if (normalized === 'stopped' || normalized === 'stop') return 'Stopped';
+  return status;
+};
+
 export default function AppManageContainer({ projectId }: AppManageContainerProps) {
   const searchParams = useSearchParams();
   const appName = (searchParams.get('appName') || APP_NAME).trim();
+  const appDetails = useAppDetailsQuery(projectId, appName).data;
   const appStatusQuery = useAppResourceStatusQuery(projectId, appName);
   const appStatus = appStatusQuery.data;
   const [trafficStartDate, setTrafficStartDate] = useState('2025-01-01');
@@ -98,7 +107,34 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
   const availableInstances = appStatus?.available_instances ?? 2;
   const totalInstances = currentInstances + availableInstances;
   const instancePercent = totalInstances > 0 ? clampPercent(Math.round((currentInstances / totalInstances) * 100)) : 0;
-  const healthLabel = cpuPercent >= 90 ? 'Risky' : 'Healthy';
+  const repositoryUrl = appDetails?.github_repository_url?.trim() || `https://github.com/M-ADP/${appName.toLowerCase()}`;
+  const repositoryLabel = repositoryUrl.replace(/^https?:\/\/github\.com\//i, '');
+  const statusLabelFromDetails = formatStatusLabel(appDetails?.status);
+  const healthLabel = statusLabelFromDetails || (cpuPercent >= 90 ? 'Risky' : 'Healthy');
+  const topSummaryMetrics = [
+    {
+      id: 'app_id',
+      label: '앱 ID',
+      value: appDetails?.app_id ? String(appDetails.app_id) : '-',
+    },
+    {
+      id: 'port',
+      label: '포트',
+      value: appDetails?.port ? String(appDetails.port) : '-',
+    },
+    {
+      id: 'resource',
+      label: '자원 사용량',
+      value: typeof appDetails?.resource_use_percentage === 'number'
+        ? `${clampPercent(appDetails.resource_use_percentage)}%`
+        : `${cpuPercent}%`,
+    },
+    {
+      id: 'status',
+      label: '상태',
+      value: statusLabelFromDetails || healthLabel,
+    },
+  ];
   const dynamicResourceMetrics = [
     {
       id: 'cpu',
@@ -134,7 +170,7 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
         <S.TopContent>
           <S.OverviewArea>
             <S.StatGrid>
-              {summaryMetrics.map((item) => (
+              {topSummaryMetrics.map((item) => (
                 <S.StatItem key={item.id}>
                   <S.StatLabel>{item.label}</S.StatLabel>
                   <S.StatValue>{item.value}</S.StatValue>
@@ -146,17 +182,17 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
               <S.BrandMark>
                 <Image src="/assets/logo.svg" alt="M-ADP" width={66} height={66} />
               </S.BrandMark>
-              <S.GithubTitle>GitHub - M-ADP/{appName.toLowerCase()} : 애매하노</S.GithubTitle>
+              <S.GithubTitle>GitHub - {repositoryLabel} : 애매하노</S.GithubTitle>
               <S.GithubDesc>
-                애매하노. Contribute to M-ADP/{appName.toLowerCase()} development by creating an account on GitHub.
+                애매하노. Contribute to {repositoryLabel} development by creating an account on GitHub.
               </S.GithubDesc>
               <S.GithubDesc>
-                Contribute to M-ADP/{appName.toLowerCase()} development by creating an account on GitHub.
+                Contribute to {repositoryLabel} development by creating an account on GitHub.
               </S.GithubDesc>
               <S.GithubLinkRow>
                 <Image src="/icons/github.svg" alt="github" width={20} height={20} />
-                <S.GithubLink href={`https://github.com/M-ADP/${appName.toLowerCase()}`} target="_blank" rel="noreferrer">
-                  https://github.com/M-ADP/{appName.toLowerCase()}
+                <S.GithubLink href={repositoryUrl} target="_blank" rel="noreferrer">
+                  {repositoryUrl}
                 </S.GithubLink>
               </S.GithubLinkRow>
             </S.GithubSection>
