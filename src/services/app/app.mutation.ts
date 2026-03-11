@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { postCreateApp, patchAppResources, AppCreatePayload, AppResourcesUpdatePayload } from './app.api';
+import { postCreateApp, patchAppResources, deleteApp, AppCreatePayload, AppResourcesUpdatePayload, AppDeletePayload } from './app.api';
 
 export const useCreateAppMutation = () => {
     return useMutation({
@@ -10,5 +10,11 @@ export const useCreateAppMutation = () => {
 export const usePatchAppResourcesMutation = () => {
     return useMutation({
         mutationFn: (payload: AppResourcesUpdatePayload) => patchAppResources(payload),
+    });
+};
+
+export const useDeleteAppMutation = () => {
+    return useMutation({
+        mutationFn: (payload: AppDeletePayload) => deleteApp(payload),
     });
 };

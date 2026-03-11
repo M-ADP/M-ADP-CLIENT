@@ -39,6 +39,21 @@ export const patchAppResources = (payload: AppResourcesUpdatePayload) => {
     });
 };
 
+export interface AppDeletePayload {
+    application_id?: number;
+}
+
+export interface AppDeleteResponse {
+    message?: string;
+}
+
+export const deleteApp = (payload: AppDeletePayload) => {
+    return api<AppDeleteResponse>('/apps', {
+        method: 'DELETE',
+        body: JSON.stringify(payload),
+    });
+};
+
 export interface AppDeploymentStatusItem {
     name?: string;
     pod_count?: number;

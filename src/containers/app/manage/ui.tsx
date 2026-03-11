@@ -1,14 +1,14 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Chart from '@/components/ui/Charts/Chart/ui';
 import MultiLineChart from '@/components/ui/Charts/MultiLineChart/ui';
 import ProgressBar from '@/components/ui/Charts/ProgressBar/ui';
 import ProgressRing from '@/components/ui/Charts/ProgressRing/ui';
 import * as S from './style';
-import { usePatchAppResourcesMutation } from '@/services/app/app.mutation';
+import { useDeleteAppMutation, usePatchAppResourcesMutation } from '@/services/app/app.mutation';
 import { useAppDetailsQuery, useAppLogsQuery, useAppResourceStatusQuery } from '@/services/app/app.query';
 import {
   APP_NAME,
@@ -61,6 +61,7 @@ const promptNumber = (label: string, initialValue: number) => {
 };
 
 export default function AppManageContainer({ projectId }: AppManageContainerProps) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const appName = (searchParams.get('appName') || APP_NAME).trim();
   const appDetailsQuery = useAppDetailsQuery(projectId, appName);
@@ -69,6 +70,7 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
   const appStatusQuery = useAppResourceStatusQuery(projectId, appName);
   const appStatus = appStatusQuery.data;
   const patchResourcesMutation = usePatchAppResourcesMutation();
+  const deleteAppMutation = useDeleteAppMutation();
   const [trafficStartDate, setTrafficStartDate] = useState('2025-01-01');
   const [trafficEndDate, setTrafficEndDate] = useState('2025-01-02');
 
@@ -230,6 +232,44 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
     }
   };
 
+  const handleDeleteApp = async () => {
+    if (deleteAppMutation.isPending) return;
+    const applicationId = appDetails?.app_id;
+    if (!applicationId) {
+      alert('앱 ID를 확인할 수 없습니다.');
+      return;
+    }
+
+    const confirmed = window.confirm(`"${appName}" 앱을 삭제하시겠습니까?`);
+    if (!confirmed) return;
+
+    try {
+      const result = await deleteAppMutation.mutateAsync({
+        application_id: applicationId,
+      });
+      alert(result.message || '앱이 삭제되었습니다.');
+      router.push(`/project/manage/${projectId}`);
+    } catch (error) {
+      if (error instanceof Error) {
+        alert(error.message);
+        return;
+      }
+      alert('앱 삭제에 실패했습니다.');
+    }
+  };
+
+  const handleActionMenu = () => {
+    if (patchResourcesMutation.isPending || deleteAppMutation.isPending) return;
+    const action = window.prompt('작업 선택: 1=자원 변경, 2=앱 삭제', '1');
+    if (action === '2') {
+      void handleDeleteApp();
+      return;
+    }
+    if (action === '1') {
+      void handlePatchResources();
+    }
+  };
+
   return (
     <S.PageWrapper>
       <S.TopCard>
@@ -267,8 +307,8 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
           </S.OverviewArea>
 
           <S.HealthArea>
-            <S.CornerMenu onClick={handlePatchResources}>
-              {patchResourcesMutation.isPending ? '...' : '...'}
+            <S.CornerMenu onClick={handleActionMenu}>
+              {patchResourcesMutation.isPending || deleteAppMutation.isPending ? '...' : '...'}
             </S.CornerMenu>
             <S.HealthLabel>상태</S.HealthLabel>
             <ProgressRing
