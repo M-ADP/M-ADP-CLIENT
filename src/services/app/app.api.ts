@@ -21,6 +21,24 @@ export const postCreateApp = (payload: AppCreatePayload) => {
     });
 };
 
+export interface AppResourcesUpdatePayload {
+    application_id: number;
+    max_cpu: number;
+    max_memory: number;
+    max_disk: number;
+}
+
+export interface AppResourcesUpdateResponse {
+    message?: string;
+}
+
+export const patchAppResources = (payload: AppResourcesUpdatePayload) => {
+    return api<AppResourcesUpdateResponse>('/apps/resources', {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+    });
+};
+
 export interface AppDeploymentStatusItem {
     name?: string;
     pod_count?: number;

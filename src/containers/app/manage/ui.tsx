@@ -8,6 +8,7 @@ import MultiLineChart from '@/components/ui/Charts/MultiLineChart/ui';
 import ProgressBar from '@/components/ui/Charts/ProgressBar/ui';
 import ProgressRing from '@/components/ui/Charts/ProgressRing/ui';
 import * as S from './style';
+import { usePatchAppResourcesMutation } from '@/services/app/app.mutation';
 import { useAppDetailsQuery, useAppLogsQuery, useAppResourceStatusQuery } from '@/services/app/app.query';
 import {
   APP_NAME,
@@ -51,13 +52,23 @@ const formatStatusLabel = (status: string | undefined) => {
   return status;
 };
 
+const promptNumber = (label: string, initialValue: number) => {
+  const input = window.prompt(label, String(initialValue));
+  if (input === null) return null;
+  const parsed = Number.parseInt(input, 10);
+  if (Number.isNaN(parsed)) return null;
+  return parsed;
+};
+
 export default function AppManageContainer({ projectId }: AppManageContainerProps) {
   const searchParams = useSearchParams();
   const appName = (searchParams.get('appName') || APP_NAME).trim();
-  const appDetails = useAppDetailsQuery(projectId, appName).data;
+  const appDetailsQuery = useAppDetailsQuery(projectId, appName);
+  const appDetails = appDetailsQuery.data;
   const appLogsQuery = useAppLogsQuery(projectId, appName);
   const appStatusQuery = useAppResourceStatusQuery(projectId, appName);
   const appStatus = appStatusQuery.data;
+  const patchResourcesMutation = usePatchAppResourcesMutation();
   const [trafficStartDate, setTrafficStartDate] = useState('2025-01-01');
   const [trafficEndDate, setTrafficEndDate] = useState('2025-01-02');
 
@@ -169,6 +180,56 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
         ? appLogsQuery.data
         : ['표시할 로그가 없습니다.'];
 
+  const handlePatchResources = async () => {
+    if (patchResourcesMutation.isPending) return;
+    const applicationId = appDetails?.app_id;
+    if (!applicationId) {
+      alert('앱 ID를 확인할 수 없습니다.');
+      return;
+    }
+
+    const parsedMemoryTotal = parseNumber(appStatus?.memory_total);
+    const parsedDiskTotal = parseNumber(appStatus?.disk_total);
+    const defaultCpu = Math.min(4, Math.max(1, Math.round(cpuPercent / 25) || 1));
+    const defaultMemory = Math.min(2048, Math.max(512, parsedMemoryTotal === null ? 512 : Math.round(parsedMemoryTotal)));
+    const defaultDisk = Math.min(16, Math.max(2, parsedDiskTotal === null ? 2 : Math.round(parsedDiskTotal)));
+
+    const maxCpu = promptNumber('max_cpu (1~4)', defaultCpu);
+    if (maxCpu === null || maxCpu < 1 || maxCpu > 4) {
+      alert('max_cpu는 1~4 정수여야 합니다.');
+      return;
+    }
+
+    const maxMemory = promptNumber('max_memory (512~2048)', defaultMemory);
+    if (maxMemory === null || maxMemory < 512 || maxMemory > 2048) {
+      alert('max_memory는 512~2048 정수여야 합니다.');
+      return;
+    }
+
+    const maxDisk = promptNumber('max_disk (2~16)', defaultDisk);
+    if (maxDisk === null || maxDisk < 2 || maxDisk > 16) {
+      alert('max_disk는 2~16 정수여야 합니다.');
+      return;
+    }
+
+    try {
+      const result = await patchResourcesMutation.mutateAsync({
+        application_id: applicationId,
+        max_cpu: maxCpu,
+        max_memory: maxMemory,
+        max_disk: maxDisk,
+      });
+      alert(result.message || '자원 정보가 변경되었습니다.');
+      await Promise.all([appStatusQuery.refetch(), appDetailsQuery.refetch()]);
+    } catch (error) {
+      if (error instanceof Error) {
+        alert(error.message);
+        return;
+      }
+      alert('자원 정보 변경에 실패했습니다.');
+    }
+  };
+
   return (
     <S.PageWrapper>
       <S.TopCard>
@@ -206,7 +267,9 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
           </S.OverviewArea>
 
           <S.HealthArea>
-            <S.CornerMenu>...</S.CornerMenu>
+            <S.CornerMenu onClick={handlePatchResources}>
+              {patchResourcesMutation.isPending ? '...' : '...'}
+            </S.CornerMenu>
             <S.HealthLabel>상태</S.HealthLabel>
             <ProgressRing
               value={cpuPercent}
