@@ -89,3 +89,18 @@ export const getAppDetails = (projectId: string, appName: string) => {
         method: 'GET',
     });
 };
+
+export interface AppLogsResponse {
+    message?: string;
+    data?: string;
+}
+
+export const getAppLogs = (projectId: string, appName: string) => {
+    const query = new URLSearchParams({
+        project_id: projectId,
+        app_name: appName,
+    }).toString();
+    return api<AppLogsResponse>(`/apps/logs?${query}`, {
+        method: 'GET',
+    });
+};

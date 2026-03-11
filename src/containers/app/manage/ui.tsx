@@ -8,10 +8,9 @@ import MultiLineChart from '@/components/ui/Charts/MultiLineChart/ui';
 import ProgressBar from '@/components/ui/Charts/ProgressBar/ui';
 import ProgressRing from '@/components/ui/Charts/ProgressRing/ui';
 import * as S from './style';
-import { useAppDetailsQuery, useAppResourceStatusQuery } from '@/services/app/app.query';
+import { useAppDetailsQuery, useAppLogsQuery, useAppResourceStatusQuery } from '@/services/app/app.query';
 import {
   APP_NAME,
-  latestLogs,
   resourceMetrics,
   trafficChartData,
   userStatsChartData,
@@ -56,6 +55,7 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
   const searchParams = useSearchParams();
   const appName = (searchParams.get('appName') || APP_NAME).trim();
   const appDetails = useAppDetailsQuery(projectId, appName).data;
+  const appLogsQuery = useAppLogsQuery(projectId, appName);
   const appStatusQuery = useAppResourceStatusQuery(projectId, appName);
   const appStatus = appStatusQuery.data;
   const [trafficStartDate, setTrafficStartDate] = useState('2025-01-01');
@@ -161,6 +161,13 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
       percent: instancePercent,
     },
   ];
+  const renderedLogs = appLogsQuery.isPending
+    ? ['로그를 불러오는 중입니다.']
+    : appLogsQuery.isError
+      ? ['로그 조회에 실패했습니다.']
+      : appLogsQuery.data && appLogsQuery.data.length > 0
+        ? appLogsQuery.data
+        : ['표시할 로그가 없습니다.'];
 
   return (
     <S.PageWrapper>
@@ -226,8 +233,8 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
             <S.SectionTitle>최신 로그</S.SectionTitle>
           </S.SectionHeader>
           <S.LogList>
-            {latestLogs.map((log, index) => (
-              <S.LogItem key={`${projectId}-log-${index}`}>{log}</S.LogItem>
+            {renderedLogs.map((log, index) => (
+              <S.LogItem key={`${projectId}-log-${index}-${log.slice(0, 16)}`}>{log}</S.LogItem>
             ))}
           </S.LogList>
         </S.LogCard>

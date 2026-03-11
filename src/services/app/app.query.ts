@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { AppDeploymentInfo, AppDeploymentStatusItem, AppResourceStatus, getAppDetails, getAppResourceStatus, getAppsByProjectId } from './app.api';
+import { AppDeploymentInfo, AppDeploymentStatusItem, AppResourceStatus, getAppDetails, getAppLogs, getAppResourceStatus, getAppsByProjectId } from './app.api';
 
 export const useAppsByProjectIdQuery = (projectId: string) => {
     return useQuery<AppDeploymentStatusItem[]>({
@@ -35,5 +35,23 @@ export const useAppDetailsQuery = (projectId: string, appName: string) => {
         },
         enabled: projectId.length > 0 && appName.length > 0,
         staleTime: 1000 * 30,
+    });
+};
+
+export const useAppLogsQuery = (projectId: string, appName: string) => {
+    return useQuery<string[]>({
+        queryKey: ['apps', 'logs', projectId, appName],
+        queryFn: async () => {
+            const response = await getAppLogs(projectId, appName);
+            const rawLogs = response.data;
+            if (!rawLogs || rawLogs.trim().length === 0) return [];
+            return rawLogs
+                .split(/\r?\n/g)
+                .map((line) => line.trimEnd())
+                .filter((line) => line.length > 0);
+        },
+        enabled: projectId.length > 0 && appName.length > 0,
+        refetchInterval: 1000 * 10,
+        staleTime: 1000 * 5,
     });
 };
