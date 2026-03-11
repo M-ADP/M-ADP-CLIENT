@@ -20,3 +20,49 @@ export const postCreateApp = (payload: AppCreatePayload) => {
         body: JSON.stringify(payload),
     });
 };
+
+export interface AppDeploymentStatusItem {
+    name?: string;
+    pod_count?: number;
+    port?: number;
+    cpu_usage_percentage?: number;
+    memory_usage_percentage?: number;
+}
+
+export interface AppDeploymentStatusListResponse {
+    message?: string;
+    data?: AppDeploymentStatusItem[];
+}
+
+export const getAppsByProjectId = (projectId: string) => {
+    const query = new URLSearchParams({ project_id: projectId }).toString();
+    return api<AppDeploymentStatusListResponse>(`/apps?${query}`, {
+        method: 'GET',
+    });
+};
+
+export interface AppResourceStatus {
+    appId?: number;
+    cpu_usage_percentage?: number;
+    memory_used?: string;
+    memory_total?: string;
+    disk_used?: string;
+    disk_total?: string;
+    current_instances?: number;
+    available_instances?: number;
+}
+
+export interface AppResourceStatusResponse {
+    message?: string;
+    data?: AppResourceStatus;
+}
+
+export const getAppResourceStatus = (projectId: string, appName: string) => {
+    const query = new URLSearchParams({
+        project_id: projectId,
+        app_name: appName,
+    }).toString();
+    return api<AppResourceStatusResponse>(`/apps/status?${query}`, {
+        method: 'GET',
+    });
+};

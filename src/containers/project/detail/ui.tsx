@@ -6,51 +6,61 @@ import Image from 'next/image';
 import Card, { MetaItem, FooterMessage, StatusBadge } from '@/components/ui/Card/ui';
 import Button from '@/components/ui/Button/ui';
 import * as S from './style';
+import { AppDeploymentStatusItem } from '@/services/app/app.api';
+import { useAppsByProjectIdQuery } from '@/services/app/app.query';
 
-const MOCK_APPS = [
-  {
-    id: '1',
-    name: 'Aemaehano',
-    language: 'Python',
-    replicas: 2,
-    port: 8000,
-    cpu: '78%',
-    ram: '51%',
-    status: 'healthy' as const,
-  },
-  {
-    id: '2',
-    name: 'Aemaehano',
-    language: 'Python',
-    replicas: 2,
-    port: 8000,
-    cpu: '78%',
-    ram: '51%',
-    status: 'unhealthy' as const,
-    statusMessage: '애플리케이션에 오류가 발생했습니다.',
-  },
-  {
-    id: '3',
-    name: 'Aemaehano',
-    language: 'Python',
-    replicas: 2,
-    port: 8000,
-    cpu: '78%',
-    ram: '51%',
-    status: 'stopped' as const,
-    statusMessage: '애플리케이션이 정지 상태입니다.',
-  },
-  {
-    id: '4',
-    name: 'Aemaehano',
-    language: 'Python',
-    replicas: 2,
-    port: 8000,
-    cpu: '78%',
-    ram: '51%',
-    status: 'healthy' as const,
-  },
-];
+type AppStatusVariant = 'healthy' | 'unhealthy' | 'stopped';
+
+interface AppCardItem {
+  key: string;
+  name: string;
+  language: string;
+  replicas: number;
+  port: number;
+  cpuUsagePercentage: number;
+  memoryUsagePercentage: number;
+  status: AppStatusVariant;
+  statusMessage?: string;
+}
+
+const getSafeNumber = (value: number | undefined) => (typeof value === 'number' ? value : 0);
+
+const toAppCardItem = (item: AppDeploymentStatusItem): AppCardItem => {
+  const name = item.name?.trim() ? item.name : 'Unknown App';
+  const replicas = getSafeNumber(item.pod_count);
+  const port = getSafeNumber(item.port);
+  const cpuUsagePercentage = getSafeNumber(item.cpu_usage_percentage);
+  const memoryUsagePercentage = getSafeNumber(item.memory_usage_percentage);
+
+  let status: AppStatusVariant = 'healthy';
+  let statusMessage: string | undefined;
+
+  if (replicas <= 0) {
+    status = 'stopped';
+    statusMessage = '애플리케이션이 정지 상태입니다.';
+  } else if (cpuUsagePercentage >= 90 || memoryUsagePercentage >= 90) {
+    status = 'unhealthy';
+    statusMessage = '애플리케이션에 오류가 발생했습니다.';
+  }
+
+  return {
+    key: `${name}-${port}`,
+    name,
+    language: '-',
+    replicas,
+    port,
+    cpuUsagePercentage,
+    memoryUsagePercentage,
+    status,
+    statusMessage,
+  };
+};
+
+const getStatusLabel = (status: AppStatusVariant) => {
+  if (status === 'healthy') return 'Healthy';
+  if (status === 'unhealthy') return 'Unhealthy';
+  return 'Stopped';
+};
 
 const MOCK_FIREWALL_RULES = [
   { source: '0.0.0.0/0', port: 80, protocol: 'TCP', direction: 'Inbound', action: 'ALLOW', description: '웹 도메인' },
@@ -65,9 +75,11 @@ interface ProjectDetailContainerProps {
 
 export default function ProjectDetailContainer({ projectId }: ProjectDetailContainerProps) {
   const router = useRouter();
+  const appsByProjectIdQuery = useAppsByProjectIdQuery(projectId);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showLeftGradient, setShowLeftGradient] = useState(false);
   const [showRightGradient, setShowRightGradient] = useState(true);
+  const appCards = (appsByProjectIdQuery.data ?? []).map(toAppCardItem);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -103,11 +115,29 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
       </S.SectionRow>
       <S.AppGridWrapper $showLeftGradient={showLeftGradient} $showRightGradient={showRightGradient}>
         <S.AppGrid ref={scrollRef}>
-          {MOCK_APPS.map((app) => (
+          {appsByProjectIdQuery.isPending && (
+            <Card title="앱 목록을 불러오는 중입니다.">
+              <MetaItem>잠시만 기다려주세요.</MetaItem>
+            </Card>
+          )}
+
+          {appsByProjectIdQuery.isError && (
+            <Card title="앱 목록 조회에 실패했습니다.">
+              <MetaItem>잠시 후 다시 시도해주세요.</MetaItem>
+            </Card>
+          )}
+
+          {!appsByProjectIdQuery.isPending && !appsByProjectIdQuery.isError && appCards.length === 0 && (
+            <Card title="배포된 앱이 없습니다.">
+              <MetaItem>새 앱을 생성해 배포를 시작하세요.</MetaItem>
+            </Card>
+          )}
+
+          {!appsByProjectIdQuery.isPending && !appsByProjectIdQuery.isError && appCards.map((app) => (
             <Card
-              key={app.id}
+              key={app.key}
               title={app.name}
-              onClick={() => router.push(`/project/manage/${projectId}/app`)}
+              onClick={() => router.push(`/project/manage/${projectId}/app?appName=${encodeURIComponent(app.name)}`)}
               footer={
                 <>
                   {app.statusMessage && (
@@ -117,9 +147,7 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
                     </FooterMessage>
                   )}
                   <StatusBadge $variant={app.status}>
-                    {app.status === 'healthy' && 'Healthy'}
-                    {app.status === 'unhealthy' && 'Unhealthy'}
-                    {app.status === 'stopped' && 'Stopped'}
+                    {getStatusLabel(app.status)}
                   </StatusBadge>
                 </>
               }
@@ -138,7 +166,7 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
               </MetaItem>
               <MetaItem>
                 <Image src="/icons/project/gauge.svg" alt="usage" width={14} height={14} />
-                CPU: {app.cpu} · RAM: {app.ram}
+                CPU: {app.cpuUsagePercentage}% · RAM: {app.memoryUsagePercentage}%
               </MetaItem>
             </Card>
           ))}

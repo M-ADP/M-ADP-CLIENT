@@ -1,12 +1,14 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Chart from '@/components/ui/Charts/Chart/ui';
 import MultiLineChart from '@/components/ui/Charts/MultiLineChart/ui';
 import ProgressBar from '@/components/ui/Charts/ProgressBar/ui';
 import ProgressRing from '@/components/ui/Charts/ProgressRing/ui';
 import * as S from './style';
+import { useAppResourceStatusQuery } from '@/services/app/app.query';
 import {
   APP_NAME,
   latestLogs,
@@ -22,7 +24,31 @@ interface AppManageContainerProps {
   projectId: string;
 }
 
+const clampPercent = (value: number) => {
+  if (value < 0) return 0;
+  if (value > 100) return 100;
+  return value;
+};
+
+const parseNumber = (value: string | undefined) => {
+  if (!value) return null;
+  const parsed = Number.parseFloat(value.replace(/,/g, '').replace(/[^\d.]/g, ''));
+  if (Number.isNaN(parsed)) return null;
+  return parsed;
+};
+
+const toRatioPercent = (used: string | undefined, total: string | undefined) => {
+  const usedNumber = parseNumber(used);
+  const totalNumber = parseNumber(total);
+  if (usedNumber === null || totalNumber === null || totalNumber <= 0) return 0;
+  return clampPercent(Math.round((usedNumber / totalNumber) * 100));
+};
+
 export default function AppManageContainer({ projectId }: AppManageContainerProps) {
+  const searchParams = useSearchParams();
+  const appName = (searchParams.get('appName') || APP_NAME).trim();
+  const appStatusQuery = useAppResourceStatusQuery(projectId, appName);
+  const appStatus = appStatusQuery.data;
   const [trafficStartDate, setTrafficStartDate] = useState('2025-01-01');
   const [trafficEndDate, setTrafficEndDate] = useState('2025-01-02');
 
@@ -65,10 +91,45 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
     };
   }, [trafficStartDate, trafficEndDate]);
 
+  const cpuPercent = clampPercent(appStatus?.cpu_usage_percentage ?? 74);
+  const memoryPercent = toRatioPercent(appStatus?.memory_used, appStatus?.memory_total);
+  const diskPercent = toRatioPercent(appStatus?.disk_used, appStatus?.disk_total);
+  const currentInstances = appStatus?.current_instances ?? 2;
+  const availableInstances = appStatus?.available_instances ?? 2;
+  const totalInstances = currentInstances + availableInstances;
+  const instancePercent = totalInstances > 0 ? clampPercent(Math.round((currentInstances / totalInstances) * 100)) : 0;
+  const healthLabel = cpuPercent >= 90 ? 'Risky' : 'Healthy';
+  const dynamicResourceMetrics = [
+    {
+      id: 'cpu',
+      label: 'CPU',
+      value: `${cpuPercent}%`,
+      percent: cpuPercent,
+    },
+    {
+      id: 'mem',
+      label: 'MEM',
+      value: appStatus?.memory_used ? `${appStatus.memory_used}${appStatus.memory_total ? ` / ${appStatus.memory_total}` : ''}` : resourceMetrics[1].value,
+      percent: memoryPercent,
+    },
+    {
+      id: 'disk',
+      label: 'DISK',
+      value: appStatus?.disk_used ? `${appStatus.disk_used}${appStatus.disk_total ? ` / ${appStatus.disk_total}` : ''}` : resourceMetrics[2].value,
+      percent: diskPercent,
+    },
+    {
+      id: 'instance',
+      label: 'INSTANCE',
+      value: String(currentInstances),
+      percent: instancePercent,
+    },
+  ];
+
   return (
     <S.PageWrapper>
       <S.TopCard>
-        <S.AppName>{APP_NAME}</S.AppName>
+        <S.AppName>{appName}</S.AppName>
 
         <S.TopContent>
           <S.OverviewArea>
@@ -85,17 +146,17 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
               <S.BrandMark>
                 <Image src="/assets/logo.svg" alt="M-ADP" width={66} height={66} />
               </S.BrandMark>
-              <S.GithubTitle>GitHub - M-ADP/{APP_NAME.toLowerCase()} : 애매하노</S.GithubTitle>
+              <S.GithubTitle>GitHub - M-ADP/{appName.toLowerCase()} : 애매하노</S.GithubTitle>
               <S.GithubDesc>
-                애매하노. Contribute to M-ADP/{APP_NAME.toLowerCase()} development by creating an account on GitHub.
+                애매하노. Contribute to M-ADP/{appName.toLowerCase()} development by creating an account on GitHub.
               </S.GithubDesc>
               <S.GithubDesc>
-                Contribute to M-ADP/{APP_NAME.toLowerCase()} development by creating an account on GitHub.
+                Contribute to M-ADP/{appName.toLowerCase()} development by creating an account on GitHub.
               </S.GithubDesc>
               <S.GithubLinkRow>
                 <Image src="/icons/github.svg" alt="github" width={20} height={20} />
-                <S.GithubLink href={`https://github.com/M-ADP/${APP_NAME.toLowerCase()}`} target="_blank" rel="noreferrer">
-                  https://github.com/M-ADP/{APP_NAME.toLowerCase()}
+                <S.GithubLink href={`https://github.com/M-ADP/${appName.toLowerCase()}`} target="_blank" rel="noreferrer">
+                  https://github.com/M-ADP/{appName.toLowerCase()}
                 </S.GithubLink>
               </S.GithubLinkRow>
             </S.GithubSection>
@@ -105,11 +166,11 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
             <S.CornerMenu>...</S.CornerMenu>
             <S.HealthLabel>상태</S.HealthLabel>
             <ProgressRing
-              value={74}
+              value={cpuPercent}
               max={100}
               size={184}
               strokeWidth={12}
-              label="Healthy"
+              label={healthLabel}
               unit=""
               gradientStops={[
                 { offset: 0, color: '#030982' },
@@ -170,7 +231,7 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
             </S.SectionHeader>
 
             <S.ResourceGrid>
-              {resourceMetrics.map((item) => (
+              {dynamicResourceMetrics.map((item) => (
                 <S.ResourceItem key={item.id}>
                   <S.ResourceLabel>{item.label}</S.ResourceLabel>
                   <S.ResourceValue>{item.value}</S.ResourceValue>
