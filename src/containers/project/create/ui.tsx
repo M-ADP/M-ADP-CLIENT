@@ -72,14 +72,14 @@ export default function ProjectCreateContainer() {
           placeholder="예: 0.3"
         />
         <Input
-          label="MEMORY (32MB ~ 4096MB)"
+          label="MEMORY (512MB ~ 1024MB)"
           name="memory"
           value={formData.memory}
           onChange={handleChange}
-          placeholder="예: 4096"
+          placeholder="예: 1024"
         />
         <Input
-          label="DISK (0.032GB ~ 50GB)"
+          label="DISK (2GB ~ 50GB)"
           name="disk"
           value={formData.disk}
           onChange={handleChange}
