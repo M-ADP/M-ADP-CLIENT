@@ -339,11 +339,11 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
             placeholder="예: 4096"
           />
           <Input
-            label="DISK (32MB ~ 50GB)"
+            label="DISK (0.032GB ~ 50GB)"
             name="disk"
             value={editForm.disk}
             onChange={handleEditChange}
-            placeholder="예: 4096"
+            placeholder="예: 4"
           />
           <S.ModalText>※ 변경할 항목만 입력해주세요. 비워두면 기존 값이 유지됩니다.</S.ModalText>
           <S.ModalButtonGroup>
