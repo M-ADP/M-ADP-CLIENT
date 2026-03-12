@@ -93,7 +93,7 @@ export default function AppCreateContainer() {
           placeholder="예: 0.3"
         />
         <Input
-          label="MEMORY (512MB ~ 1024MB)"
+          label="MEMORY (256MB ~ 1024MB)"
           name="memory"
           value={formData.memory}
           onChange={handleChange}
