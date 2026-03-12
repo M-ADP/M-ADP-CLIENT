@@ -216,7 +216,12 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
         </S.TitleRow>
       </S.PageHeader>
 
-      <S.SectionTitle>앱 배포 목록</S.SectionTitle>
+      <S.SectionRow>
+        <S.SectionTitle>앱 배포 목록</S.SectionTitle>
+        <Button variant="confirm" onClick={() => router.push(`/app/create?projectId=${projectId}`)}>
+          새 앱
+        </Button>
+      </S.SectionRow>
       <S.AppGridWrapper $showLeftGradient={showLeftGradient} $showRightGradient={showRightGradient}>
         <S.AppGrid ref={scrollRef}>
           {project.deployments.length === 0 ? (

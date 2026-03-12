@@ -22,6 +22,7 @@ const PRIMARY_NAV = [
     ],
   },
   { key: 'report', label: '분석', icon: '/icons/sidebar/analytics.svg', path: '/report' },
+  { key: 'agent', label: 'ChatOps', icon: '/icons/sidebar/chat.svg', path: '/agent' },
 ];
 
 const SECONDARY_NAV = [

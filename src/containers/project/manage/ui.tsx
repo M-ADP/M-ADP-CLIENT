@@ -21,7 +21,7 @@ export default function ProjectManageContainer() {
     );
   }, [data, searchQuery]);
 
-  const handleProjectClick = (projectId: string) => {
+  const handleProjectClick = (projectId: string | number) => {
     router.push(`/project/manage/${projectId}`);
   };
 

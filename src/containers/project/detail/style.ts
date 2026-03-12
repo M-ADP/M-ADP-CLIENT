@@ -39,13 +39,21 @@ export const ProjectId = styled.span`
   color: ${black[75]};
 `;
 
+export const SectionRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+`;
+
 export const SectionTitle = styled.h2`
   font-family: ${FONT_FAMILY};
   font-weight: ${fontWeights.semibold};
   font-size: 1.5rem;
   color: ${black[300]};
-  margin: 0 0 1.5rem 0;
+  margin: 0;
 `;
+
 
 export const AppGridWrapper = styled.div<{ $showLeftGradient: boolean; $showRightGradient: boolean }>`
   position: relative;
