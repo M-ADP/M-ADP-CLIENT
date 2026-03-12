@@ -93,11 +93,11 @@ export default function AppCreateContainer() {
           placeholder="예: 0.3"
         />
         <Input
-          label="MEMORY (256MB ~ 1024MB)"
+          label="MEMORY (0.25GB ~ 1GB)"
           name="memory"
           value={formData.memory}
           onChange={handleChange}
-          placeholder="예: 1024"
+          placeholder="예: 1"
         />
         <Input
           label="DISK (2GB ~ 50GB)"
@@ -107,7 +107,7 @@ export default function AppCreateContainer() {
           placeholder="예: 4"
         />
         <S.NoticeText>
-          {`※ MEMORY는 MB 단위, DISK는 GB 단위로 입력해주세요.\n※ 이후 DISK는 증가만 가능하며 감소는 불가합니다.`}
+          {`※ 메모리와 디스크는 모두 GB 단위로 입력해 주세요.\n※ 주의: 디스크 용량은 이후 확장만 가능하며, 축소는 불가능합니다.`}
         </S.NoticeText>
         <S.ButtonGroup>
           <Button variant="confirm" type="submit" disabled={createAppMutation.isPending}>

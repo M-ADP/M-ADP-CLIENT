@@ -332,11 +332,11 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
             placeholder="예: 0.3"
           />
           <Input
-            label="MEMORY (512MB ~ 1024MB)"
+            label="MEMORY (0.5GB ~ 1GB)"
             name="memory"
             value={editForm.memory}
             onChange={handleEditChange}
-            placeholder="예: 1024"
+            placeholder="예: 1"
           />
           <Input
             label="DISK (2GB ~ 50GB)"
@@ -345,7 +345,7 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
             onChange={handleEditChange}
             placeholder="예: 4"
           />
-          <S.ModalText>※ 변경할 항목만 입력해주세요. 비워두면 기존 값이 유지됩니다.</S.ModalText>
+          <S.ModalText>※ 변경하실 항목만 GB 단위로 입력해 주세요. (입력하지 않으면 기존 값이 유지됩니다.)</S.ModalText>
           <S.ModalButtonGroup>
             <Button variant="cancel" onClick={() => setIsEditModalOpen(false)}>
               취소
