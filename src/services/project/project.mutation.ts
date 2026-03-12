@@ -6,11 +6,18 @@ import {
     updateProjectResource,
     addProjectMember,
     removeProjectMember,
+    postCreateProjectPort,
+    updateProjectPort,
+    deleteProjectPort,
+} from './project.api';
+import {
     ProjectCreatePayload,
     UpdateProjectNamePayload,
     UpdateProjectResourcePayload,
     AddProjectMemberPayload,
-} from './project.api';
+    PortCreate,
+    PortUpdate,
+} from '@/types/project';
 
 export const useCreateProjectMutation = () => {
     return useMutation({
@@ -69,6 +76,42 @@ export const useRemoveProjectMemberMutation = () => {
             removeProjectMember(projectId, targetUserId),
         onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: ['projectMembers', variables.projectId] });
+        },
+    });
+};
+
+export const useCreateProjectPortMutation = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ projectId, payload }: { projectId: string; payload: PortCreate }) =>
+            postCreateProjectPort(projectId, payload),
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['projectPorts', variables.projectId] });
+            queryClient.invalidateQueries({ queryKey: ['project', variables.projectId] });
+        },
+    });
+};
+
+export const useUpdateProjectPortMutation = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ projectId, portId, payload }: { projectId: string; portId: string; payload: PortUpdate }) =>
+            updateProjectPort(projectId, portId, payload),
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['projectPorts', variables.projectId] });
+            queryClient.invalidateQueries({ queryKey: ['project', variables.projectId] });
+        },
+    });
+};
+
+export const useDeleteProjectPortMutation = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ projectId, portId }: { projectId: string; portId: string }) =>
+            deleteProjectPort(projectId, portId),
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['projectPorts', variables.projectId] });
+            queryClient.invalidateQueries({ queryKey: ['project', variables.projectId] });
         },
     });
 };
