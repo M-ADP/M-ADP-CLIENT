@@ -14,14 +14,10 @@ import {
   useUpdateProjectNameMutation,
   useUpdateProjectResourceMutation,
   useAddProjectMemberMutation,
-  useRemoveProjectMemberMutation,
-  useCreateProjectPortMutation,
-  useUpdateProjectPortMutation,
-  useDeleteProjectPortMutation
+  useRemoveProjectMemberMutation
 } from '@/services/project/project.mutation';
 import { useSearchUserQuery } from '@/services/user/user.query';
 import { useDebounce } from '@/hooks/useDebounce';
-import { PortResponse } from '@/types/project';
 
 interface ProjectDetailContainerProps {
   projectId: string;
@@ -36,17 +32,12 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
   const updateResourceMutation = useUpdateProjectResourceMutation();
   const addMemberMutation = useAddProjectMemberMutation();
   const removeMemberMutation = useRemoveProjectMemberMutation();
-  const createPortMutation = useCreateProjectPortMutation();
-  const updatePortMutation = useUpdateProjectPortMutation();
-  const deletePortMutation = useDeleteProjectPortMutation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showLeftGradient, setShowLeftGradient] = useState(false);
   const [showRightGradient, setShowRightGradient] = useState(true);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  const [isPortModalOpen, setIsPortModalOpen] = useState(false);
-  const [editingPortId, setEditingPortId] = useState<string | null>(null);
   const [inviteSearchQuery, setInviteSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(inviteSearchQuery, 500);
   const { data: searchResult, isLoading: isSearchLoading } = useSearchUserQuery(debouncedSearchQuery);
@@ -56,13 +47,6 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
     cpu: '',
     memory: '',
     disk: '',
-  });
-
-  const [portForm, setPortForm] = useState({
-    from_ip: '0.0.0.0/0',
-    from_port: '',
-    port_number: '',
-    protocol: 'tcp',
   });
 
   useEffect(() => {
@@ -182,79 +166,6 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
         alert(error.message);
       } else {
         alert('멤버 추방에 실패했습니다.');
-      }
-    }
-  };
-
-  const handleOpenPortModal = (port?: PortResponse) => {
-    if (port) {
-      setEditingPortId(port.id);
-      setPortForm({
-        from_ip: port.from_ip,
-        from_port: String(port.from_port),
-        port_number: String(port.port_number),
-        protocol: port.protocol,
-      });
-    } else {
-      setEditingPortId(null);
-      setPortForm({
-        from_ip: '0.0.0.0/0',
-        from_port: '',
-        port_number: '',
-        protocol: 'tcp',
-      });
-    }
-    setIsPortModalOpen(true);
-  };
-
-  const handlePortChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setPortForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handlePortSubmit = async () => {
-    try {
-      const payload = {
-        from_ip: portForm.from_ip,
-        from_port: Number(portForm.from_port),
-        port_number: Number(portForm.port_number),
-        protocol: portForm.protocol,
-      };
-
-      if (editingPortId) {
-        await updatePortMutation.mutateAsync({
-          projectId,
-          portId: editingPortId,
-          payload,
-        });
-        alert('포트가 수정되었습니다.');
-      } else {
-        await createPortMutation.mutateAsync({
-          projectId,
-          payload,
-        });
-        alert('포트가 추가되었습니다.');
-      }
-      setIsPortModalOpen(false);
-    } catch (error) {
-       if (error instanceof Error) {
-        alert(error.message);
-      } else {
-        alert('포트 저장에 실패했습니다.');
-      }
-    }
-  };
-
-  const handleDeletePort = async (portId: string) => {
-    if (!confirm('정말 이 포트를 삭제하시겠습니까?')) return;
-    try {
-      await deletePortMutation.mutateAsync({ projectId, portId });
-      alert('포트가 삭제되었습니다.');
-    } catch (error) {
-       if (error instanceof Error) {
-        alert(error.message);
-      } else {
-        alert('포트 삭제에 실패했습니다.');
       }
     }
   };
@@ -380,36 +291,6 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
           </S.ChartCard>
         </S.ChartGrid>
 
-        <S.RightPanel>
-          <S.PortSection>
-            <S.SectionRow style={{ marginBottom: '1rem' }}>
-              <S.PortTitle style={{ margin: 0 }}>포트 공개 정보</S.PortTitle>
-              <Button variant="confirm" onClick={() => handleOpenPortModal()}>
-                포트 추가
-              </Button>
-            </S.SectionRow>
-            {project.ports.length === 0 ? (
-              <p>공개된 포트가 없습니다.</p>
-            ) : (
-              project.ports.map((port) => (
-                <S.PortInputRow key={port.id} style={{ alignItems: 'flex-end', marginBottom: '1rem' }}>
-                  <S.PortInputGroup>
-                    <S.PortLabel>From ({port.from_ip})</S.PortLabel>
-                    <S.PortInput type="text" value={port.from_port} readOnly />
-                  </S.PortInputGroup>
-                  <S.PortInputGroup>
-                    <S.PortLabel>To Port</S.PortLabel>
-                    <S.PortInput type="text" value={port.port_number} readOnly />
-                  </S.PortInputGroup>
-                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '4px' }}>
-                    <Button variant="confirm" onClick={() => handleOpenPortModal(port)}>수정</Button>
-                    <Button variant="cancel" onClick={() => handleDeletePort(port.id)}>삭제</Button>
-                  </div>
-                </S.PortInputRow>
-              ))
-            )}
-          </S.PortSection>
-        </S.RightPanel>
       </S.ChartSection>
 
       <Modal open={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} width={480} height="auto">
@@ -528,63 +409,6 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
           <S.ModalButtonGroup>
             <Button variant="cancel" onClick={() => setIsInviteModalOpen(false)}>
               닫기
-            </Button>
-          </S.ModalButtonGroup>
-        </S.ModalContent>
-      </Modal>
-
-      <Modal open={isPortModalOpen} onClose={() => setIsPortModalOpen(false)} width={480} height="auto">
-        <S.ModalContent>
-          <S.ModalTitle>{editingPortId ? '포트 수정' : '포트 추가'}</S.ModalTitle>
-          <Input
-            label="접근 허용 IP (From IP)"
-            name="from_ip"
-            value={portForm.from_ip}
-            onChange={handlePortChange}
-            placeholder="예: 0.0.0.0/0"
-          />
-          <Input
-            label="외부 접속 포트 (From Port)"
-            name="from_port"
-            value={portForm.from_port}
-            onChange={handlePortChange}
-            placeholder="예: 80"
-          />
-          <Input
-            label="내부 연결 포트 (To Port)"
-            name="port_number"
-            value={portForm.port_number}
-            onChange={handlePortChange}
-            placeholder="예: 8080"
-          />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <S.PortLabel>프로토콜</S.PortLabel>
-            <select
-              name="protocol"
-              value={portForm.protocol}
-              onChange={handlePortChange}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                border: '1px solid #e2e8f0',
-                borderRadius: '8px',
-                fontFamily: 'inherit',
-                fontSize: '14px',
-                color: '#0f172a',
-                boxSizing: 'border-box'
-              }}
-            >
-              <option value="tcp">TCP</option>
-              <option value="udp">UDP</option>
-              <option value="icmp">ICMP</option>
-            </select>
-          </div>
-          <S.ModalButtonGroup>
-            <Button variant="cancel" onClick={() => setIsPortModalOpen(false)}>
-              취소
-            </Button>
-            <Button variant="confirm" onClick={handlePortSubmit} disabled={createPortMutation.isPending || updatePortMutation.isPending}>
-              {createPortMutation.isPending || updatePortMutation.isPending ? '저장 중...' : '저장'}
             </Button>
           </S.ModalButtonGroup>
         </S.ModalContent>

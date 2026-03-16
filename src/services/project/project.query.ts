@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { getProjects, getProjectById, getProjectMembers, getProjectPorts } from './project.api';
-import { ProjectListParams, ProjectPortsListParams } from '@/types/project';
+import { getProjects, getProjectById, getProjectMembers } from './project.api';
+import { ProjectListParams } from '@/types/project';
 
 export const useProjectListQuery = (params?: ProjectListParams) => {
     return useQuery({
@@ -23,15 +23,6 @@ export const useProjectMembersQuery = (projectId: string, params?: ProjectListPa
     return useQuery({
         queryKey: ['projectMembers', projectId, params],
         queryFn: () => getProjectMembers(projectId, params),
-        select: (data) => data.data,
-        enabled: !!projectId,
-    });
-};
-
-export const useProjectPortsQuery = (projectId: string, params?: ProjectPortsListParams) => {
-    return useQuery({
-        queryKey: ['projectPorts', projectId, params],
-        queryFn: () => getProjectPorts(projectId, params),
         select: (data) => data.data,
         enabled: !!projectId,
     });

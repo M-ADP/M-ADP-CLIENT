@@ -65,14 +65,6 @@ export interface MetricPoint {
     value: number;
 }
 
-export interface PortResponse {
-    id: string;
-    project_id: string;
-    from_ip: string;
-    from_port: number;
-    port_number: number;
-    protocol: string;
-}
 
 export interface ProjectDetail {
     id: string;
@@ -84,7 +76,6 @@ export interface ProjectDetail {
     disk_usage: MetricPoint[];
     network_usage: MetricPoint[];
     traffic_per_hour: MetricPoint[];
-    ports: PortResponse[];
 }
 
 export interface ProjectDetailResponse {
@@ -129,46 +120,3 @@ export interface AddProjectMemberPayload {
     user_id: string;
 }
 
-export interface PortCreate {
-    from_ip: string;
-    from_port: number;
-    port_number: number;
-    protocol: 'tcp' | 'udp' | 'icmp' | string;
-}
-
-export interface CreateProjectPortResponse {
-    message: string;
-    data: PortResponse;
-}
-
-export interface CursorPagePortResponse {
-    items: PortResponse[];
-    has_next: boolean;
-}
-
-export interface ProjectPortsListResponse {
-    message: string;
-    data: CursorPagePortResponse;
-}
-
-export interface ProjectPortsListParams {
-    cursor?: string | null;
-    limit?: number;
-}
-
-export interface PortUpdate {
-    from_ip: string;
-    from_port: number;
-    port_number: number;
-    protocol: 'tcp' | 'udp' | 'icmp' | string;
-}
-
-export interface UpdateProjectPortResponse {
-    message: string;
-    data: PortResponse;
-}
-
-export interface DeleteProjectPortResponse {
-    message: string;
-    data: PortResponse;
-}

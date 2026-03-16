@@ -10,13 +10,6 @@ import {
     ProjectMembersParams,
     ProjectMembersListResponse,
     AddProjectMemberPayload,
-    PortCreate,
-    CreateProjectPortResponse,
-    ProjectPortsListParams,
-    ProjectPortsListResponse,
-    PortUpdate,
-    UpdateProjectPortResponse,
-    DeleteProjectPortResponse,
 } from '@/types/project';
 
 export const postCreateProject = (payload: ProjectCreatePayload) => {
@@ -77,35 +70,6 @@ export const addProjectMember = (projectId: string, payload: AddProjectMemberPay
 
 export const removeProjectMember = (projectId: string, targetUserId: string) => {
     return api(`/projects/${projectId}/members/${targetUserId}`, {
-        method: 'DELETE',
-    });
-};
-
-export const postCreateProjectPort = (projectId: string, payload: PortCreate) => {
-    return api<CreateProjectPortResponse>(`/projects/${projectId}/ports`, {
-        method: 'POST',
-        body: JSON.stringify(payload),
-    });
-};
-
-export const getProjectPorts = (projectId: string, params?: ProjectPortsListParams) => {
-    const searchParams = new URLSearchParams();
-    if (params?.cursor) searchParams.set('cursor', params.cursor);
-    if (params?.limit) searchParams.set('limit', String(params.limit));
-
-    const query = searchParams.toString();
-    return api<ProjectPortsListResponse>(`/projects/${projectId}/ports${query ? `?${query}` : ''}`);
-};
-
-export const updateProjectPort = (projectId: string, portId: string, payload: PortUpdate) => {
-    return api<UpdateProjectPortResponse>(`/projects/${projectId}/ports/${portId}`, {
-        method: 'PUT',
-        body: JSON.stringify(payload),
-    });
-};
-
-export const deleteProjectPort = (projectId: string, portId: string) => {
-    return api<DeleteProjectPortResponse>(`/projects/${projectId}/ports/${portId}`, {
         method: 'DELETE',
     });
 };
