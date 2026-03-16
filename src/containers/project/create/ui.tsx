@@ -34,7 +34,7 @@ export default function ProjectCreateContainer() {
       await createProjectMutation.mutateAsync({
         name: formData.projectName.trim(),
         ...(formData.cpu && { cpu: `${Math.round(Number(formData.cpu) * 1000)}m` }),
-        ...(formData.memory && { memory: `${formData.memory}Mi` }),
+        ...(formData.memory && { memory: `${Math.round(Number(formData.memory) * 1024)}Mi` }),
         ...(formData.disk && { disk: `${formData.disk}Gi` }),
       });
 
