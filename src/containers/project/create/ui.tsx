@@ -33,9 +33,9 @@ export default function ProjectCreateContainer() {
     try {
       await createProjectMutation.mutateAsync({
         name: formData.projectName.trim(),
-        ...(formData.cpu && { cpu: `${Math.round(Number(formData.cpu) * 1000)}m` }),
-        ...(formData.memory && { memory: `${Math.round(Number(formData.memory) * 1024)}Mi` }),
-        ...(formData.disk && { disk: `${formData.disk}Gi` }),
+        ...(formData.cpu && { max_cpu: Number(formData.cpu) }),
+        ...(formData.memory && { max_memory: Number(formData.memory) }),
+        ...(formData.disk && { max_disk: Number(formData.disk) }),
       });
 
       alert('프로젝트가 생성되었습니다.');

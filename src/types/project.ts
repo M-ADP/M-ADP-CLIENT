@@ -1,17 +1,19 @@
 export interface ProjectCreatePayload {
     name: string;
-    cpu?: string;
-    memory?: string;
-    disk?: string;
+    max_cpu?: number;
+    max_memory?: number;
+    max_disk?: number;
 }
 
 export interface ProjectCreateResponse {
     message: string;
     data: {
-        namespace_id: string;
+        id: number;
+        user_id: number;
         name: string;
-        resource_quota_id: string;
-        limits: Record<string, string>;
+        max_cpu: number;
+        max_memory: number;
+        max_disk: number;
     };
 }
 
