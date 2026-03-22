@@ -1,12 +1,12 @@
 import { api } from '@/utils/api';
 
 export interface AuthCodePayload {
-    code: string;
+  code: string;
 }
 
 export interface AuthResponse {
     access_token?: string;
-    role?: string;
+    is_authenticated?: string;
 }
 
 export const postAuthCode = (payload: AuthCodePayload) => {

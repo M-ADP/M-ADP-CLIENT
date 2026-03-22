@@ -1,7 +1,5 @@
-'use client'
+import DashboardContainer from '@/containers/dashboard/ui';
+
 export default function Home() {
-  return (
-    <div>
-    </div>
-  );
+  return <DashboardContainer />;
 }

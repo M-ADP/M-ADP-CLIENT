@@ -103,7 +103,7 @@ export const IconWrapper = styled.span<{ $active?: boolean }>`
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  
+
   img {
     filter: ${({ $active }) =>
     $active
@@ -151,6 +151,30 @@ export const SubNavItem = styled.div`
 
   &:hover {
     background: ${colors.black[50]};
+  }
+`;
+
+export const DeepNavContainer = styled.div`
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+
+  &[data-open='true'] {
+    max-height: 280px;
+    opacity: 1;
+  }
+`;
+
+export const DeepNavItem = styled.div<{ $clickable?: boolean }>`
+  padding: 9px 16px 9px 68px;
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  cursor: ${({ $clickable }) => ($clickable ? 'pointer' : 'default')};
+
+  &:hover {
+    background: ${({ $clickable }) => ($clickable ? colors.black[50] : 'transparent')};
   }
 `;
 
@@ -259,7 +283,6 @@ export const LogoutButton = styled.button`
   padding: 0;
   text-align: left;
   transition: color 0.3s;
-  
   &:hover {
     color: ${colors.primary.default};
     text-decoration: underline;
