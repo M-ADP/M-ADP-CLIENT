@@ -6,12 +6,14 @@ import {
     updateProjectResource,
     addProjectMember,
     removeProjectMember,
+    transferProjectOwnership,
 } from './project.api';
 import {
     ProjectCreatePayload,
     UpdateProjectNamePayload,
     UpdateProjectResourcePayload,
     AddProjectMemberPayload,
+    ProjectOwnerTransferPayload,
 } from '@/types/project';
 
 export const useCreateProjectMutation = () => {
@@ -75,6 +77,18 @@ export const useRemoveProjectMemberMutation = () => {
             removeProjectMember(projectId, targetUserId),
         onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: ['projectMembers', variables.projectId] });
+        },
+    });
+};
+
+export const useTransferOwnershipMutation = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ projectId, payload }: { projectId: string; payload: ProjectOwnerTransferPayload }) =>
+            transferProjectOwnership(projectId, payload),
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['projectMembers', variables.projectId] });
+            queryClient.invalidateQueries({ queryKey: ['project', variables.projectId] });
         },
     });
 };

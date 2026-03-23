@@ -46,7 +46,12 @@ const getRefreshedToken = async (): Promise<string | null> => {
 const parseResponse = async <T>(response: Response): Promise<T> => {
     const contentType = response.headers.get('content-type');
     if (contentType && contentType.includes('application/json')) {
-        return response.json() as T;
+        const text = await response.text();
+        const safeParsed = text.replace(
+            /(?<=[:{[,])\s*(\d{16,})\s*(?=[,}\]])/g,
+            '"$1"'
+        );
+        return JSON.parse(safeParsed) as T;
     }
     return response.text() as T;
 };

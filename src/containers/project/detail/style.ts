@@ -427,3 +427,26 @@ export const KickButton = styled.button`
   }
 `;
 
+export const MemberActionGroup = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+`;
+
+export const TransferButton = styled.button`
+  background: none;
+  border: none;
+  padding: 6px 12px;
+  color: ${primary.default};
+  font-family: ${FONT_FAMILY};
+  font-weight: ${fontWeights.medium};
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #eef2ff;
+  }
+`;
+

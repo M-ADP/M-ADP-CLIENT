@@ -16,9 +16,10 @@ import {
   useUpdateProjectNameMutation,
   useUpdateProjectResourceMutation,
   useAddProjectMemberMutation,
-  useRemoveProjectMemberMutation
+  useRemoveProjectMemberMutation,
+  useTransferOwnershipMutation
 } from '@/services/project/project.mutation';
-import { useSearchUserQuery } from '@/services/user/user.query';
+import { useSearchUserByNicknameQuery } from '@/services/user/user.query';
 import { useDebounce } from '@/hooks/useDebounce';
 
 interface ProjectDetailContainerProps {
@@ -39,6 +40,7 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
   const updateResourceMutation = useUpdateProjectResourceMutation();
   const addMemberMutation = useAddProjectMemberMutation();
   const removeMemberMutation = useRemoveProjectMemberMutation();
+  const transferOwnershipMutation = useTransferOwnershipMutation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showLeftGradient, setShowLeftGradient] = useState(false);
   const [showRightGradient, setShowRightGradient] = useState(true);
@@ -47,7 +49,7 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [inviteSearchQuery, setInviteSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(inviteSearchQuery, 500);
-  const { data: searchResult, isLoading: isSearchLoading } = useSearchUserQuery(debouncedSearchQuery);
+  const { data: searchResult, isLoading: isSearchLoading } = useSearchUserByNicknameQuery(debouncedSearchQuery);
 
   const [editForm, setEditForm] = useState({
     name: '',
@@ -384,7 +386,7 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%', marginBottom: '1rem' }}>
             <Input
               name="inviteSearch"
-              placeholder="사용자 ID를 검색해주세요..."
+              placeholder="닉네임을 검색해주세요..."
               value={inviteSearchQuery}
               onChange={(e) => setInviteSearchQuery(e.target.value)}
               width="100%"
@@ -399,11 +401,11 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
                 <S.MemberItem>
                   <S.MemberInfoWrapper>
                     <S.AvatarImage $imageUrl={searchResult.profile || undefined} />
-                    <S.MemberName>{searchResult.nickname} ({searchResult.user_id})</S.MemberName>
+                    <S.MemberName>{searchResult.nickname} ({searchResult.github_id})</S.MemberName>
                   </S.MemberInfoWrapper>
                   <Button
                     variant="confirm"
-                    onClick={() => handleInviteUser(String(searchResult.user_id))}
+                    onClick={() => handleInviteUser(searchResult.id)}
                     disabled={addMemberMutation.isPending}
                   >
                     {addMemberMutation.isPending ? '초대 중...' : '초대'}
@@ -417,17 +419,35 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
 
           <S.ModalText style={{ marginTop: '1.5rem', marginBottom: '0.5rem', fontWeight: 600 }}>참여 중인 멤버</S.ModalText>
           <S.MemberList>
-            {membersData?.items.map((member) => (
+            {membersData?.items
+              .slice()
+              .sort((a, b) => (a.role === 'OWNER' ? -1 : b.role === 'OWNER' ? 1 : 0))
+              .map((member) => (
               <S.MemberItem key={member.user_id}>
                 <S.MemberInfoWrapper>
                   <S.AvatarImage $imageUrl={member.profile_image || undefined} />
                   <S.MemberName>{member.username}</S.MemberName>
                   {member.role === 'OWNER' && <S.OwnerBadge>오너</S.OwnerBadge>}
                 </S.MemberInfoWrapper>
-                {member.role !== 'OWNER' && (
-                  <S.KickButton onClick={() => handleKickUser(member.user_id)}>
-                    {removeMemberMutation.isPending ? '처리 중' : '추방'}
-                  </S.KickButton>
+                {member.role !== 'OWNER' && project.my_role === 'OWNER' && (
+                  <S.MemberActionGroup>
+                    <S.TransferButton
+                      onClick={() => {
+                        if (!confirm(`${member.username}님에게 소유권을 이전하시겠습니까?`)) return;
+                        transferOwnershipMutation.mutateAsync({
+                          projectId,
+                          payload: { target_user_id: member.user_id },
+                        }).then(() => alert('소유권이 이전되었습니다.')).catch((err) => {
+                          alert(err instanceof Error ? err.message : '소유권 이전에 실패했습니다.');
+                        });
+                      }}
+                    >
+                      {transferOwnershipMutation.isPending ? '처리 중' : '소유권 이전'}
+                    </S.TransferButton>
+                    <S.KickButton onClick={() => handleKickUser(member.user_id)}>
+                      {removeMemberMutation.isPending ? '처리 중' : '추방'}
+                    </S.KickButton>
+                  </S.MemberActionGroup>
                 )}
               </S.MemberItem>
             )) || <p>멤버를 불러오는 중입니다.</p>}

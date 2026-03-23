@@ -10,6 +10,7 @@ import {
     ProjectMembersParams,
     ProjectMembersListResponse,
     AddProjectMemberPayload,
+    ProjectOwnerTransferPayload,
 } from '@/types/project';
 
 export const postCreateProject = (payload: ProjectCreatePayload) => {
@@ -71,5 +72,12 @@ export const addProjectMember = (projectId: string, payload: AddProjectMemberPay
 export const removeProjectMember = (projectId: string, targetUserId: string) => {
     return api(`/projects/${projectId}/members/${targetUserId}`, {
         method: 'DELETE',
+    });
+};
+
+export const transferProjectOwnership = (projectId: string, payload: ProjectOwnerTransferPayload) => {
+    return api(`/projects/${projectId}/owner`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
     });
 };

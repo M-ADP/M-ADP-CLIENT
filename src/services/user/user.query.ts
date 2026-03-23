@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getMyUserProfile, getUserByProfileId, UserProfile } from './user.api';
+import { getMyUserProfile, getUserByNickname, UserProfile } from './user.api';
 import { useUserStore } from '@/store/userStore';
 import { useAuthStore } from '@/store/authStore';
 import { useEffect } from 'react';
@@ -26,11 +26,11 @@ export const useUserProfileQuery = () => {
     return query;
 };
 
-export const useSearchUserQuery = (userId: string) => {
+export const useSearchUserByNicknameQuery = (nickname: string) => {
     return useQuery({
-        queryKey: ['searchUser', userId],
-        queryFn: () => getUserByProfileId(userId),
-        enabled: Boolean(userId),
+        queryKey: ['searchUserByNickname', nickname],
+        queryFn: () => getUserByNickname(nickname),
+        enabled: Boolean(nickname),
         staleTime: 1000 * 60 * 5,
         retry: 1,
     });

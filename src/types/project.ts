@@ -120,3 +120,6 @@ export interface AddProjectMemberPayload {
     user_id: string;
 }
 
+export interface ProjectOwnerTransferPayload {
+    target_user_id: string;
+}
