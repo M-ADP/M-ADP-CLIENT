@@ -15,6 +15,7 @@ export const TitleRow = styled.div`
   display: flex;
   align-items: center;
   gap: 1rem;
+  flex-wrap: wrap;
 `;
 
 export const HeaderButtonGroup = styled.div`
@@ -27,9 +28,13 @@ export const HeaderButtonGroup = styled.div`
 export const PageTitle = styled.h1`
   font-family: ${FONT_FAMILY};
   font-weight: ${fontWeights.semibold};
-  font-size: 3rem;
+  font-size: 1.75rem;
   color: ${black[300]};
   margin: 0;
+  max-width: 50%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
 export const ProjectId = styled.span`

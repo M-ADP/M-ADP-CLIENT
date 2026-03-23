@@ -201,7 +201,7 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
       <S.PageHeader>
         <S.TitleRow>
           <S.PageTitle>{project.name}</S.PageTitle>
-          <S.ProjectId>({project.id})</S.ProjectId>
+          {/* <S.ProjectId>({project.id})</S.ProjectId> */}
           <S.HeaderButtonGroup>
             <Button variant="confirm" onClick={handleOpenEditModal}>
               수정
@@ -302,6 +302,7 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
             value={editForm.name}
             onChange={handleEditChange}
             placeholder="프로젝트 이름"
+            maxLength={20}
           />
           <Input
             label="CPU (0.1v ~ 4.0v)"

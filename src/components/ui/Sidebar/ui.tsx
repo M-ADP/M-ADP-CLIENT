@@ -6,6 +6,7 @@ import Image from 'next/image';
 import * as S from './style';
 import { useUserStore } from '@/store/userStore';
 import { useUserProfileQuery } from '@/services/user/user.query';
+import { useProjectListQuery } from '@/services/project/project.query';
 import { useAuthStore } from '@/store/authStore';
 import { postLogout } from '@/services/login/login.api';
 import Cookies from 'js-cookie';
@@ -30,6 +31,11 @@ interface SidebarItem {
   children?: SidebarChildItem[];
 }
 
+const DETAIL_TABS: DetailNavItem[] = [
+  { key: 'project-info', label: '프로젝트 정보' },
+  { key: 'project-app', label: '앱' },
+];
+
 const PRIMARY_NAV: SidebarItem[] = [
   { key: 'dashboard', label: '대시보드', icon: '/icons/sidebar/dashboard.svg', path: '/' },
   {
@@ -39,17 +45,6 @@ const PRIMARY_NAV: SidebarItem[] = [
     path: '/project',
     children: [
       { key: 'project-create', label: '프로젝트 생성', path: '/project/create' },
-      {
-        key: 'project-manage',
-        label: '프로젝트명',
-        path: '/project/manage',
-        detailChildren: [
-          { key: 'project-info', label: '프로젝트명' },
-          { key: 'project-app', label: '앱' },
-          { key: 'project-nuri', label: '누리' },
-          { key: 'project-favorite', label: '최애의 사인' },
-        ],
-      },
     ],
   },
   { key: 'report', label: '분석', icon: '/icons/sidebar/analytics.svg', path: '/report' },
@@ -71,6 +66,7 @@ export default function Sidebar() {
   const [expandedMenu, setExpandedMenu] = useState<string | null>('project');
 
   useUserProfileQuery();
+  const { data: projectListData } = useProjectListQuery();
 
   useEffect(() => {
     if (pathname !== '/login' && step === 'github') {
@@ -164,26 +160,38 @@ export default function Sidebar() {
                 {!isCollapsed && item.children && (
                   <S.SubNavContainer data-open={expandedMenu === item.key ? 'true' : 'false'}>
                     {item.children.map((child) => {
-                      const childActive = pathname === child.path || (child.key === 'project-manage' && inProjectDetail);
-
+                      const childActive = pathname === child.path;
                       return (
-                        <div key={child.key}>
-                          <S.SubNavItem onClick={() => handleNavigation(child.path)}>
-                            <S.NavLabel $active={childActive}>{child.label}</S.NavLabel>
+                        <S.SubNavItem key={child.key} onClick={() => handleNavigation(child.path)}>
+                          <S.NavLabel $active={childActive}>{child.label}</S.NavLabel>
+                        </S.SubNavItem>
+                      );
+                    })}
+
+                    {item.key === 'project' && projectListData?.items && projectListData.items.length > 0 && (
+                      <S.SubNavLabel />
+                    )}
+                    {item.key === 'project' && projectListData?.items?.map((project) => {
+                      const isThisProject = currentProjectId === project.id;
+                      return (
+                        <div key={project.id}>
+                          <S.SubNavItem onClick={() => handleNavigation(`/project/manage/${project.id}`)}>
+                            <S.NavLabel $active={isThisProject}>{project.name}</S.NavLabel>
                           </S.SubNavItem>
 
-                          {child.detailChildren && (
-                            <S.DeepNavContainer data-open={inProjectDetail ? 'true' : 'false'}>
-                              {child.detailChildren.map((detail) => {
+                          {/* 현재 보고 있는 프로젝트이면 하위 탭 표시 */}
+                          {isThisProject && (
+                            <S.DeepNavContainer data-open="true">
+                              {DETAIL_TABS.map((detail) => {
                                 const detailActive = detail.key === 'project-app'
                                   ? inAppManage
                                   : detail.key === 'project-info'
                                     ? inProjectDetail && !inAppManage
                                     : false;
                                 const detailPath = detail.key === 'project-app'
-                                  ? (currentProjectId ? `/project/manage/${currentProjectId}/app` : null)
+                                  ? `/project/manage/${project.id}/app`
                                   : detail.key === 'project-info'
-                                    ? (currentProjectId ? `/project/manage/${currentProjectId}` : null)
+                                    ? `/project/manage/${project.id}`
                                     : null;
 
                                 return (

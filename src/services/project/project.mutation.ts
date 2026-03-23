@@ -15,8 +15,12 @@ import {
 } from '@/types/project';
 
 export const useCreateProjectMutation = () => {
+    const queryClient = useQueryClient();
     return useMutation({
         mutationFn: (payload: ProjectCreatePayload) => postCreateProject(payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+        },
     });
 };
 

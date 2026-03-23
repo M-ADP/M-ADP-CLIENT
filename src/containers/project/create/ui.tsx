@@ -63,6 +63,7 @@ export default function ProjectCreateContainer() {
           value={formData.projectName}
           onChange={handleChange}
           placeholder="예: Kill Dongwookki"
+          maxLength={20}
         />
         <Input
           label="CPU (0.1v ~ 4.0v)"

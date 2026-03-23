@@ -7,6 +7,9 @@ export const useProjectListQuery = (params?: ProjectListParams) => {
         queryKey: ['projects', params],
         queryFn: () => getProjects(params),
         select: (data) => data.data,
+        staleTime: 1000 * 60 * 5,
+        gcTime: 1000 * 60 * 10,
+        refetchOnWindowFocus: false,
     });
 };
 
