@@ -218,9 +218,11 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
             <Button variant="cancel" onClick={() => setIsDeleteModalOpen(true)}>
               삭제
             </Button>
-            <Button variant="confirm" onClick={handleInviteOpen}>
-              사용자 초대
-            </Button>
+            {project.my_role === 'OWNER' && (
+              <Button variant="confirm" onClick={handleInviteOpen}>
+                사용자 초대
+              </Button>
+            )}
           </S.HeaderButtonGroup>
         </S.TitleRow>
       </S.PageHeader>
