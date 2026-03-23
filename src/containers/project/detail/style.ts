@@ -188,10 +188,8 @@ export const StatusBadge = styled.span<{ $healthy?: boolean }>`
 `;
 
 export const ChartSection = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
   margin-bottom: 2rem;
+  width: 50%;
 `;
 
 export const ChartGrid = styled.div`
@@ -201,21 +199,26 @@ export const ChartGrid = styled.div`
 `;
 
 export const ChartCard = styled.div`
-  background: #1e293b;
-  border-radius: 8px;
-  padding: 0.75rem;
-  height: 160px;
+  background: #ffffff;
+  border: 1px solid ${black[50]};
+  border-radius: 12px;
+  padding: 1.25rem 1rem;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  transition: box-shadow 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  }
 `;
 
 export const ChartTitle = styled.span`
   font-family: ${FONT_FAMILY};
-  font-weight: ${fontWeights.regular};
-  font-size: 0.75rem;
-  color: #94a3b8;
-  text-align: right;
-  margin-bottom: 0.5rem;
+  font-weight: ${fontWeights.medium};
+  font-size: 0.8125rem;
+  color: ${black[75]};
 `;
 
 export const ChartPlaceholder = styled.div`

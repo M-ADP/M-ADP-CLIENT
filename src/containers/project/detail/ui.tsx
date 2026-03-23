@@ -7,8 +7,10 @@ import Card, { MetaItem, FooterMessage, StatusBadge } from '@/components/ui/Card
 import Modal from '@/components/ui/Modal/ui';
 import Button from '@/components/ui/Button/ui';
 import Input from '@/components/ui/Input/ui';
+import ProgressRing from '@/components/ui/Charts/ProgressRing/ui';
 import * as S from './style';
 import { useProjectDetailQuery, useProjectMembersQuery } from '@/services/project/project.query';
+import type { MetricPoint } from '@/types/project';
 import {
   useDeleteProjectMutation,
   useUpdateProjectNameMutation,
@@ -21,6 +23,11 @@ import { useDebounce } from '@/hooks/useDebounce';
 
 interface ProjectDetailContainerProps {
   projectId: string;
+}
+
+function getLatestValue(points: MetricPoint[]): number {
+  if (!points || points.length === 0) return 0;
+  return points[points.length - 1].value;
 }
 
 export default function ProjectDetailContainer({ projectId }: ProjectDetailContainerProps) {
@@ -275,22 +282,41 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
         <S.ChartGrid>
           <S.ChartCard>
             <S.ChartTitle>CPU 사용량</S.ChartTitle>
-            <S.ChartPlaceholder>차트 영역</S.ChartPlaceholder>
+            <ProgressRing
+              value={getLatestValue(project.cpu_usage)}
+              color="#3b82f6"
+              size={80}
+              strokeWidth={8}
+            />
           </S.ChartCard>
           <S.ChartCard>
             <S.ChartTitle>메모리 사용량</S.ChartTitle>
-            <S.ChartPlaceholder>차트 영역</S.ChartPlaceholder>
+            <ProgressRing
+              value={getLatestValue(project.memory_usage)}
+              color="#8b5cf6"
+              size={80}
+              strokeWidth={8}
+            />
           </S.ChartCard>
           <S.ChartCard>
             <S.ChartTitle>디스크 사용량</S.ChartTitle>
-            <S.ChartPlaceholder>차트 영역</S.ChartPlaceholder>
+            <ProgressRing
+              value={getLatestValue(project.disk_usage)}
+              color="#f59e0b"
+              size={80}
+              strokeWidth={8}
+            />
           </S.ChartCard>
           <S.ChartCard>
             <S.ChartTitle>네트워크 사용량</S.ChartTitle>
-            <S.ChartPlaceholder>차트 영역</S.ChartPlaceholder>
+            <ProgressRing
+              value={getLatestValue(project.network_usage)}
+              color="#10b981"
+              size={80}
+              strokeWidth={8}
+            />
           </S.ChartCard>
         </S.ChartGrid>
-
       </S.ChartSection>
 
       <Modal open={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} width={480} height="auto">
