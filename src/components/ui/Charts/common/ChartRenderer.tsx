@@ -82,7 +82,6 @@ export default function ChartRenderer(props: ChartComponentProps) {
 
   const baseOptions = getBaseOptions(type);
 
-  // 옵션 병합
   const mergedOptions = {
     ...baseOptions,
     ...options,

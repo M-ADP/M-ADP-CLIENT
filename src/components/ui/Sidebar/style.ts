@@ -103,7 +103,7 @@ export const IconWrapper = styled.span<{ $active?: boolean }>`
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  
+
   img {
     filter: ${({ $active }) =>
     $active
@@ -154,6 +154,30 @@ export const SubNavItem = styled.div`
   }
 `;
 
+export const DeepNavContainer = styled.div`
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+
+  &[data-open='true'] {
+    max-height: 280px;
+    opacity: 1;
+  }
+`;
+
+export const DeepNavItem = styled.div<{ $clickable?: boolean }>`
+  padding: 9px 16px 9px 68px;
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  cursor: ${({ $clickable }) => ($clickable ? 'pointer' : 'default')};
+
+  &:hover {
+    background: ${({ $clickable }) => ($clickable ? colors.black[50] : 'transparent')};
+  }
+`;
+
 export const NavLabel = styled.span<{ $active?: boolean }>`
   font-family: ${({ $active }) => $active ? typography.text14Semibold.fontFamily : typography.text14Medium.fontFamily};
   font-size: ${({ $active }) => $active ? typography.text14Semibold.fontSize : typography.text14Medium.fontSize};
@@ -195,7 +219,6 @@ export const Avatar = styled.div`
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 50%;
-  background: ${colors.primary.default};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -246,4 +269,22 @@ export const Caret = styled.span`
   align-items: center;
   justify-content: center;
   cursor: pointer;
+`;
+
+export const LogoutButton = styled.button`
+  font-family: ${typography.text14Regular.fontFamily};
+  font-size: ${typography.text14Regular.fontSize};
+  font-weight: ${typography.text14Regular.fontWeight};
+  line-height: ${typography.text14Regular.lineHeight};
+  color: ${colors.black[100]};
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  transition: color 0.3s;
+  &:hover {
+    color: ${colors.primary.default};
+    text-decoration: underline;
+  }
 `;

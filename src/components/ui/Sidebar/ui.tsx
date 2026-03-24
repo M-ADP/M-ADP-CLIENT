@@ -1,11 +1,36 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import * as S from './style';
+import { useUserStore } from '@/store/userStore';
+import { useUserProfileQuery } from '@/services/user/user.query';
+import { useAuthStore } from '@/store/authStore';
+import { postLogout } from '@/services/login/login.api';
+import Cookies from 'js-cookie';
 
-const PRIMARY_NAV = [
+interface DetailNavItem {
+  key: string;
+  label: string;
+}
+
+interface SidebarChildItem {
+  key: string;
+  label: string;
+  path: string;
+  detailChildren?: DetailNavItem[];
+}
+
+interface SidebarItem {
+  key: string;
+  label: string;
+  icon: string;
+  path: string;
+  children?: SidebarChildItem[];
+}
+
+const PRIMARY_NAV: SidebarItem[] = [
   { key: 'dashboard', label: '대시보드', icon: '/icons/sidebar/dashboard.svg', path: '/' },
   {
     key: 'project',
@@ -14,10 +39,22 @@ const PRIMARY_NAV = [
     path: '/project',
     children: [
       { key: 'project-create', label: '프로젝트 생성', path: '/project/create' },
-      { key: 'project-manage', label: '프로젝트 관리', path: '/project/manage' },
+      {
+        key: 'project-manage',
+        label: '프로젝트명',
+        path: '/project/manage',
+        detailChildren: [
+          { key: 'project-info', label: '프로젝트명' },
+          { key: 'project-app', label: '앱' },
+          { key: 'project-nuri', label: '누리' },
+          { key: 'project-favorite', label: '최애의 사인' },
+        ],
+      },
     ],
   },
   { key: 'cloud-database', label: '클라우드 데이터베이스', icon: '/icons/sidebar/cloud-db.svg', path: '/cloud-database' },
+  { key: 'report', label: '분석', icon: '/icons/sidebar/analytics.svg', path: '/report' },
+  { key: 'agent', label: 'ChatOps', icon: '/icons/sidebar/chat.svg', path: '/agent' },
 ];
 
 const SECONDARY_NAV = [
@@ -29,19 +66,43 @@ const SECONDARY_NAV = [
 export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
+  const { step, setStep } = useAuthStore();
+  const { user, setUser } = useUserStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedMenu, setExpandedMenu] = useState<string | null>('project');
 
-  const toggleSidebar = () => {
-    setIsCollapsed(!isCollapsed);
-    if (!isCollapsed) {
-      setExpandedMenu(null);
+  useUserProfileQuery();
+
+  useEffect(() => {
+    if (pathname !== '/login' && step === 'github') {
+      setStep('google');
     }
+  }, [pathname, step, setStep]);
+
+  const handleLogout = async () => {
+    try {
+      await postLogout();
+    } catch {
+    } finally {
+      Cookies.remove('token', { path: '/' });
+      setUser(null);
+      setStep('google');
+      router.push('/login');
+    }
+  };
+
+  const toggleSidebar = () => {
+    setIsCollapsed((prev) => {
+      if (!prev) {
+        setExpandedMenu(null);
+      }
+      return !prev;
+    });
   };
 
   const toggleMenu = (key: string) => {
     if (isCollapsed) return;
-    setExpandedMenu(expandedMenu === key ? null : key);
+    setExpandedMenu((prev) => (prev === key ? null : key));
   };
 
   const handleNavigation = (path: string, hasChildren?: boolean) => {
@@ -57,7 +118,11 @@ export default function Sidebar() {
     return pathname === path;
   };
 
-  if (pathname?.startsWith('/login')) {
+  const currentProjectId = pathname?.match(/^\/project\/manage\/([^/]+)/)?.[1] ?? null;
+  const inProjectDetail = Boolean(currentProjectId);
+  const inAppManage = Boolean(pathname?.match(/^\/project\/manage\/[^/]+\/app(?:\/|$)/));
+
+  if (pathname?.startsWith('/login') || pathname?.startsWith('/oauth2/callback')) {
     return null;
   }
 
@@ -87,29 +152,60 @@ export default function Sidebar() {
                     if (item.children) {
                       toggleMenu(item.key);
                     } else {
-                      handleNavigation(item.path!);
+                      handleNavigation(item.path);
                     }
                   }}
                 >
                   <S.IconWrapper $active={active}>
-                    <Image
-                      src={item.icon}
-                      alt={item.label}
-                      width={20}
-                      height={20}
-                    />
+                    <Image src={item.icon} alt={item.label} width={20} height={20} />
                   </S.IconWrapper>
-                  {!isCollapsed && (
-                    <S.NavLabel $active={active}>{item.label}</S.NavLabel>
-                  )}
+                  {!isCollapsed && <S.NavLabel $active={active}>{item.label}</S.NavLabel>}
                 </S.NavItem>
+
                 {!isCollapsed && item.children && (
                   <S.SubNavContainer data-open={expandedMenu === item.key ? 'true' : 'false'}>
-                    {item.children.map((child) => (
-                      <S.SubNavItem key={child.key} onClick={() => handleNavigation(child.path!)}>
-                        <S.NavLabel $active={pathname === child.path}>{child.label}</S.NavLabel>
-                      </S.SubNavItem>
-                    ))}
+                    {item.children.map((child) => {
+                      const childActive = pathname === child.path || (child.key === 'project-manage' && inProjectDetail);
+
+                      return (
+                        <div key={child.key}>
+                          <S.SubNavItem onClick={() => handleNavigation(child.path)}>
+                            <S.NavLabel $active={childActive}>{child.label}</S.NavLabel>
+                          </S.SubNavItem>
+
+                          {child.detailChildren && (
+                            <S.DeepNavContainer data-open={inProjectDetail ? 'true' : 'false'}>
+                              {child.detailChildren.map((detail) => {
+                                const detailActive = detail.key === 'project-app'
+                                  ? inAppManage
+                                  : detail.key === 'project-info'
+                                    ? inProjectDetail && !inAppManage
+                                    : false;
+                                const detailPath = detail.key === 'project-app'
+                                  ? (currentProjectId ? `/project/manage/${currentProjectId}/app` : null)
+                                  : detail.key === 'project-info'
+                                    ? (currentProjectId ? `/project/manage/${currentProjectId}` : null)
+                                    : null;
+
+                                return (
+                                  <S.DeepNavItem
+                                    key={detail.key}
+                                    $clickable={Boolean(detailPath)}
+                                    onClick={() => {
+                                      if (detailPath) {
+                                        handleNavigation(detailPath);
+                                      }
+                                    }}
+                                  >
+                                    <S.NavLabel $active={detailActive}>{detail.label}</S.NavLabel>
+                                  </S.DeepNavItem>
+                                );
+                              })}
+                            </S.DeepNavContainer>
+                          )}
+                        </div>
+                      );
+                    })}
                   </S.SubNavContainer>
                 )}
               </div>
@@ -121,11 +217,7 @@ export default function Sidebar() {
 
         <S.Section>
           {SECONDARY_NAV.map((item) => (
-            <S.NavItem
-              key={item.key}
-              $collapsed={isCollapsed}
-              onClick={() => handleNavigation(item.path)}
-            >
+            <S.NavItem key={item.key} $collapsed={isCollapsed} onClick={() => handleNavigation(item.path)}>
               <S.IconWrapper>
                 <Image src={item.icon} alt={item.label} width={20} height={20} />
               </S.IconWrapper>
@@ -138,10 +230,20 @@ export default function Sidebar() {
       {!isCollapsed && (
         <S.Footer>
           <S.ProfileInner>
-            <S.Avatar>N</S.Avatar>
+            <S.Avatar>
+              {user?.profile ? (
+                <Image src={user.profile} alt="profile" width={32} height={32} style={{ borderRadius: '50%' }} />
+              ) : (
+                user?.nickname?.[0] || 'N'
+              )}
+            </S.Avatar>
             <S.ProfileText>
-              <S.ProfileSub>부산소프트웨어마이스터고</S.ProfileSub>
-              <S.ProfileName>류승찬</S.ProfileName>
+              <S.ProfileName>{user?.nickname || '류승찬'}</S.ProfileName>
+              {user ? (
+                <S.LogoutButton onClick={handleLogout}>로그아웃</S.LogoutButton>
+              ) : (
+                <S.ProfileSub>부산소프트웨어마이스터고</S.ProfileSub>
+              )}
             </S.ProfileText>
           </S.ProfileInner>
           <S.Caret>

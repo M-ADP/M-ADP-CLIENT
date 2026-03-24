@@ -1,5 +1,5 @@
 import styled from '@emotion/styled';
-import { background, black } from '@/styles/colors';
+import { black } from '@/styles/colors';
 
 export const ChartContainer = styled.div<{
   width?: number | string;

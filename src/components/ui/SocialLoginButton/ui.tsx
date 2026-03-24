@@ -25,7 +25,7 @@ export default function SocialLoginButton({
   return (
     <S.SocialLoginButtonWrapper onClick={onClick} className={className}>
       <S.IconWrapper>
-        <Image src={config.icon} alt={`${provider} icon`} width={48} height={48} />
+        <Image src={config.icon} alt={`${provider} icon`} width={24} height={24} />
       </S.IconWrapper>
       <S.ButtonText>{config.text}</S.ButtonText>
     </S.SocialLoginButtonWrapper>

@@ -34,15 +34,24 @@ export const ButtonWrapper = styled.div`
 export const LogoImage = styled.div`
   position: relative;
   width: 10rem;
-  aspect-ratio: 209 / 193;
+  aspect-ratio: 1 / 1;
 `;
 
 export const LogoText = styled.h1`
   font-family: ${FONT_FAMILY};
   font-weight: ${fontWeights.bold};
-  font-size: 4.2rem;
+  font-size: 3.2rem;
   color: #000000;
   text-transform: capitalize;
   margin: 0;
+  text-align: center;
+`;
+
+export const GuideText = styled.p`
+  font-family: ${FONT_FAMILY};
+  font-size: 1.2rem;
+  color: #333333;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
   text-align: center;
 `;
