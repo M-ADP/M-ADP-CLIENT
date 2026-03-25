@@ -247,7 +247,7 @@ export const SelectBadge = styled.div`
 export const CustomInput = styled.input`
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid ${primary.default};
+  border: 1px solid ${black[50]};
   border-radius: 4px;
   padding: 0.75rem 1rem;
   font-family: ${FONT_FAMILY};
@@ -259,6 +259,7 @@ export const CustomInput = styled.input`
   }
 
   &:focus {
+    border-color: ${primary.default};
     box-shadow: 0 0 0 1px ${primary.default};
   }
 `;
