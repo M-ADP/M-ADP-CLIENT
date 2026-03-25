@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Button from '@/components/ui/Button/ui';
 import Input from '@/components/ui/Input/ui';
-import TableCreateModal from '@/components/ui/Modal/TableCreateModal/ui';
-import TableEditModal from '@/components/ui/Modal/TableEditModal/ui';
+import TableCreateModal from '@/components/ui/CloudDB/TableCreateModal/ui';
+import TableEditModal from '@/components/ui/CloudDB/TableEditModal/ui';
 import * as S from './style';
 
 interface Props {
@@ -311,7 +311,7 @@ export default function TableDetailContainer({ databaseId }: Props) {
       <TableCreateModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        onSubmit={(data: { tableName: string; columns: any[] }) => {
+        onSubmit={(data: { tableName: string; description: string; columns: any[] }) => {
           console.log('Create table:', data);
           setIsCreateModalOpen(false);
         }}
@@ -321,7 +321,7 @@ export default function TableDetailContainer({ databaseId }: Props) {
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         tableName={currentTable?.name || ''}
-        onSubmit={(data: { tableName: string; columns: any[] }) => {
+        onSubmit={(data: { tableName: string; description: string; columns: any[] }) => {
           console.log('Edit table:', data);
           setIsEditModalOpen(false);
         }}
