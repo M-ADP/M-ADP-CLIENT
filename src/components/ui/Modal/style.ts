@@ -12,12 +12,12 @@ export const Overlay = styled.div<{ $position?: 'center' | 'right' }>`
   z-index: 1000;
 `;
 
-export const Card = styled.div<{ width?: string | number; height?: string | number }>`
+export const Card = styled.div<{ $width?: string | number; $height?: string | number; $padding?: string | number }>`
   background: white;
   border-radius: 4px;
-  padding: 12px;
+  padding: ${({ $padding }) => ($padding !== undefined ? (typeof $padding === 'number' ? `${$padding}px` : $padding) : '12px')};
   box-sizing: border-box;
-  width: ${({ width }) => (typeof width === 'number' ? `${width}px` : width || '400px')};
-  height: ${({ height }) => (typeof height === 'number' ? `${height}px` : height || '400px')};
+  width: ${({ $width }) => (typeof $width === 'number' ? `${$width}px` : $width || '400px')};
+  height: ${({ $height }) => (typeof $height === 'number' ? `${$height}px` : $height || '400px')};
   font-family: ${FONT_FAMILY};
 `;

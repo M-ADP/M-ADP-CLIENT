@@ -8,4 +8,5 @@ export type ModalProps = {
   height?: string | number;
   closeOnOverlay?: boolean;
   position?: 'center' | 'right';
+  padding?: string | number;
 };

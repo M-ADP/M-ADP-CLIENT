@@ -8,4 +8,5 @@ export type ButtonProps = {
   className?: string;
   children?: ReactNode;
   type?: 'button' | 'submit' | 'reset';
+  style?: React.CSSProperties;
 };

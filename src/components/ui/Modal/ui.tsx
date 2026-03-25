@@ -5,14 +5,15 @@ import { Overlay, Card } from './style';
 import type { ModalProps } from '@/types/modal';
 import { getSize } from '@/utils/size';
 
-export default function Modal({ open, onClose, children, width, height, closeOnOverlay = true, position = 'center' }: ModalProps) {
+export default function Modal({ open, onClose, children, width, height, closeOnOverlay = true, position = 'center', padding }: ModalProps) {
   if (!open) return null;
 
   const content = (
     <Overlay onClick={closeOnOverlay ? onClose : undefined} $position={position}>
       <Card
-        width={getSize(width)}
-        height={getSize(height)}
+        $width={getSize(width)}
+        $height={getSize(height)}
+        $padding={padding}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal
