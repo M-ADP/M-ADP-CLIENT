@@ -46,9 +46,7 @@ export default function ForeignKeyModal({ isOpen, onClose }: Props) {
                 <option value="application">application</option>
               </S.TableSelect>
               <S.InputIcon style={{ right: '1rem' }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
+                <img src="/icons/cloud-db/caret-down.svg" alt="down" width={16} height={16} />
               </S.InputIcon>
             </S.InputWrapper>
           </S.FKFormGroup>

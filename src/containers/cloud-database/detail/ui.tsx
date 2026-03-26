@@ -67,9 +67,36 @@ export default function TableDetailContainer({ databaseId }: Props) {
   const [menuOpenTable, setMenuOpenTable] = useState<string | null>(null);
   const [activeSqlTab, setActiveSqlTab] = useState<number>(1);
   const [sqlQuery, setSqlQuery] = useState('desc user;');
+  const [tableData, setTableData] = useState(MOCK_DATA);
+  const [selectedRows, setSelectedRows] = useState<number[]>([]);
 
   const handleBack = () => {
     router.push('/cloud-database');
+  };
+
+  const handleAddValue = () => {
+    const newId = tableData.length > 0 ? Math.max(...tableData.map(d => d.id)) + 1 : 1;
+    setTableData([...tableData, { 
+      id: newId, 
+      user_id: 'new_user', 
+      date: new Date().toISOString().replace('T', ' ').substring(0, 19), 
+      status: 'pending', 
+      created_at: new Date().toISOString().replace('T', ' ').substring(0, 19) 
+    }]);
+  };
+
+  const toggleAllRows = (checked: boolean) => {
+    if (checked) {
+      setSelectedRows(tableData.map(d => d.id));
+    } else {
+      setSelectedRows([]);
+    }
+  };
+
+  const toggleRow = (id: number) => {
+    setSelectedRows(prev => 
+      prev.includes(id) ? prev.filter(rowId => rowId !== id) : [...prev, id]
+    );
   };
 
   const currentTable = MOCK_TABLES.find((t) => t.id === selectedTable);
@@ -188,7 +215,7 @@ export default function TableDetailContainer({ databaseId }: Props) {
               </S.DataTabContainer>
 
               <S.ActionBar>
-                <Button variant="confirm">값 추가</Button>
+                <Button variant="confirm" onClick={handleAddValue}>값 추가</Button>
               </S.ActionBar>
 
               <S.TableWrapper>
@@ -196,7 +223,11 @@ export default function TableDetailContainer({ databaseId }: Props) {
                   <S.TableHead>
                     <S.TableRow>
                       <S.CheckboxCell>
-                        <input type="checkbox" />
+                        <input 
+                          type="checkbox" 
+                          checked={selectedRows.length === tableData.length && tableData.length > 0} 
+                          onChange={(e) => toggleAllRows(e.target.checked)} 
+                        />
                       </S.CheckboxCell>
                       {MOCK_COLUMNS.map((column, idx) => (
                         <S.TableHeaderCell key={idx}>
@@ -214,10 +245,14 @@ export default function TableDetailContainer({ databaseId }: Props) {
                     </S.TableRow>
                   </S.TableHead>
                   <S.TableBody>
-                    {MOCK_DATA.map((row, idx) => (
+                    {tableData.map((row, idx) => (
                       <S.TableRow key={idx}>
                         <S.CheckboxCell>
-                          <input type="checkbox" />
+                          <input 
+                            type="checkbox" 
+                            checked={selectedRows.includes(row.id)}
+                            onChange={() => toggleRow(row.id)}
+                          />
                         </S.CheckboxCell>
                         <S.TableCell>{row.id}</S.TableCell>
                         <S.TableCell>{row.user_id}</S.TableCell>
