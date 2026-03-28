@@ -20,3 +20,27 @@ export const postCreateApp = (payload: AppCreatePayload) => {
         body: JSON.stringify(payload),
     });
 };
+export interface GithubAllowedRepository {
+    repository_full_name: string;
+    repository_profile: string;
+}
+
+export const getGithubAllowedRepositories = () => {
+    return api<GithubAllowedRepository[]>('/apps/github/allowed-repositories', {
+        method: 'GET',
+    });
+};
+
+export interface UpdateGithubInfoPayload {
+    appDeploymentId: number | string;
+    owner: string;
+    repository: string;
+    branch?: string;
+}
+
+export const patchGithubInfo = (payload: UpdateGithubInfoPayload) => {
+    return api('/apps/github', {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+    });
+};
