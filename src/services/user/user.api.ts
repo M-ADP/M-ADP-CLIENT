@@ -22,7 +22,7 @@ export interface UserProfileByNickname {
 }
 
 export const getUserByNickname = (nickname: string) => {
-    return api<UserProfileByNickname>(`/user/profile/${nickname}`, {
+    return api<UserProfileByNickname | UserProfileByNickname[]>(`/user/search?nickname=${nickname}`, {
         method: 'GET',
     });
 };

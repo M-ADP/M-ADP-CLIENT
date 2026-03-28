@@ -399,20 +399,22 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
             <S.SearchPreviewBox>
               {isSearchLoading ? (
                 <p>검색 중...</p>
-              ) : searchResult ? (
-                <S.MemberItem>
-                  <S.MemberInfoWrapper>
-                    <S.AvatarImage $imageUrl={searchResult.profile || undefined} />
-                    <S.MemberName>{searchResult.nickname} ({searchResult.github_id})</S.MemberName>
-                  </S.MemberInfoWrapper>
-                  <Button
-                    variant="confirm"
-                    onClick={() => handleInviteUser(searchResult.id)}
-                    disabled={addMemberMutation.isPending}
-                  >
-                    {addMemberMutation.isPending ? '초대 중...' : '초대'}
-                  </Button>
-                </S.MemberItem>
+              ) : searchResult && (Array.isArray(searchResult) ? searchResult.length > 0 : true) ? (
+                (Array.isArray(searchResult) ? searchResult : [searchResult]).map(result => (
+                  <S.MemberItem key={result.id}>
+                    <S.MemberInfoWrapper>
+                      <S.AvatarImage $imageUrl={result.profile || undefined} />
+                      <S.MemberName>{result.nickname} ({result.github_id})</S.MemberName>
+                    </S.MemberInfoWrapper>
+                    <Button
+                      variant="confirm"
+                      onClick={() => handleInviteUser(result.id)}
+                      disabled={addMemberMutation.isPending}
+                    >
+                      {addMemberMutation.isPending ? '초대 중...' : '초대'}
+                    </Button>
+                  </S.MemberItem>
+                ))
               ) : (
                 <p>검색 결과가 없습니다.</p>
               )}
