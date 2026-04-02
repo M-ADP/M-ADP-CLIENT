@@ -10,7 +10,6 @@ import Input from '@/components/ui/Input/ui';
 import ProgressRing from '@/components/ui/Charts/ProgressRing/ui';
 import * as S from './style';
 import { useProjectDetailQuery, useProjectMembersQuery } from '@/services/project/project.query';
-import type { MetricPoint } from '@/types/project';
 import {
   useDeleteProjectMutation,
   useUpdateProjectNameMutation,
@@ -26,10 +25,7 @@ interface ProjectDetailContainerProps {
   projectId: string;
 }
 
-function getLatestValue(points: MetricPoint[]): number {
-  if (!points || points.length === 0) return 0;
-  return points[points.length - 1].value;
-}
+
 
 export default function ProjectDetailContainer({ projectId }: ProjectDetailContainerProps) {
   const router = useRouter();
@@ -196,10 +192,17 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
   }
 
   const getStatusVariant = (status: string): 'healthy' | 'unhealthy' | 'stopped' => {
-    switch (status) {
-      case 'Healthy': return 'healthy';
-      case 'Unhealthy': return 'unhealthy';
-      default: return 'stopped';
+    const s = status.toUpperCase();
+    switch (s) {
+      case 'HEALTHY':
+      case 'RUNNING':
+        return 'healthy';
+      case 'UNHEALTHY':
+        return 'unhealthy';
+      case 'PENDING':
+      case 'STOPPED':
+      default:
+        return 'stopped';
     }
   };
 
@@ -259,10 +262,12 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
                     </>
                   }
                 >
-                  <MetaItem>
-                    <Image src="/icons/project/code.svg" alt="language" width={14} height={14} />
-                    {app.runtime}
-                  </MetaItem>
+                  {app.runtime && (
+                    <MetaItem>
+                      <Image src="/icons/project/code.svg" alt="language" width={14} height={14} />
+                      {app.runtime}
+                    </MetaItem>
+                  )}
                   <MetaItem>
                     <Image src="/icons/project/pods.svg" alt="replicas" width={14} height={14} />
                     {app.pod_count}
@@ -287,7 +292,7 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
           <S.ChartCard>
             <S.ChartTitle>CPU 사용량</S.ChartTitle>
             <ProgressRing
-              value={getLatestValue(project.cpu_usage)}
+              value={project.resource?.cpu?.percentage || 0}
               color="#3b82f6"
               size={80}
               strokeWidth={8}
@@ -296,7 +301,7 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
           <S.ChartCard>
             <S.ChartTitle>메모리 사용량</S.ChartTitle>
             <ProgressRing
-              value={getLatestValue(project.memory_usage)}
+              value={project.resource?.memory?.percentage || 0}
               color="#8b5cf6"
               size={80}
               strokeWidth={8}
@@ -305,16 +310,16 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
           <S.ChartCard>
             <S.ChartTitle>디스크 사용량</S.ChartTitle>
             <ProgressRing
-              value={getLatestValue(project.disk_usage)}
+              value={project.resource?.disk?.percentage || 0}
               color="#f59e0b"
               size={80}
               strokeWidth={8}
             />
           </S.ChartCard>
           <S.ChartCard>
-            <S.ChartTitle>네트워크 사용량</S.ChartTitle>
+            <S.ChartTitle>인스턴스 사용량</S.ChartTitle>
             <ProgressRing
-              value={getLatestValue(project.network_usage)}
+              value={project.resource?.instance?.percentage || 0}
               color="#10b981"
               size={80}
               strokeWidth={8}

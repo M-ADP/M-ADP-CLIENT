@@ -6,12 +6,12 @@ export interface AppCreatePayload {
     cpu?: number;
     memory?: number;
     disk?: number;
-    project_id: number;
+    project_id: string;
 }
 
 export interface AppCreateResponse {
     message?: string;
-    data?: number;
+    data?: string;
 }
 
 export const postCreateApp = (payload: AppCreatePayload) => {
@@ -32,7 +32,7 @@ export const getGithubAllowedRepositories = () => {
 };
 
 export interface UpdateGithubInfoPayload {
-    appDeploymentId: number | string;
+    appDeploymentId: string;
     owner: string;
     repository: string;
     branch?: string;

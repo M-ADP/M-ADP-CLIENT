@@ -8,8 +8,8 @@ export interface ProjectCreatePayload {
 export interface ProjectCreateResponse {
     message: string;
     data: {
-        id: number;
-        user_id: number;
+        id: string;
+        user_id: string;
         name: string;
         max_cpu: number;
         max_memory: number;
@@ -50,14 +50,14 @@ export interface ProjectListParams {
 }
 
 export interface DeploymentItem {
-    id: string;
+    id: string | number;
     name: string;
-    runtime: string;
+    runtime?: string;
     pod_count: number;
     exposed_port: number;
     cpu_usage_percent: number;
     ram_usage_percent: number;
-    health_status: 'Stopped' | 'Healthy' | 'Unhealthy' | string;
+    health_status: 'RUNNING' | 'PENDING' | 'Stopped' | 'Healthy' | 'Unhealthy' | string;
 }
 
 export interface MetricPoint {
@@ -66,16 +66,27 @@ export interface MetricPoint {
 }
 
 
+export interface ResourceUsage {
+    limit: string | number;
+    used: string | number;
+    percentage: number;
+    unit?: string;
+}
+
+export interface ProjectResource {
+    project_id: string | number;
+    cpu: ResourceUsage;
+    memory: ResourceUsage;
+    disk: ResourceUsage;
+    instance: ResourceUsage;
+}
+
 export interface ProjectDetail {
-    id: string;
+    id: string | number;
     name: string;
     my_role: 'OWNER' | 'VIEWER';
     deployments: DeploymentItem[];
-    cpu_usage: MetricPoint[];
-    memory_usage: MetricPoint[];
-    disk_usage: MetricPoint[];
-    network_usage: MetricPoint[];
-    traffic_per_hour: MetricPoint[];
+    resource: ProjectResource;
 }
 
 export interface ProjectDetailResponse {

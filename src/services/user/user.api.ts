@@ -1,13 +1,13 @@
 import { api } from '@/utils/api';
 
 export interface UserProfile {
-    id: number;
+    id: string;
     github_id: string;
     nickname?: string;
     profile?: string;
 }
 
-export const getMyUserProfile = (userId?: number) => {
+export const getMyUserProfile = (userId?: string) => {
     const query = userId ? `?userId=${userId}` : '';
     return api(`/user/profile${query}`, {
         method: 'GET',

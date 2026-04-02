@@ -79,7 +79,7 @@ export default function GithubConnectContainer() {
 
     try {
       await updateGithubInfoMutation.mutateAsync({
-        appDeploymentId: Number(appId),
+        appDeploymentId: appId,
         owner: selectedOwner.name,
         repository: selectedRepo,
       });
