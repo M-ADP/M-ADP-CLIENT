@@ -13,7 +13,7 @@ export default function GithubConnectContainer() {
   const searchParams = useSearchParams();
   const appId = searchParams.get('appId');
 
-  const { data: repositories, isLoading } = useGithubAllowedRepositoriesQuery();
+  const { data: repositories, isLoading } = useGithubAllowedRepositoriesQuery(appId);
   const updateGithubInfoMutation = useUpdateGithubInfoMutation();
 
   const [selectedOwner, setSelectedOwner] = useState<{ name: string, profile: string } | null>(null);
