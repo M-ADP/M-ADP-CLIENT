@@ -6,17 +6,41 @@ export interface AppCreatePayload {
     cpu?: number;
     memory?: number;
     disk?: number;
-    project_id: number;
+    project_id: string;
 }
 
 export interface AppCreateResponse {
     message?: string;
-    data?: number;
+    data?: string;
 }
 
 export const postCreateApp = (payload: AppCreatePayload) => {
     return api<AppCreateResponse>('/apps', {
         method: 'POST',
+        body: JSON.stringify(payload),
+    });
+};
+export interface GithubAllowedRepository {
+    repository_full_name: string;
+    repository_profile: string;
+}
+
+export const getGithubAllowedRepositories = () => {
+    return api<GithubAllowedRepository[]>('/apps/github/allowed-repositories', {
+        method: 'GET',
+    });
+};
+
+export interface UpdateGithubInfoPayload {
+    appDeploymentId: string;
+    owner: string;
+    repository: string;
+    branch?: string;
+}
+
+export const patchGithubInfo = (payload: UpdateGithubInfoPayload) => {
+    return api('/apps/github', {
+        method: 'PATCH',
         body: JSON.stringify(payload),
     });
 };

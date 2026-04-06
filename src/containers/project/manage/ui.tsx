@@ -7,97 +7,19 @@ import Input from '@/components/ui/Input/ui';
 import Button from '@/components/ui/Button/ui';
 import Card, { MetaItem, FooterMessage } from '@/components/ui/Card/ui';
 import * as S from './style';
-
-const MOCK_PROJECTS = [
-  {
-    id: 251207218102272,
-    name: 'TestProject',
-    deployments: 'Running 2',
-    warning: 'Warning 1',
-    domain: 'test.mdeveloper.platform',
-    hasWarning: true,
-  },
-  {
-    id: 'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d',
-    name: 'TestProject',
-    deployments: 'Running 2',
-    warning: 'Warning 1',
-    domain: '',
-    hasWarning: false,
-  },
-  {
-    id: 'c0ffee42-1337-4bad-babe-123456789abc',
-    name: 'TestProject',
-    deployments: 'Running 2',
-    warning: 'Warning 1',
-    domain: '',
-    hasWarning: false,
-  },
-  {
-    id: 'deadbeef-0000-4000-8000-abcdefabcdef',
-    name: 'TestProject',
-    deployments: 'Running 2',
-    warning: 'Warning 1',
-    domain: '',
-    hasWarning: true,
-  },
-  {
-    id: '123e4567-e89b-12d3-a456-426614174000',
-    name: 'TestProject',
-    deployments: 'Running 2',
-    warning: 'Warning 1',
-    domain: '',
-    hasWarning: false,
-  },
-  {
-    id: '987fbc97-4bed-5078-9f07-9141ba07c9f3',
-    name: 'TestProject',
-    deployments: 'Running 2',
-    warning: 'Warning 1',
-    domain: '',
-    hasWarning: false,
-  },
-  {
-    id: 'e4eaaaf2-d142-11e1-b3e4-080027620cdd',
-    name: 'TestProject',
-    deployments: 'Running 2',
-    warning: 'Warning 1',
-    domain: '',
-    hasWarning: true,
-  },
-  {
-    id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
-    name: 'TestProject',
-    deployments: 'Running 2',
-    warning: 'Warning 1',
-    domain: '',
-    hasWarning: false,
-  },
-  {
-    id: '6fa459ea-ee8a-3ca4-894e-db77e160355e',
-    name: 'TestProject',
-    deployments: 'Running 2',
-    warning: 'Warning 1',
-    domain: '',
-    hasWarning: false,
-  },
-  {
-    id: '7c9e6679-7425-40de-944b-e07fc1f90ae7',
-    name: 'TestProject',
-    deployments: 'Running 2',
-    warning: 'Warning 1',
-    domain: '',
-    hasWarning: false,
-  },
-];
+import { useProjectListQuery } from '@/services/project/project.query';
 
 export default function ProjectManageContainer() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
+  const { data, isLoading, isError } = useProjectListQuery();
 
-  const filteredProjects = useMemo(() => MOCK_PROJECTS.filter((project) =>
-    project.name.toLowerCase().includes(searchQuery.toLowerCase())
-  ), [searchQuery]);
+  const filteredProjects = useMemo(() => {
+    if (!data?.items) return [];
+    return data.items.filter((project) =>
+      project.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [data, searchQuery]);
 
   const handleProjectClick = (projectId: string | number) => {
     router.push(`/project/manage/${projectId}`);
@@ -106,6 +28,24 @@ export default function ProjectManageContainer() {
   const handleNewProject = () => {
     router.push('/project/create');
   };
+
+  if (isLoading) {
+    return (
+      <S.PageWrapper>
+        <S.PageTitle>프로젝트</S.PageTitle>
+        <p>로딩 중...</p>
+      </S.PageWrapper>
+    );
+  }
+
+  if (isError) {
+    return (
+      <S.PageWrapper>
+        <S.PageTitle>프로젝트</S.PageTitle>
+        <p>프로젝트 목록을 불러오는데 실패했습니다.</p>
+      </S.PageWrapper>
+    );
+  }
 
   return (
     <S.PageWrapper>
@@ -122,25 +62,35 @@ export default function ProjectManageContainer() {
         </Button>
       </S.HeaderRow>
       <S.ProjectGrid>
-        {filteredProjects.map((project) => (
-          <Card
-            key={project.id}
-            title={project.name}
-            onClick={() => handleProjectClick(project.id)}
-            footer={
-              project.hasWarning ? (
-                <FooterMessage>
-                  <Image src="/icons/project/warning.svg" alt="warning" width={14} height={14} />
-                  프로젝트가 현재 중지 상태입니다.
-                </FooterMessage>
-              ) : undefined
-            }
-          >
-            <MetaItem>Deployments: {project.deployments} · {project.warning}</MetaItem>
-            {project.domain && <MetaItem>Domain: {project.domain}</MetaItem>}
-          </Card>
-        ))}
+        {filteredProjects.length === 0 ? (
+          <p>프로젝트가 없습니다.</p>
+        ) : (
+          filteredProjects.map((project) => {
+            const hasWarning = project.deployment_summary.warning > 0;
+            return (
+              <Card
+                key={project.id}
+                title={project.name}
+                onClick={() => handleProjectClick(project.id)}
+                footer={
+                  hasWarning ? (
+                    <FooterMessage>
+                      <Image src="/icons/project/warning.svg" alt="warning" width={14} height={14} />
+                      {project.deployment_status.message || '프로젝트에 경고가 있습니다.'}
+                    </FooterMessage>
+                  ) : undefined
+                }
+              >
+                <MetaItem>
+                  Deployments: Running {project.deployment_summary.running} · Warning {project.deployment_summary.warning}
+                </MetaItem>
+                {project.domain && <MetaItem>Domain: {project.domain}</MetaItem>}
+              </Card>
+            );
+          })
+        )}
       </S.ProjectGrid>
     </S.PageWrapper>
   );
 }
+

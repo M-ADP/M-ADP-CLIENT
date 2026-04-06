@@ -1,5 +1,5 @@
 import styled from '@emotion/styled';
-import { black, primary } from '@/styles/colors';
+import { black, primary, gray } from '@/styles/colors';
 import { FONT_FAMILY, fontWeights } from '@/styles/typography';
 
 export const PageWrapper = styled.div`
@@ -13,16 +13,28 @@ export const PageHeader = styled.div`
 
 export const TitleRow = styled.div`
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 1rem;
+  flex-wrap: wrap;
 `;
+
+export const HeaderButtonGroup = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+`;
+
 
 export const PageTitle = styled.h1`
   font-family: ${FONT_FAMILY};
   font-weight: ${fontWeights.semibold};
-  font-size: 3rem;
+  font-size: 1.75rem;
   color: ${black[300]};
   margin: 0;
+  max-width: 50%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
 export const ProjectId = styled.span`
@@ -176,10 +188,8 @@ export const StatusBadge = styled.span<{ $healthy?: boolean }>`
 `;
 
 export const ChartSection = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
   margin-bottom: 2rem;
+  width: 50%;
 `;
 
 export const ChartGrid = styled.div`
@@ -189,21 +199,26 @@ export const ChartGrid = styled.div`
 `;
 
 export const ChartCard = styled.div`
-  background: #1e293b;
-  border-radius: 8px;
-  padding: 0.75rem;
-  height: 160px;
+  background: #ffffff;
+  border: 1px solid ${black[50]};
+  border-radius: 12px;
+  padding: 1.25rem 1rem;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  transition: box-shadow 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  }
 `;
 
 export const ChartTitle = styled.span`
   font-family: ${FONT_FAMILY};
-  font-weight: ${fontWeights.regular};
-  font-size: 0.75rem;
-  color: #94a3b8;
-  text-align: right;
-  margin-bottom: 0.5rem;
+  font-weight: ${fontWeights.medium};
+  font-size: 0.8125rem;
+  color: ${black[75]};
 `;
 
 export const ChartPlaceholder = styled.div`
@@ -295,3 +310,143 @@ export const TableCell = styled.td`
   color: ${black[300]};
   border-bottom: 1px solid ${black[50]};
 `;
+
+export const ModalContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+`;
+
+export const ModalTitle = styled.h3`
+  font-family: ${FONT_FAMILY};
+  font-weight: ${fontWeights.semibold};
+  font-size: 1.25rem;
+  color: ${black[300]};
+  margin: 0;
+`;
+
+export const ModalText = styled.p`
+  font-family: ${FONT_FAMILY};
+  font-size: 0.875rem;
+  color: ${black[75]};
+  margin: 0;
+`;
+
+export const ModalButtonGroup = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+`;
+
+export const SearchPreviewBox = styled.div`
+  background: ${gray[50]};
+  border: 1px solid ${gray[200]};
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 24px;
+`;
+
+export const MemberList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  max-height: 240px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: ${black[50]};
+    border-radius: 3px;
+  }
+`;
+
+export const MemberItem = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+`;
+
+export const MemberInfoWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+`;
+
+export const AvatarImage = styled.div<{ $imageUrl?: string }>`
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: ${black[50]};
+  background-image: ${({ $imageUrl }) => ($imageUrl ? `url(${$imageUrl})` : 'none')};
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+`;
+
+export const MemberName = styled.span`
+  font-family: ${FONT_FAMILY};
+  font-weight: ${fontWeights.medium};
+  font-size: 14px;
+  color: ${black[300]};
+`;
+
+export const OwnerBadge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  background-color: #fef08a; /* Yellow-200 equivalent */
+  color: #a16207; /* Yellow-700 equivalent */
+  font-family: ${FONT_FAMILY};
+  font-weight: ${fontWeights.semibold};
+  font-size: 11px;
+  border-radius: 12px;
+`;
+
+export const KickButton = styled.button`
+  background: none;
+  border: none;
+  padding: 6px 12px;
+  color: #ef4444; /* Status Error Red */
+  font-family: ${FONT_FAMILY};
+  font-weight: ${fontWeights.medium};
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #fef2f2; /* Red-50 */
+  }
+`;
+
+export const MemberActionGroup = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+`;
+
+export const TransferButton = styled.button`
+  background: none;
+  border: none;
+  padding: 6px 12px;
+  color: ${primary.default};
+  font-family: ${FONT_FAMILY};
+  font-weight: ${fontWeights.medium};
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #eef2ff;
+  }
+`;
+
