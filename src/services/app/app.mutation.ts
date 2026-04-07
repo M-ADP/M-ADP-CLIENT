@@ -1,5 +1,5 @@
-import { useMutation } from '@tanstack/react-query';
-import { postCreateApp, patchAppResources, deleteApp, AppCreatePayload, AppResourcesUpdatePayload, AppDeletePayload } from './app.api';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { postCreateApp, AppCreatePayload, patchGithubInfo, UpdateGithubInfoPayload } from './app.api';
 
 export const useCreateAppMutation = () => {
     return useMutation({
@@ -7,14 +7,13 @@ export const useCreateAppMutation = () => {
     });
 };
 
-export const usePatchAppResourcesMutation = () => {
+export const useUpdateGithubInfoMutation = () => {
+    const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (payload: AppResourcesUpdatePayload) => patchAppResources(payload),
-    });
-};
-
-export const useDeleteAppMutation = () => {
-    return useMutation({
-        mutationFn: (payload: AppDeletePayload) => deleteApp(payload),
+        mutationFn: (payload: UpdateGithubInfoPayload) => patchGithubInfo(payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['project'] });
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+        }
     });
 };
