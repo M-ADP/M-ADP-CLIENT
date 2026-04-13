@@ -187,6 +187,13 @@ export default function GithubConnectContainer() {
         </S.SelectWrapper>
       </S.SelectsRow>
 
+      <S.AppInstallPrompt>
+        찾으시는 저장소가 없나요?
+        <a href="https://github.com/apps/m-adp/installations/new" target="_blank" rel="noopener noreferrer">
+          GitHub App 설치하기
+        </a>
+      </S.AppInstallPrompt>
+
       <S.SubmitButton onClick={handleSelectSubmit} disabled={updateGithubInfoMutation.isPending}>
         {updateGithubInfoMutation.isPending ? '등록 중...' : '선택'}
       </S.SubmitButton>
