@@ -7,8 +7,6 @@ export interface SummaryMetric {
   helperText?: string;
 }
 
-export type NuriMetric = SummaryMetric;
-
 export interface ResourceAllocationItem {
   cpu: number;
   memory: { current: number; max: number };

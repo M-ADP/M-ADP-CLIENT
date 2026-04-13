@@ -13,7 +13,6 @@ import {
   useAppLogsQuery,
   useAppResourceStatusQuery,
 } from '@/services/app/app.query';
-import { resourceMetrics } from './data';
 
 interface AppManageContainerProps {
   projectId: string;
@@ -122,43 +121,63 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
   const appStatus = appStatusQuery.data;
   const patchResourcesMutation = usePatchAppResourcesMutation();
   const deleteAppMutation = useDeleteAppMutation();
+  const isDetailsLoading = appDetailsQuery.isPending;
+  const isDetailsError = appDetailsQuery.isError;
+  const isStatusLoading = appStatusQuery.isPending;
+  const isStatusError = appStatusQuery.isError;
+  const statusFetchLabel = isStatusLoading ? '불러오는 중' : isStatusError ? '조회 실패' : null;
 
-  const cpuPercent = clampPercent(appStatus?.cpu_usage_percentage ?? 74);
+  const detailValue = (value: string | number | undefined, fallback = '-') => {
+    if (isDetailsLoading) return '불러오는 중';
+    if (isDetailsError) return '조회 실패';
+    if (value === undefined || value === null || value === '') return fallback;
+    return String(value);
+  };
+
+  const cpuPercent = clampPercent(appStatus?.cpu_usage_percentage ?? 0);
   const memoryPercent = toRatioPercent(appStatus?.memory_used, appStatus?.memory_total);
   const diskPercent = toRatioPercent(appStatus?.disk_used, appStatus?.disk_total);
-  const currentInstances = appStatus?.current_instances ?? 2;
-  const availableInstances = appStatus?.available_instances ?? 2;
+  const currentInstances = appStatus?.current_instances ?? 0;
+  const availableInstances = appStatus?.available_instances ?? 0;
   const totalInstances = currentInstances + availableInstances;
   const instancePercent = totalInstances > 0 ? clampPercent(Math.round((currentInstances / totalInstances) * 100)) : 0;
   const repositoryUrl = normalizeRepositoryUrl(appDetails?.github_repository_url);
-  const repositoryLabel = repositoryUrl
-    ? repositoryUrl.replace(/^https?:\/\/github\.com\//i, '').replace(/\/+$/, '')
-    : '연결된 저장소 없음';
+  const repositoryLabel = isDetailsLoading
+    ? '불러오는 중'
+    : isDetailsError
+      ? '조회 실패'
+      : repositoryUrl
+        ? repositoryUrl.replace(/^https?:\/\/github\.com\//i, '').replace(/\/+$/, '')
+        : '연결된 저장소 없음';
   const statusLabelFromDetails = formatStatusLabel(appDetails?.status);
-  const healthLabel = statusLabelFromDetails || 'Unknown';
-  const statusRingValue = getStatusRingValue(appDetails?.status);
-  const githubSummary = repositoryUrl
-    ? `${repositoryLabel} 저장소가 현재 앱과 연결되어 있습니다.`
-    : 'GitHub 저장소가 아직 연결되지 않았습니다.';
+  const healthLabel = isDetailsLoading ? '불러오는 중' : isDetailsError ? '조회 실패' : statusLabelFromDetails || '-';
+  const statusRingValue = isDetailsLoading || isDetailsError ? 0 : getStatusRingValue(appDetails?.status);
+  const githubSummary = isDetailsLoading
+    ? 'GitHub 저장소 정보를 불러오는 중입니다.'
+    : isDetailsError
+      ? 'GitHub 저장소 정보 조회에 실패했습니다.'
+      : repositoryUrl
+        ? `${repositoryLabel} 저장소가 현재 앱과 연결되어 있습니다.`
+        : 'GitHub 저장소가 아직 연결되지 않았습니다.';
   const appIdValue = appDetails?.app_id ? String(appDetails.app_id) : '-';
   const topSummaryMetrics: Array<{ id: string; label: string; value: string; fullValue?: string }> = [
     {
       id: 'app_id',
       label: '앱 ID',
-      value: appDetails?.app_id ? String(appDetails.app_id) : '-',
+      value: detailValue(appDetails?.app_id),
       fullValue: appIdValue,
     },
     {
       id: 'port',
       label: '포트',
-      value: appDetails?.port ? String(appDetails.port) : '-',
+      value: detailValue(appDetails?.port),
     },
     {
       id: 'resource',
       label: '자원 사용량',
-      value: typeof appDetails?.resource_use_percentage === 'number'
+      value: statusFetchLabel || (typeof appDetails?.resource_use_percentage === 'number'
         ? `${clampPercent(appDetails.resource_use_percentage)}%`
-        : `${cpuPercent}%`,
+        : `${cpuPercent}%`),
     },
     {
       id: 'status',
@@ -170,26 +189,26 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
     {
       id: 'cpu',
       label: 'CPU',
-      value: `${cpuPercent}%`,
-      percent: cpuPercent,
+      value: statusFetchLabel || `${cpuPercent}%`,
+      percent: statusFetchLabel ? 0 : cpuPercent,
     },
     {
       id: 'mem',
       label: 'MEM',
-      value: appStatus?.memory_used ? `${appStatus.memory_used}${appStatus.memory_total ? ` / ${appStatus.memory_total}` : ''}` : resourceMetrics[1].value,
-      percent: memoryPercent,
+      value: statusFetchLabel || (appStatus?.memory_used ? `${appStatus.memory_used}${appStatus.memory_total ? ` / ${appStatus.memory_total}` : ''}` : '-'),
+      percent: statusFetchLabel ? 0 : memoryPercent,
     },
     {
       id: 'disk',
       label: 'DISK',
-      value: appStatus?.disk_used ? `${appStatus.disk_used}${appStatus.disk_total ? ` / ${appStatus.disk_total}` : ''}` : resourceMetrics[2].value,
-      percent: diskPercent,
+      value: statusFetchLabel || (appStatus?.disk_used ? `${appStatus.disk_used}${appStatus.disk_total ? ` / ${appStatus.disk_total}` : ''}` : '-'),
+      percent: statusFetchLabel ? 0 : diskPercent,
     },
     {
       id: 'instance',
       label: 'INSTANCE',
-      value: String(currentInstances),
-      percent: instancePercent,
+      value: statusFetchLabel || String(currentInstances),
+      percent: statusFetchLabel ? 0 : instancePercent,
     },
   ];
   const renderedLogs = appLogsQuery.isPending
@@ -213,7 +232,7 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
     };
   });
   const openRepository = () => {
-    if (!repositoryUrl) return;
+    if (!repositoryUrl || isDetailsLoading || isDetailsError) return;
     window.open(repositoryUrl, '_blank', 'noopener,noreferrer');
   };
 
@@ -369,7 +388,9 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
                     {repositoryLabel}
                   </S.GithubLink>
                 ) : (
-                  <S.GithubLinkPlaceholder>연결된 저장소 없음</S.GithubLinkPlaceholder>
+                  <S.GithubLinkPlaceholder>
+                    {isDetailsLoading ? '불러오는 중' : isDetailsError ? '조회 실패' : '연결된 저장소 없음'}
+                  </S.GithubLinkPlaceholder>
                 )}
               </S.GithubLinkRow>
             </S.GithubSection>

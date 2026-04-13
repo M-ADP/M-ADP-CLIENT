@@ -54,9 +54,6 @@ export const useDeleteAppMutation = () => {
             queryClient.invalidateQueries({ queryKey: ['project'] });
             queryClient.invalidateQueries({ queryKey: ['projects'] });
             queryClient.invalidateQueries({ queryKey: ['appDeployments'] });
-            queryClient.invalidateQueries({ queryKey: ['appDetails'] });
-            queryClient.invalidateQueries({ queryKey: ['appLogs'] });
-            queryClient.invalidateQueries({ queryKey: ['appResourceStatus'] });
         },
     });
 };

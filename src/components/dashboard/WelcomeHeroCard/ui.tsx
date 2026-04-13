@@ -1,11 +1,12 @@
 import * as S from './style';
+import { normalizeDisplayName } from '@/utils/userDisplay';
 
 interface WelcomeHeroCardProps {
   userName: string;
 }
 
 export const WelcomeHeroCard = ({ userName }: WelcomeHeroCardProps) => {
-  const normalizedUserName = userName.replace(/\s+/g, ' ').trim();
+  const normalizedUserName = normalizeDisplayName(userName);
 
   return (
     <S.HeroContainer>
