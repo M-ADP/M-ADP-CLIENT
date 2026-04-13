@@ -83,28 +83,7 @@ export const MetricValue = styled.span`
   color: ${colors.black[300]};
 `;
 
-export const ComingSoonText = styled.span`
-  font-family: ${typography.text12Regular.fontFamily};
-  font-size: ${typography.text12Regular.fontSize};
-  font-weight: ${typography.text12Regular.fontWeight};
-  line-height: ${typography.text12Regular.lineHeight};
-  color: ${colors.black[75]};
-`;
-
 export const ProgressBarWrapper = styled.div`
   margin-top: auto;
   padding-top: 8px;
-`;
-
-export const ComingSoonBar = styled.div`
-  width: 100%;
-  height: 4px;
-  border-radius: 999px;
-  background: repeating-linear-gradient(
-    90deg,
-    #c4cada 0,
-    #c4cada 12px,
-    #e4e8f0 12px,
-    #e4e8f0 20px
-  );
 `;

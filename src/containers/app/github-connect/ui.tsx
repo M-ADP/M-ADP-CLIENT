@@ -12,6 +12,8 @@ export default function GithubConnectContainer() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const appId = searchParams.get('appId');
+  const projectId = searchParams.get('projectId');
+  const appName = (searchParams.get('appName') || '').trim();
 
   const { data: repositories, isLoading } = useGithubAllowedRepositoriesQuery(appId);
   const updateGithubInfoMutation = useUpdateGithubInfoMutation();
@@ -84,7 +86,13 @@ export default function GithubConnectContainer() {
         repository: selectedRepo,
       });
       alert('GitHub 저장소가 등록되었습니다.');
-      router.push(`/app/manage/${appId}`);
+      if (projectId) {
+        const nextQuery = new URLSearchParams();
+        if (appName) nextQuery.set('appName', appName);
+        router.push(`/project/manage/${projectId}/app${nextQuery.toString() ? `?${nextQuery.toString()}` : ''}`);
+        return;
+      }
+      router.push('/project/manage');
     } catch (error) {
       if (error instanceof Error) {
         alert(error.message);

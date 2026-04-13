@@ -50,7 +50,12 @@ export default function AppCreateContainer() {
 
       alert(result.message || '애플리케이션이 생성되었습니다.');
       if (result.data) {
-        router.push(`/app/github-connect?appId=${result.data}`);
+        const nextQuery = new URLSearchParams({
+          appId: result.data,
+          projectId,
+          appName: formData.appName.trim(),
+        });
+        router.push(`/app/github-connect?${nextQuery.toString()}`);
       } else {
         alert("애플리케이션 생성에 실패했습니다.")
       }

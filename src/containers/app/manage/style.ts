@@ -70,6 +70,9 @@ export const StatItem = styled.div`
   flex-direction: column;
   gap: 4px;
   justify-content: center;
+  position: relative;
+  overflow: visible;
+  isolation: isolate;
 `;
 
 export const StatLabel = styled.span`
@@ -80,15 +83,20 @@ export const StatLabel = styled.span`
   line-height: ${typography.text14Medium.lineHeight};
 `;
 
-export const StatValue = styled.span`
+export const StatValue = styled.span<{ $compact?: boolean }>`
   color: ${colors.black[300]};
   font-family: ${typography.text18Bold.fontFamily};
-  font-size: ${typography.text18Bold.fontSize};
+  font-size: ${({ $compact }) => ($compact ? typography.text14Bold.fontSize : typography.text18Bold.fontSize)};
   font-weight: ${typography.text18Bold.fontWeight};
-  line-height: ${typography.text18Bold.lineHeight};
+  line-height: ${({ $compact }) => ($compact ? 1.3 : typography.text18Bold.lineHeight)};
+  min-width: 0;
+  overflow: ${({ $compact }) => ($compact ? 'visible' : 'hidden')};
+  text-overflow: ${({ $compact }) => ($compact ? 'clip' : 'ellipsis')};
+  white-space: ${({ $compact }) => ($compact ? 'normal' : 'nowrap')};
+  word-break: ${({ $compact }) => ($compact ? 'break-all' : 'normal')};
 `;
 
-export const GithubSection = styled.div`
+export const GithubSection = styled.div<{ $clickable?: boolean }>`
   position: relative;
   display: flex;
   flex-direction: column;
@@ -100,6 +108,13 @@ export const GithubSection = styled.div`
   border-radius: 16px;
   background: #f6f7fa;
   padding: 10px 96px 10px 14px;
+  cursor: ${({ $clickable }) => ($clickable ? 'pointer' : 'default')};
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    box-shadow: ${({ $clickable }) => ($clickable ? '0 6px 16px rgba(16, 24, 40, 0.12)' : 'none')};
+    transform: ${({ $clickable }) => ($clickable ? 'translateY(-1px)' : 'none')};
+  }
 `;
 
 export const GithubTitle = styled.h3`
@@ -109,6 +124,10 @@ export const GithubTitle = styled.h3`
   font-size: ${typography.text16Semibold.fontSize};
   font-weight: ${typography.text16Semibold.fontWeight};
   line-height: ${typography.text16Semibold.lineHeight};
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 `;
 
 export const GithubDesc = styled.p`
@@ -138,6 +157,19 @@ export const GithubLink = styled.a`
   font-size: ${typography.text16Medium.fontSize};
   font-weight: ${typography.text16Medium.fontWeight};
   line-height: ${typography.text16Medium.lineHeight};
+  text-decoration: underline;
+
+  &:hover {
+    color: ${colors.primary.default};
+  }
+`;
+
+export const GithubLinkPlaceholder = styled.span`
+  color: ${colors.black[75]};
+  font-family: ${typography.text14Regular.fontFamily};
+  font-size: ${typography.text14Regular.fontSize};
+  font-weight: ${typography.text14Regular.fontWeight};
+  line-height: ${typography.text14Regular.lineHeight};
 `;
 
 export const BrandMark = styled.div`
@@ -234,23 +266,55 @@ export const SectionTitle = styled.h2`
 
 export const LogList = styled.ul`
   margin: 10px 0 0;
-  padding: 0;
+  padding: 8px 0;
   list-style: none;
-  border-radius: 14px;
+  border-radius: 12px;
+  background: #0a0c10;
+  border: 1px solid #181d27;
   max-height: 412px;
   overflow-y: auto;
 `;
 
 export const LogItem = styled.li`
-  font-family: ${typography.text12Regular.fontFamily};
-  font-size: ${typography.text12Regular.fontSize};
-  font-weight: ${typography.text12Regular.fontWeight};
-  line-height: 1.4;
-  color: ${colors.black[200]};
-  padding: 9px 8px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  display: grid;
+  grid-template-columns: 52px 74px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #e5e7eb;
+  padding: 3px 10px;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+`;
+
+export const LogLine = styled.span`
+  color: #7f8ea3;
+  text-align: right;
+  user-select: none;
+`;
+
+export const LogText = styled.span`
+  min-width: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+`;
+
+export const LogTime = styled.span`
+  color: #9ba8ba;
+  text-align: right;
+  user-select: none;
+`;
+
+export const LogCount = styled.span`
+  color: ${colors.black[100]};
+  font-family: ${typography.text12Medium.fontFamily};
+  font-size: ${typography.text12Medium.fontSize};
+  font-weight: ${typography.text12Medium.fontWeight};
+  line-height: ${typography.text12Medium.lineHeight};
 `;
 
 export const RightPanel = styled.div`
@@ -262,6 +326,24 @@ export const RightPanel = styled.div`
 export const UserStatsCard = styled.article`
   ${panelStyle}
   padding: 14px 16px 12px;
+`;
+
+export const FeaturePlaceholder = styled.div`
+  margin-top: 10px;
+  min-height: 184px;
+  border: 1px dashed #d0d7e4;
+  border-radius: 14px;
+  background: #f8faff;
+  color: ${colors.black[100]};
+  font-family: ${typography.text14Medium.fontFamily};
+  font-size: ${typography.text14Medium.fontSize};
+  font-weight: ${typography.text14Medium.fontWeight};
+  line-height: ${typography.text14Medium.lineHeight};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 16px;
 `;
 
 export const UserChartArea = styled.div`
@@ -353,6 +435,8 @@ export const BottomSection = styled.section`
 export const TrafficCard = styled.article`
   ${panelStyle}
   padding: 12px 12px 8px;
+  display: flex;
+  flex-direction: column;
 `;
 
 export const TrafficHeader = styled.div`

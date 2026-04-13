@@ -1,23 +1,19 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import Chart from '@/components/ui/Charts/Chart/ui';
-import MultiLineChart from '@/components/ui/Charts/MultiLineChart/ui';
 import ProgressBar from '@/components/ui/Charts/ProgressBar/ui';
 import ProgressRing from '@/components/ui/Charts/ProgressRing/ui';
 import * as S from './style';
 import { useDeleteAppMutation, usePatchAppResourcesMutation } from '@/services/app/app.mutation';
-import { useAppDetailsQuery, useAppLogsQuery, useAppResourceStatusQuery } from '@/services/app/app.query';
 import {
-  APP_NAME,
-  resourceMetrics,
-  trafficChartData,
-  userStatsChartData,
-  userStatsChartOptions,
-  userStatsLegend,
-} from './data';
+  useAppDeploymentsQuery,
+  useAppDetailsQuery,
+  useAppLogsQuery,
+  useAppResourceStatusQuery,
+} from '@/services/app/app.query';
+import { resourceMetrics } from './data';
 
 interface AppManageContainerProps {
   projectId: string;
@@ -52,6 +48,15 @@ const formatStatusLabel = (status: string | undefined) => {
   return status;
 };
 
+const getStatusRingValue = (status: string | undefined) => {
+  if (!status) return 0;
+  const normalized = status.trim().toLowerCase();
+  if (normalized === 'healthy' || normalized === 'running') return 100;
+  if (normalized === 'unhealthy' || normalized === 'error' || normalized === 'failed') return 30;
+  if (normalized === 'stopped' || normalized === 'stop') return 10;
+  return 0;
+};
+
 const promptNumber = (label: string, initialValue: number) => {
   const input = window.prompt(label, String(initialValue));
   if (input === null) return null;
@@ -60,58 +65,63 @@ const promptNumber = (label: string, initialValue: number) => {
   return parsed;
 };
 
+const normalizeRepositoryUrl = (value: string | undefined) => {
+  const raw = value?.trim();
+  if (!raw) return '';
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (/^github\.com\//i.test(raw)) return `https://${raw}`;
+  if (raw.includes('/')) return `https://github.com/${raw.replace(/^\/+/, '')}`;
+  return '';
+};
+
+const parseLogTimestamp = (line: string) => {
+  const matched = line.match(/^(\d{4}-\d{2}-\d{2}T[\d:.]+Z)\s?(.*)$/);
+  if (!matched) {
+    return {
+      timestamp: '',
+      message: line,
+      rawTimestamp: '',
+    };
+  }
+
+  const [, rawTimestamp, message] = matched;
+  const timestampDate = new Date(rawTimestamp);
+  const timestamp = Number.isNaN(timestampDate.getTime())
+    ? rawTimestamp
+    : timestampDate.toLocaleTimeString('ko-KR', {
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+
+  return {
+    timestamp,
+    message,
+    rawTimestamp,
+  };
+};
+
 export default function AppManageContainer({ projectId }: AppManageContainerProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const appName = (searchParams.get('appName') || APP_NAME).trim();
-  const appDetailsQuery = useAppDetailsQuery(projectId, appName);
+  const appNameFromQuery = (searchParams.get('appName') || '').trim();
+  const appDeploymentsQuery = useAppDeploymentsQuery(projectId);
+  const deployments = appDeploymentsQuery.data ?? [];
+  const appName = useMemo(() => {
+    if (deployments.length === 0) return appNameFromQuery;
+    if (appNameFromQuery && deployments.some((deployment) => deployment.name === appNameFromQuery)) {
+      return appNameFromQuery;
+    }
+    return deployments[0]?.name ?? appNameFromQuery;
+  }, [deployments, appNameFromQuery]);
+  const appDetailsQuery = useAppDetailsQuery(projectId, appName || null);
   const appDetails = appDetailsQuery.data;
-  const appLogsQuery = useAppLogsQuery(projectId, appName);
-  const appStatusQuery = useAppResourceStatusQuery(projectId, appName);
+  const appLogsQuery = useAppLogsQuery(projectId, appName || null);
+  const appStatusQuery = useAppResourceStatusQuery(projectId, appName || null);
   const appStatus = appStatusQuery.data;
   const patchResourcesMutation = usePatchAppResourcesMutation();
   const deleteAppMutation = useDeleteAppMutation();
-  const [trafficStartDate, setTrafficStartDate] = useState('2025-01-01');
-  const [trafficEndDate, setTrafficEndDate] = useState('2025-01-02');
-
-  const trafficData = useMemo(() => {
-    const baseData = trafficChartData;
-
-    if (trafficStartDate === trafficEndDate) {
-      return baseData;
-    }
-
-    const start = new Date(trafficStartDate);
-    const end = new Date(trafficEndDate);
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) diffDays = 1;
-    const labels: string[] = [];
-
-    for (let i = 0; i <= diffDays; i++) {
-      const date = new Date(start);
-      date.setDate(date.getDate() + i);
-      const mm = String(date.getMonth() + 1).padStart(2, '0');
-      const dd = String(date.getDate()).padStart(2, '0');
-      labels.push(`${mm}.${dd}`);
-    }
-
-    const seed = trafficStartDate.charCodeAt(trafficStartDate.length - 1) + trafficEndDate.charCodeAt(trafficEndDate.length - 1);
-
-    return {
-      ...baseData,
-      labels,
-      datasets: baseData.datasets.map((dataset, dsIndex) => ({
-        ...dataset,
-        data: labels.map((_, i) => {
-          const baseVal = (dataset.data[i % dataset.data.length] as number) || 200;
-          const change = ((seed + i + dsIndex) % 40) - 20;
-          return Math.max(0, baseVal + change * 5);
-        }),
-      })),
-    };
-  }, [trafficStartDate, trafficEndDate]);
 
   const cpuPercent = clampPercent(appStatus?.cpu_usage_percentage ?? 74);
   const memoryPercent = toRatioPercent(appStatus?.memory_used, appStatus?.memory_total);
@@ -120,15 +130,23 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
   const availableInstances = appStatus?.available_instances ?? 2;
   const totalInstances = currentInstances + availableInstances;
   const instancePercent = totalInstances > 0 ? clampPercent(Math.round((currentInstances / totalInstances) * 100)) : 0;
-  const repositoryUrl = appDetails?.github_repository_url?.trim() || `https://github.com/M-ADP/${appName.toLowerCase()}`;
-  const repositoryLabel = repositoryUrl.replace(/^https?:\/\/github\.com\//i, '');
+  const repositoryUrl = normalizeRepositoryUrl(appDetails?.github_repository_url);
+  const repositoryLabel = repositoryUrl
+    ? repositoryUrl.replace(/^https?:\/\/github\.com\//i, '').replace(/\/+$/, '')
+    : '연결된 저장소 없음';
   const statusLabelFromDetails = formatStatusLabel(appDetails?.status);
-  const healthLabel = statusLabelFromDetails || (cpuPercent >= 90 ? 'Risky' : 'Healthy');
-  const topSummaryMetrics = [
+  const healthLabel = statusLabelFromDetails || 'Unknown';
+  const statusRingValue = getStatusRingValue(appDetails?.status);
+  const githubSummary = repositoryUrl
+    ? `${repositoryLabel} 저장소가 현재 앱과 연결되어 있습니다.`
+    : 'GitHub 저장소가 아직 연결되지 않았습니다.';
+  const appIdValue = appDetails?.app_id ? String(appDetails.app_id) : '-';
+  const topSummaryMetrics: Array<{ id: string; label: string; value: string; fullValue?: string }> = [
     {
       id: 'app_id',
       label: '앱 ID',
       value: appDetails?.app_id ? String(appDetails.app_id) : '-',
+      fullValue: appIdValue,
     },
     {
       id: 'port',
@@ -145,7 +163,7 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
     {
       id: 'status',
       label: '상태',
-      value: statusLabelFromDetails || healthLabel,
+      value: healthLabel,
     },
   ];
   const dynamicResourceMetrics = [
@@ -176,11 +194,28 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
   ];
   const renderedLogs = appLogsQuery.isPending
     ? ['로그를 불러오는 중입니다.']
+    : !appName
+      ? ['조회 가능한 애플리케이션이 없습니다.']
     : appLogsQuery.isError
       ? ['로그 조회에 실패했습니다.']
       : appLogsQuery.data && appLogsQuery.data.length > 0
         ? appLogsQuery.data
         : ['표시할 로그가 없습니다.'];
+  const formattedLogs = renderedLogs.map((log, index) => {
+    const parsed = parseLogTimestamp(log);
+    return {
+      id: `${projectId}-log-${index}-${log.slice(0, 16)}`,
+      line: String(index + 1).padStart(3, '0'),
+      timestamp: parsed.timestamp,
+      rawTimestamp: parsed.rawTimestamp,
+      text: parsed.message,
+      isBlank: parsed.message.trim().length === 0,
+    };
+  });
+  const openRepository = () => {
+    if (!repositoryUrl) return;
+    window.open(repositoryUrl, '_blank', 'noopener,noreferrer');
+  };
 
   const handlePatchResources = async () => {
     if (patchResourcesMutation.isPending) return;
@@ -240,7 +275,7 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
       return;
     }
 
-    const confirmed = window.confirm(`"${appName}" 앱을 삭제하시겠습니까?`);
+    const confirmed = window.confirm(`"${appName || '선택된 앱'}"을 삭제하시겠습니까?`);
     if (!confirmed) return;
 
     try {
@@ -260,6 +295,10 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
 
   const handleActionMenu = () => {
     if (patchResourcesMutation.isPending || deleteAppMutation.isPending) return;
+    if (!appName) {
+      alert('조회 가능한 애플리케이션이 없습니다.');
+      return;
+    }
     const action = window.prompt('작업 선택: 1=자원 변경, 2=앱 삭제', '1');
     if (action === '2') {
       void handleDeleteApp();
@@ -270,38 +309,68 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
     }
   };
 
+  if (appDeploymentsQuery.isPending && deployments.length === 0) {
+    return (
+      <S.PageWrapper>
+        <p>애플리케이션 목록을 불러오는 중입니다.</p>
+      </S.PageWrapper>
+    );
+  }
+
+  if (appDeploymentsQuery.isError) {
+    return (
+      <S.PageWrapper>
+        <p>애플리케이션 목록 조회에 실패했습니다.</p>
+      </S.PageWrapper>
+    );
+  }
+
+  if (deployments.length === 0) {
+    return (
+      <S.PageWrapper>
+        <p>배포된 애플리케이션이 없습니다.</p>
+      </S.PageWrapper>
+    );
+  }
+
   return (
     <S.PageWrapper>
       <S.TopCard>
-        <S.AppName>{appName}</S.AppName>
+        <S.AppName>{appName || '애플리케이션'}</S.AppName>
 
         <S.TopContent>
           <S.OverviewArea>
             <S.StatGrid>
               {topSummaryMetrics.map((item) => (
-                <S.StatItem key={item.id}>
+                <S.StatItem key={item.id} title={item.id === 'app_id' ? (item.fullValue ?? item.value) : undefined}>
                   <S.StatLabel>{item.label}</S.StatLabel>
-                  <S.StatValue>{item.value}</S.StatValue>
+                  <S.StatValue $compact={item.id === 'app_id'} title={item.fullValue ?? item.value}>{item.value}</S.StatValue>
                 </S.StatItem>
               ))}
             </S.StatGrid>
 
-            <S.GithubSection>
+            <S.GithubSection
+              $clickable={Boolean(repositoryUrl)}
+              onClick={openRepository}
+              title={repositoryUrl || '연결된 저장소가 없습니다.'}
+            >
               <S.BrandMark>
                 <Image src="/assets/logo.svg" alt="M-ADP" width={66} height={66} />
               </S.BrandMark>
-              <S.GithubTitle>GitHub - {repositoryLabel} : 애매하노</S.GithubTitle>
+              <S.GithubTitle>GitHub - {repositoryLabel}</S.GithubTitle>
+              <S.GithubDesc>{githubSummary}</S.GithubDesc>
               <S.GithubDesc>
-                애매하노. Contribute to {repositoryLabel} development by creating an account on GitHub.
-              </S.GithubDesc>
-              <S.GithubDesc>
-                Contribute to {repositoryLabel} development by creating an account on GitHub.
+                {repositoryUrl ? '카드를 클릭하면 GitHub 저장소로 이동합니다.' : '저장소 연결 후 상세 정보를 확인할 수 있습니다.'}
               </S.GithubDesc>
               <S.GithubLinkRow>
                 <Image src="/icons/github.svg" alt="github" width={20} height={20} />
-                <S.GithubLink href={repositoryUrl} target="_blank" rel="noreferrer">
-                  {repositoryUrl}
-                </S.GithubLink>
+                {repositoryUrl ? (
+                  <S.GithubLink href={repositoryUrl} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>
+                    {repositoryLabel}
+                  </S.GithubLink>
+                ) : (
+                  <S.GithubLinkPlaceholder>연결된 저장소 없음</S.GithubLinkPlaceholder>
+                )}
               </S.GithubLinkRow>
             </S.GithubSection>
           </S.OverviewArea>
@@ -312,7 +381,7 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
             </S.CornerMenu>
             <S.HealthLabel>상태</S.HealthLabel>
             <ProgressRing
-              value={cpuPercent}
+              value={statusRingValue}
               max={100}
               size={184}
               strokeWidth={12}
@@ -334,10 +403,17 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
         <S.LogCard>
           <S.SectionHeader>
             <S.SectionTitle>최신 로그</S.SectionTitle>
+            <S.LogCount>{formattedLogs.length} lines</S.LogCount>
           </S.SectionHeader>
           <S.LogList>
-            {renderedLogs.map((log, index) => (
-              <S.LogItem key={`${projectId}-log-${index}-${log.slice(0, 16)}`}>{log}</S.LogItem>
+            {formattedLogs.map((log) => (
+              <S.LogItem key={log.id}>
+                <S.LogLine>{log.line}</S.LogLine>
+                <S.LogTime title={log.rawTimestamp || undefined}>
+                  {log.timestamp || '--:--:--'}
+                </S.LogTime>
+                <S.LogText>{log.isBlank ? '\u00A0' : log.text}</S.LogText>
+              </S.LogItem>
             ))}
           </S.LogList>
         </S.LogCard>
@@ -346,29 +422,10 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
           <S.UserStatsCard>
             <S.SectionHeader>
               <S.SectionTitle>사용자 통계</S.SectionTitle>
-              <S.CardMenu>...</S.CardMenu>
             </S.SectionHeader>
-
-            <S.UserChartArea>
-              <Chart
-                type="line"
-                data={userStatsChartData}
-                options={userStatsChartOptions}
-                height={210}
-              />
-            </S.UserChartArea>
-
-            <S.LegendList>
-              {userStatsLegend.map((item) => (
-                <S.LegendRow key={item.id}>
-                  <S.LegendLeft>
-                    <S.LegendDot $color={item.color} />
-                    <S.LegendName>{item.label}</S.LegendName>
-                  </S.LegendLeft>
-                  <S.LegendValue>{item.value}</S.LegendValue>
-                </S.LegendRow>
-              ))}
-            </S.LegendList>
+            <S.FeaturePlaceholder>
+              추후에 추가될 기능입니다.
+            </S.FeaturePlaceholder>
           </S.UserStatsCard>
 
           <S.ResourceCard>
@@ -391,19 +448,12 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
 
       <S.BottomSection>
         <S.TrafficCard>
-          <MultiLineChart
-            title="트래픽"
-            data={trafficData}
-            legendData={[{ label: '트래픽', color: '#151EA9', value: '' }]}
-            startDate={trafficStartDate}
-            endDate={trafficEndDate}
-            onStartDateChange={setTrafficStartDate}
-            onEndDateChange={setTrafficEndDate}
-            yAxisMax={500}
-            yAxisUnit=""
-            showMenu={false}
-            height={320}
-          />
+          <S.SectionHeader>
+            <S.SectionTitle>트래픽</S.SectionTitle>
+          </S.SectionHeader>
+          <S.FeaturePlaceholder>
+            추후에 추가될 기능입니다.
+          </S.FeaturePlaceholder>
         </S.TrafficCard>
 
         <S.RiskCard>
@@ -411,10 +461,7 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
             <Image src="/icons/project/warning.svg" alt="warning" width={24} height={24} />
             <S.RiskTitle>Active Performance Risk</S.RiskTitle>
           </S.RiskHeader>
-
-          <S.RiskName>최애의 사인 응답 지연 감지</S.RiskName>
-          <S.RiskMeta>사용자 영향 : 이탈율 증가</S.RiskMeta>
-          <S.RiskMeta>발생 시점 : 12분전</S.RiskMeta>
+          <S.RiskName>추후에 추가될 기능입니다.</S.RiskName>
         </S.RiskCard>
       </S.BottomSection>
     </S.PageWrapper>

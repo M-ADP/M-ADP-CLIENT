@@ -3,7 +3,11 @@ export interface SummaryMetric {
   label: string;
   value: string;
   percentage: number;
+  comingSoon?: boolean;
+  helperText?: string;
 }
+
+export type NuriMetric = SummaryMetric;
 
 export interface ResourceAllocationItem {
   cpu: number;

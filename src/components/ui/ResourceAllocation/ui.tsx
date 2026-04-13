@@ -7,6 +7,18 @@ interface ResourceAllocationProps {
 }
 
 export const ResourceAllocation = ({ projects }: ResourceAllocationProps) => {
+  if (projects.length === 0) {
+    return (
+      <S.AllocationContainer>
+        <S.AllocationList>
+          <S.ProjectCard>
+            <S.ProjectName>프로젝트 자원 정보가 없습니다.</S.ProjectName>
+          </S.ProjectCard>
+        </S.AllocationList>
+      </S.AllocationContainer>
+    );
+  }
+
   return (
     <S.AllocationContainer>
       <S.AllocationList>
