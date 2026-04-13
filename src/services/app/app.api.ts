@@ -88,6 +88,32 @@ export interface DeleteAppPayload {
     application_id: number;
 }
 
+export interface DnsEndpointItem {
+    id: string | number;
+    project_id: string | number;
+    deployment_id: string | number;
+    subdomain: string;
+    deployment_type: string;
+    service_type?: string;
+}
+
+export interface DnsEndpointPage {
+    cursor: number | null;
+    items: DnsEndpointItem[];
+}
+
+export interface CreateDnsEndpointPayload {
+    deploymentId: string | number;
+    project_id: string | number;
+    deployment_type: 'CloudDB' | 'App Deployment';
+    subdomain?: string;
+}
+
+export interface UpdateDnsEndpointPayload {
+    dnsId: string | number;
+    subdomain: string;
+}
+
 const buildQueryString = (params: Record<string, string | number | undefined>) => {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
@@ -137,5 +163,37 @@ export const deleteApp = (payload: DeleteAppPayload) => {
     return api<ApiResponse<unknown>>('/apps', {
         method: 'DELETE',
         body: JSON.stringify(payload),
+    });
+};
+
+export const getDnsEndpoints = (projectId: string, cursor?: number, limit?: number) => {
+    const query = buildQueryString({
+        cursor,
+        limit,
+    });
+    return api<ApiResponse<DnsEndpointPage> | DnsEndpointPage>(`/dns/${projectId}${query}`, {
+        method: 'GET',
+    });
+};
+
+export const postCreateDnsEndpoint = (payload: CreateDnsEndpointPayload) => {
+    const { deploymentId, ...body } = payload;
+    return api<ApiResponse<DnsEndpointItem> | DnsEndpointItem>(`/dns/${deploymentId}`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+    });
+};
+
+export const deleteDnsEndpoint = (dnsId: string | number) => {
+    return api<ApiResponse<DnsEndpointItem> | DnsEndpointItem>(`/dns/${String(dnsId)}`, {
+        method: 'DELETE',
+    });
+};
+
+export const putUpdateDnsEndpoint = (payload: UpdateDnsEndpointPayload) => {
+    const { dnsId, subdomain } = payload;
+    return api<ApiResponse<DnsEndpointItem> | DnsEndpointItem>(`/dns/${String(dnsId)}`, {
+        method: 'PUT',
+        body: JSON.stringify({ subdomain }),
     });
 };

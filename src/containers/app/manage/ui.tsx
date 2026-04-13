@@ -6,10 +6,17 @@ import Image from 'next/image';
 import ProgressBar from '@/components/ui/Charts/ProgressBar/ui';
 import ProgressRing from '@/components/ui/Charts/ProgressRing/ui';
 import * as S from './style';
-import { useDeleteAppMutation, usePatchAppResourcesMutation } from '@/services/app/app.mutation';
+import {
+  useCreateDnsEndpointMutation,
+  useDeleteAppMutation,
+  useDeleteDnsEndpointMutation,
+  useUpdateDnsEndpointMutation,
+  usePatchAppResourcesMutation
+} from '@/services/app/app.mutation';
 import {
   useAppDeploymentsQuery,
   useAppDetailsQuery,
+  useDnsEndpointsQuery,
   useAppLogsQuery,
   useAppResourceStatusQuery,
 } from '@/services/app/app.query';
@@ -118,9 +125,13 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
   const appDetails = appDetailsQuery.data;
   const appLogsQuery = useAppLogsQuery(projectId, appName || null);
   const appStatusQuery = useAppResourceStatusQuery(projectId, appName || null);
+  const dnsQuery = useDnsEndpointsQuery(projectId, undefined, 20);
   const appStatus = appStatusQuery.data;
   const patchResourcesMutation = usePatchAppResourcesMutation();
   const deleteAppMutation = useDeleteAppMutation();
+  const createDnsMutation = useCreateDnsEndpointMutation();
+  const deleteDnsMutation = useDeleteDnsEndpointMutation();
+  const updateDnsMutation = useUpdateDnsEndpointMutation();
   const isDetailsLoading = appDetailsQuery.isPending;
   const isDetailsError = appDetailsQuery.isError;
   const isStatusLoading = appStatusQuery.isPending;
@@ -235,6 +246,26 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
     if (!repositoryUrl || isDetailsLoading || isDetailsError) return;
     window.open(repositoryUrl, '_blank', 'noopener,noreferrer');
   };
+  const dnsItems = dnsQuery.data?.items ?? [];
+  const relatedDnsItems = appDetails?.app_id
+    ? dnsItems.filter((item) => String(item.deployment_id) === String(appDetails.app_id))
+    : [];
+  const isDnsActionPending = createDnsMutation.isPending || deleteDnsMutation.isPending || updateDnsMutation.isPending;
+  const canCreateDns = Boolean(appDetails?.app_id) && !dnsQuery.isPending && !dnsQuery.isError && relatedDnsItems.length === 0;
+  const isSubdomainFormatValid = (value: string) => /^[a-z0-9-]{1,63}$/.test(value);
+  const toDnsUrl = (subdomain: string) => {
+    const trimmed = subdomain.trim();
+    if (!trimmed) return null;
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    if (trimmed.includes('.')) return `https://${trimmed}`;
+    return null;
+  };
+  const formatDnsDomain = (subdomain: string) => {
+    const trimmed = subdomain.trim();
+    if (!trimmed) return '-';
+    if (trimmed.includes('.')) return trimmed;
+    return `${trimmed} (서브도메인)`;
+  };
 
   const handlePatchResources = async () => {
     if (patchResourcesMutation.isPending) return;
@@ -325,6 +356,85 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
     }
     if (action === '1') {
       void handlePatchResources();
+    }
+  };
+
+  const handleCreateDns = async () => {
+    if (isDnsActionPending) return;
+    if (!appDetails?.app_id) {
+      alert('앱 ID를 확인할 수 없습니다.');
+      return;
+    }
+
+    const parsedProjectId = Number.parseInt(projectId, 10);
+    if (Number.isNaN(parsedProjectId)) {
+      alert('프로젝트 ID를 확인할 수 없습니다.');
+      return;
+    }
+
+    try {
+      const result = await createDnsMutation.mutateAsync({
+        deploymentId: appDetails.app_id,
+        project_id: parsedProjectId,
+        deployment_type: 'App Deployment',
+      });
+      alert(('message' in result && result.message) ? result.message : 'DNS Endpoint가 생성되었습니다.');
+      await dnsQuery.refetch();
+    } catch (error) {
+      if (error instanceof Error) {
+        alert(error.message);
+        return;
+      }
+      alert('DNS Endpoint 생성에 실패했습니다.');
+    }
+  };
+
+  const handleDeleteDns = async (dnsId: string | number) => {
+    if (isDnsActionPending) return;
+
+    const confirmed = window.confirm('DNS Endpoint를 삭제하시겠습니까?');
+    if (!confirmed) return;
+
+    try {
+      const result = await deleteDnsMutation.mutateAsync(dnsId);
+      alert(('message' in result && result.message) ? result.message : 'DNS Endpoint가 삭제되었습니다.');
+      await dnsQuery.refetch();
+    } catch (error) {
+      if (error instanceof Error) {
+        alert(error.message);
+        return;
+      }
+      alert('DNS Endpoint 삭제에 실패했습니다.');
+    }
+  };
+
+  const handleUpdateDns = async (dnsId: string | number, currentSubdomain: string) => {
+    if (isDnsActionPending) return;
+
+    const input = window.prompt('변경할 서브도메인을 입력하세요. (영문 소문자, 숫자, 하이픈)', currentSubdomain);
+    if (input === null) return;
+    const nextSubdomain = input.trim().toLowerCase();
+
+    if (!isSubdomainFormatValid(nextSubdomain)) {
+      alert('서브도메인은 1~63자 영문 소문자, 숫자, 하이픈(-)만 사용할 수 있습니다.');
+      return;
+    }
+
+    if (nextSubdomain === currentSubdomain) return;
+
+    try {
+      const result = await updateDnsMutation.mutateAsync({
+        dnsId,
+        subdomain: nextSubdomain,
+      });
+      alert(('message' in result && result.message) ? result.message : 'DNS Endpoint가 수정되었습니다.');
+      await dnsQuery.refetch();
+    } catch (error) {
+      if (error instanceof Error) {
+        alert(error.message);
+        return;
+      }
+      alert('DNS Endpoint 수정에 실패했습니다.');
     }
   };
 
@@ -440,14 +550,57 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
         </S.LogCard>
 
         <S.RightPanel>
-          <S.UserStatsCard>
+          <S.DnsCard>
             <S.SectionHeader>
-              <S.SectionTitle>사용자 통계</S.SectionTitle>
+              <S.SectionTitle>DNS Endpoint</S.SectionTitle>
+              {canCreateDns && (
+                <S.DnsActionButton onClick={handleCreateDns} disabled={isDnsActionPending}>
+                  {createDnsMutation.isPending ? '생성 중...' : '추가하기'}
+                </S.DnsActionButton>
+              )}
             </S.SectionHeader>
-            <S.FeaturePlaceholder>
-              추후에 추가될 기능입니다.
-            </S.FeaturePlaceholder>
-          </S.UserStatsCard>
+            {dnsQuery.isPending ? (
+              <S.DnsState>DNS 정보를 불러오는 중입니다.</S.DnsState>
+            ) : dnsQuery.isError ? (
+              <S.DnsState>DNS 정보 조회에 실패했습니다.</S.DnsState>
+            ) : relatedDnsItems.length === 0 ? (
+              <S.DnsState>연결된 DNS Endpoint가 없습니다.</S.DnsState>
+            ) : (
+              <S.DnsList>
+                {relatedDnsItems.map((dns) => {
+                  const dnsUrl = toDnsUrl(dns.subdomain);
+                  const serviceTypeLabel = dns.service_type?.toUpperCase();
+                  return (
+                    <S.DnsItem key={`${dns.id}-${dns.deployment_id}`}>
+                      {dnsUrl ? (
+                        <S.DnsLink href={dnsUrl} target="_blank" rel="noreferrer">
+                          {dns.subdomain}
+                        </S.DnsLink>
+                      ) : (
+                        <S.DnsDomain>{formatDnsDomain(dns.subdomain)}</S.DnsDomain>
+                      )}
+                      <S.DnsMeta>
+                        {dns.deployment_type}
+                        {serviceTypeLabel ? ` · ${serviceTypeLabel}` : ''}
+                        {` · deployment #${dns.deployment_id}`}
+                      </S.DnsMeta>
+                      <S.DnsActions>
+                        <S.DnsEditButton
+                          onClick={() => void handleUpdateDns(dns.id, dns.subdomain)}
+                          disabled={isDnsActionPending}
+                        >
+                          {updateDnsMutation.isPending ? '수정 중...' : '수정'}
+                        </S.DnsEditButton>
+                        <S.DnsDeleteButton onClick={() => void handleDeleteDns(dns.id)} disabled={isDnsActionPending}>
+                          {deleteDnsMutation.isPending ? '삭제 중...' : '삭제'}
+                        </S.DnsDeleteButton>
+                      </S.DnsActions>
+                    </S.DnsItem>
+                  );
+                })}
+              </S.DnsList>
+            )}
+          </S.DnsCard>
 
           <S.ResourceCard>
             <S.SectionHeader>

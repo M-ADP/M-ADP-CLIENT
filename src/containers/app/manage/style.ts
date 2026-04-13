@@ -328,6 +328,163 @@ export const UserStatsCard = styled.article`
   padding: 14px 16px 12px;
 `;
 
+export const DnsCard = styled.article`
+  ${panelStyle}
+  padding: 14px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+`;
+
+export const DnsActionButton = styled.button`
+  border: none;
+  border-radius: 8px;
+  background: ${colors.primary.default};
+  color: #ffffff;
+  font-family: ${typography.text12Semibold.fontFamily};
+  font-size: ${typography.text12Semibold.fontSize};
+  font-weight: ${typography.text12Semibold.fontWeight};
+  line-height: ${typography.text12Semibold.lineHeight};
+  padding: 7px 12px;
+  cursor: pointer;
+
+  &:disabled {
+    background: #97a3b7;
+    cursor: not-allowed;
+  }
+`;
+
+export const DnsState = styled.p`
+  margin: 0;
+  min-height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: ${colors.black[100]};
+  font-family: ${typography.text14Medium.fontFamily};
+  font-size: ${typography.text14Medium.fontSize};
+  font-weight: ${typography.text14Medium.fontWeight};
+  line-height: ${typography.text14Medium.lineHeight};
+  border: 1px dashed #d0d7e4;
+  border-radius: 12px;
+  background: #f8faff;
+  padding: 12px;
+`;
+
+export const DnsList = styled.ul`
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 204px;
+  overflow-y: auto;
+`;
+
+export const DnsItem = styled.li`
+  border: 1px solid #e3e7ef;
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: #fbfcff;
+`;
+
+export const DnsDomain = styled.span`
+  color: ${colors.black[300]};
+  font-family: ${typography.text14Semibold.fontFamily};
+  font-size: ${typography.text14Semibold.fontSize};
+  font-weight: ${typography.text14Semibold.fontWeight};
+  line-height: ${typography.text14Semibold.lineHeight};
+  word-break: break-all;
+`;
+
+export const DnsLink = styled.a`
+  color: ${colors.primary.default};
+  text-decoration: underline;
+  font-family: ${typography.text14Semibold.fontFamily};
+  font-size: ${typography.text14Semibold.fontSize};
+  font-weight: ${typography.text14Semibold.fontWeight};
+  line-height: ${typography.text14Semibold.lineHeight};
+  word-break: break-all;
+`;
+
+export const DnsMeta = styled.span`
+  color: ${colors.black[100]};
+  font-family: ${typography.text12Regular.fontFamily};
+  font-size: ${typography.text12Regular.fontSize};
+  font-weight: ${typography.text12Regular.fontWeight};
+  line-height: ${typography.text12Regular.lineHeight};
+`;
+
+export const DnsHint = styled.span`
+  color: ${colors.black[75]};
+  font-family: ${typography.text12Regular.fontFamily};
+  font-size: ${typography.text12Regular.fontSize};
+  font-weight: ${typography.text12Regular.fontWeight};
+  line-height: ${typography.text12Regular.lineHeight};
+`;
+
+export const DnsActions = styled.div`
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+`;
+
+export const DnsEditButton = styled.button`
+  align-self: flex-start;
+  border: 1px solid #d2d8e6;
+  border-radius: 8px;
+  background: #f7f9fe;
+  color: ${colors.black[200]};
+  font-family: ${typography.text12Medium.fontFamily};
+  font-size: ${typography.text12Medium.fontSize};
+  font-weight: ${typography.text12Medium.fontWeight};
+  line-height: ${typography.text12Medium.lineHeight};
+  padding: 4px 10px;
+  cursor: pointer;
+
+  &:hover {
+    border-color: #b8c2d7;
+    background: #edf2ff;
+  }
+
+  &:disabled {
+    color: ${colors.black[75]};
+    border-color: #dfe4ee;
+    background: #f5f7fb;
+    cursor: not-allowed;
+  }
+`;
+
+export const DnsDeleteButton = styled.button`
+  align-self: flex-start;
+  border: 1px solid #d2d8e6;
+  border-radius: 8px;
+  background: #ffffff;
+  color: ${colors.black[200]};
+  font-family: ${typography.text12Medium.fontFamily};
+  font-size: ${typography.text12Medium.fontSize};
+  font-weight: ${typography.text12Medium.fontWeight};
+  line-height: ${typography.text12Medium.lineHeight};
+  padding: 4px 10px;
+  cursor: pointer;
+
+  &:hover {
+    border-color: #b8c2d7;
+  }
+
+  &:disabled {
+    color: ${colors.black[75]};
+    border-color: #dfe4ee;
+    cursor: not-allowed;
+  }
+`;
+
 export const FeaturePlaceholder = styled.div`
   margin-top: 10px;
   min-height: 184px;

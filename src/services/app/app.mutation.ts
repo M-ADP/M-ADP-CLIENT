@@ -8,6 +8,11 @@ import {
     PatchAppResourcesPayload,
     deleteApp,
     DeleteAppPayload,
+    postCreateDnsEndpoint,
+    CreateDnsEndpointPayload,
+    deleteDnsEndpoint,
+    putUpdateDnsEndpoint,
+    UpdateDnsEndpointPayload,
 } from './app.api';
 
 export const useCreateAppMutation = () => {
@@ -54,6 +59,36 @@ export const useDeleteAppMutation = () => {
             queryClient.invalidateQueries({ queryKey: ['project'] });
             queryClient.invalidateQueries({ queryKey: ['projects'] });
             queryClient.invalidateQueries({ queryKey: ['appDeployments'] });
+        },
+    });
+};
+
+export const useCreateDnsEndpointMutation = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (payload: CreateDnsEndpointPayload) => postCreateDnsEndpoint(payload),
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['dnsEndpoints', String(variables.project_id)] });
+        },
+    });
+};
+
+export const useDeleteDnsEndpointMutation = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (dnsId: string | number) => deleteDnsEndpoint(dnsId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['dnsEndpoints'] });
+        },
+    });
+};
+
+export const useUpdateDnsEndpointMutation = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (payload: UpdateDnsEndpointPayload) => putUpdateDnsEndpoint(payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['dnsEndpoints'] });
         },
     });
 };

@@ -10,6 +10,8 @@ import {
     getAppResourceStatus,
     AppResourceStatus,
     ApiResponse,
+    getDnsEndpoints,
+    DnsEndpointPage,
 } from './app.api';
 
 const unwrap = <T>(response: ApiResponse<T> | T | undefined, fallback: T): T => {
@@ -78,5 +80,16 @@ export const useAppResourceStatusQuery = (projectId: string, appName: string | n
             return unwrap<AppResourceStatus>(response, {});
         },
         enabled: !!projectId && !!appName,
+    });
+};
+
+export const useDnsEndpointsQuery = (projectId: string, cursor?: number, limit: number = 20) => {
+    return useQuery<DnsEndpointPage>({
+        queryKey: ['dnsEndpoints', projectId, cursor, limit],
+        queryFn: async () => {
+            const response = await getDnsEndpoints(projectId, cursor, limit);
+            return unwrap<DnsEndpointPage>(response, { cursor: null, items: [] });
+        },
+        enabled: !!projectId,
     });
 };
