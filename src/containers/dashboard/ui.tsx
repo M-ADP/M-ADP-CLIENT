@@ -40,6 +40,7 @@ export default function DashboardContainer() {
   });
 
   const detailRows = projectDetailsQuery.data ?? [];
+  const summaryTitle = `${detailRows[0]?.name || projectItems[0]?.name || '프로젝트'} 요약`;
   const resourceProjects = detailRows.slice(0, 3).map((row) => {
     const resource = row.detail.resource;
     const memoryCurrent = parseNumeric(resource?.memory?.used);
@@ -163,7 +164,7 @@ export default function DashboardContainer() {
 
       <S.TopSection>
         <WelcomeHeroCard userName={userName} />
-        <SummaryMetricsCard title="누리 요약" metrics={summaryMetrics} />
+        <SummaryMetricsCard title={summaryTitle} metrics={summaryMetrics} />
       </S.TopSection>
 
       <S.BottomSection>

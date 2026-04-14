@@ -485,6 +485,79 @@ export const DnsDeleteButton = styled.button`
   }
 `;
 
+export const ActionModalContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+`;
+
+export const ActionModalTitle = styled.h3`
+  margin: 0;
+  color: ${colors.black[300]};
+  font-family: ${typography.text20Bold.fontFamily};
+  font-size: ${typography.text20Bold.fontSize};
+  font-weight: ${typography.text20Bold.fontWeight};
+  line-height: ${typography.text20Bold.lineHeight};
+`;
+
+export const ActionModalDescription = styled.p`
+  margin: 0;
+  color: ${colors.black[100]};
+  font-family: ${typography.text14Regular.fontFamily};
+  font-size: ${typography.text14Regular.fontSize};
+  font-weight: ${typography.text14Regular.fontWeight};
+  line-height: ${typography.text14Regular.lineHeight};
+`;
+
+export const ActionModalButtonGroup = styled.div`
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+export const DnsModalContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+`;
+
+export const DnsModalTitle = styled.h3`
+  margin: 0;
+  color: ${colors.black[300]};
+  font-family: ${typography.text20Bold.fontFamily};
+  font-size: ${typography.text20Bold.fontSize};
+  font-weight: ${typography.text20Bold.fontWeight};
+  line-height: ${typography.text20Bold.lineHeight};
+`;
+
+export const DnsModalDescription = styled.p`
+  margin: 0;
+  color: ${colors.black[100]};
+  font-family: ${typography.text14Regular.fontFamily};
+  font-size: ${typography.text14Regular.fontSize};
+  font-weight: ${typography.text14Regular.fontWeight};
+  line-height: ${typography.text14Regular.lineHeight};
+`;
+
+export const DnsModalError = styled.p`
+  margin: 0;
+  color: #dc2626;
+  font-family: ${typography.text12Medium.fontFamily};
+  font-size: ${typography.text12Medium.fontSize};
+  font-weight: ${typography.text12Medium.fontWeight};
+  line-height: ${typography.text12Medium.lineHeight};
+`;
+
+export const DnsModalButtonGroup = styled.div`
+  margin-top: 4px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+`;
+
 export const FeaturePlaceholder = styled.div`
   margin-top: 10px;
   min-height: 184px;

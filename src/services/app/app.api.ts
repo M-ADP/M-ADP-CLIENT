@@ -7,7 +7,6 @@ export interface ApiResponse<T> {
 
 export interface AppCreatePayload {
     name: string;
-    port?: number;
     cpu?: number;
     memory?: number;
     disk?: number;

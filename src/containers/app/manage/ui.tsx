@@ -1,10 +1,13 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import ProgressBar from '@/components/ui/Charts/ProgressBar/ui';
 import ProgressRing from '@/components/ui/Charts/ProgressRing/ui';
+import Modal from '@/components/ui/Modal/ui';
+import Input from '@/components/ui/Input/ui';
+import Button from '@/components/ui/Button/ui';
 import * as S from './style';
 import {
   useCreateDnsEndpointMutation,
@@ -108,6 +111,28 @@ const parseLogTimestamp = (line: string) => {
   };
 };
 
+const DNS_HOST_SUFFIX = 'madp.cloud';
+
+const toEditableSubdomain = (value: string) => {
+  const trimmed = value.trim().toLowerCase();
+  if (!trimmed) return '';
+
+  let host = trimmed.replace(/^https?:\/\//i, '').split('/')[0] || '';
+  if (host.endsWith(`.${DNS_HOST_SUFFIX}`)) {
+    host = host.slice(0, -(`.${DNS_HOST_SUFFIX}`.length + 1));
+  }
+  if (host.includes('.')) {
+    host = host.split('.')[0] || '';
+  }
+  return host;
+};
+
+const toPublicDnsUrl = (subdomain: string) => {
+  const normalized = toEditableSubdomain(subdomain);
+  if (!normalized) return '';
+  return `https://${normalized}.${DNS_HOST_SUFFIX}`;
+};
+
 export default function AppManageContainer({ projectId }: AppManageContainerProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -132,6 +157,7 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
   const createDnsMutation = useCreateDnsEndpointMutation();
   const deleteDnsMutation = useDeleteDnsEndpointMutation();
   const updateDnsMutation = useUpdateDnsEndpointMutation();
+  const [isActionModalOpen, setIsActionModalOpen] = useState(false);
   const isDetailsLoading = appDetailsQuery.isPending;
   const isDetailsError = appDetailsQuery.isError;
   const isStatusLoading = appStatusQuery.isPending;
@@ -251,21 +277,13 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
     ? dnsItems.filter((item) => String(item.deployment_id) === String(appDetails.app_id))
     : [];
   const isDnsActionPending = createDnsMutation.isPending || deleteDnsMutation.isPending || updateDnsMutation.isPending;
+  const [isDnsEditModalOpen, setIsDnsEditModalOpen] = useState(false);
+  const [editingDnsId, setEditingDnsId] = useState<string | number | null>(null);
+  const [dnsEditInitialValue, setDnsEditInitialValue] = useState('');
+  const [dnsEditValue, setDnsEditValue] = useState('');
+  const [dnsEditError, setDnsEditError] = useState('');
   const canCreateDns = Boolean(appDetails?.app_id) && !dnsQuery.isPending && !dnsQuery.isError && relatedDnsItems.length === 0;
   const isSubdomainFormatValid = (value: string) => /^[a-z0-9-]{1,63}$/.test(value);
-  const toDnsUrl = (subdomain: string) => {
-    const trimmed = subdomain.trim();
-    if (!trimmed) return null;
-    if (/^https?:\/\//i.test(trimmed)) return trimmed;
-    if (trimmed.includes('.')) return `https://${trimmed}`;
-    return null;
-  };
-  const formatDnsDomain = (subdomain: string) => {
-    const trimmed = subdomain.trim();
-    if (!trimmed) return '-';
-    if (trimmed.includes('.')) return trimmed;
-    return `${trimmed} (서브도메인)`;
-  };
 
   const handlePatchResources = async () => {
     if (patchResourcesMutation.isPending) return;
@@ -343,20 +361,28 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
     }
   };
 
+  const closeActionModal = () => {
+    if (patchResourcesMutation.isPending || deleteAppMutation.isPending) return;
+    setIsActionModalOpen(false);
+  };
+
   const handleActionMenu = () => {
     if (patchResourcesMutation.isPending || deleteAppMutation.isPending) return;
     if (!appName) {
       alert('조회 가능한 애플리케이션이 없습니다.');
       return;
     }
-    const action = window.prompt('작업 선택: 1=자원 변경, 2=앱 삭제', '1');
-    if (action === '2') {
-      void handleDeleteApp();
-      return;
-    }
-    if (action === '1') {
-      void handlePatchResources();
-    }
+    setIsActionModalOpen(true);
+  };
+
+  const handleSelectPatchResources = async () => {
+    closeActionModal();
+    await handlePatchResources();
+  };
+
+  const handleSelectDeleteApp = async () => {
+    closeActionModal();
+    await handleDeleteApp();
   };
 
   const handleCreateDns = async () => {
@@ -408,25 +434,45 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
     }
   };
 
-  const handleUpdateDns = async (dnsId: string | number, currentSubdomain: string) => {
-    if (isDnsActionPending) return;
+  const closeDnsEditModal = () => {
+    if (updateDnsMutation.isPending) return;
+    setIsDnsEditModalOpen(false);
+    setEditingDnsId(null);
+    setDnsEditInitialValue('');
+    setDnsEditValue('');
+    setDnsEditError('');
+  };
 
-    const input = window.prompt('변경할 서브도메인을 입력하세요. (영문 소문자, 숫자, 하이픈)', currentSubdomain);
-    if (input === null) return;
-    const nextSubdomain = input.trim().toLowerCase();
+  const openDnsEditModal = (dnsId: string | number, currentSubdomain: string) => {
+    if (isDnsActionPending) return;
+    const normalizedSubdomain = toEditableSubdomain(currentSubdomain);
+    setEditingDnsId(dnsId);
+    setDnsEditInitialValue(normalizedSubdomain);
+    setDnsEditValue(normalizedSubdomain);
+    setDnsEditError('');
+    setIsDnsEditModalOpen(true);
+  };
+
+  const handleDnsEditSubmit = async () => {
+    if (editingDnsId === null || updateDnsMutation.isPending) return;
+    const nextSubdomain = toEditableSubdomain(dnsEditValue);
 
     if (!isSubdomainFormatValid(nextSubdomain)) {
-      alert('서브도메인은 1~63자 영문 소문자, 숫자, 하이픈(-)만 사용할 수 있습니다.');
+      setDnsEditError('서브도메인은 1~63자 영문 소문자, 숫자, 하이픈(-)만 사용할 수 있습니다.');
       return;
     }
 
-    if (nextSubdomain === currentSubdomain) return;
+    if (nextSubdomain === dnsEditInitialValue) {
+      closeDnsEditModal();
+      return;
+    }
 
     try {
       const result = await updateDnsMutation.mutateAsync({
-        dnsId,
+        dnsId: editingDnsId,
         subdomain: nextSubdomain,
       });
+      closeDnsEditModal();
       alert(('message' in result && result.message) ? result.message : 'DNS Endpoint가 수정되었습니다.');
       await dnsQuery.refetch();
     } catch (error) {
@@ -568,25 +614,15 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
             ) : (
               <S.DnsList>
                 {relatedDnsItems.map((dns) => {
-                  const dnsUrl = toDnsUrl(dns.subdomain);
-                  const serviceTypeLabel = dns.service_type?.toUpperCase();
+                  const dnsUrl = toPublicDnsUrl(dns.subdomain);
                   return (
                     <S.DnsItem key={`${dns.id}-${dns.deployment_id}`}>
-                      {dnsUrl ? (
-                        <S.DnsLink href={dnsUrl} target="_blank" rel="noreferrer">
-                          {dns.subdomain}
-                        </S.DnsLink>
-                      ) : (
-                        <S.DnsDomain>{formatDnsDomain(dns.subdomain)}</S.DnsDomain>
-                      )}
-                      <S.DnsMeta>
-                        {dns.deployment_type}
-                        {serviceTypeLabel ? ` · ${serviceTypeLabel}` : ''}
-                        {` · deployment #${dns.deployment_id}`}
-                      </S.DnsMeta>
+                      <S.DnsLink href={dnsUrl} target="_blank" rel="noreferrer">
+                        {dnsUrl}
+                      </S.DnsLink>
                       <S.DnsActions>
                         <S.DnsEditButton
-                          onClick={() => void handleUpdateDns(dns.id, dns.subdomain)}
+                          onClick={() => openDnsEditModal(dns.id, dns.subdomain)}
                           disabled={isDnsActionPending}
                         >
                           {updateDnsMutation.isPending ? '수정 중...' : '수정'}
@@ -638,6 +674,62 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
           <S.RiskName>추후에 추가될 기능입니다.</S.RiskName>
         </S.RiskCard>
       </S.BottomSection>
+
+      <Modal open={isActionModalOpen} onClose={closeActionModal} width={420} height="auto">
+        <S.ActionModalContent>
+          <S.ActionModalTitle>작업 선택</S.ActionModalTitle>
+          <S.ActionModalDescription>실행할 작업을 선택하세요.</S.ActionModalDescription>
+          <S.ActionModalButtonGroup>
+            <Button variant="confirm" onClick={() => void handleSelectPatchResources()} disabled={patchResourcesMutation.isPending || deleteAppMutation.isPending}>
+              자원 변경
+            </Button>
+            <Button variant="confirm" onClick={() => void handleSelectDeleteApp()} disabled={patchResourcesMutation.isPending || deleteAppMutation.isPending}>
+              앱 삭제
+            </Button>
+            <Button variant="cancel" onClick={closeActionModal} disabled={patchResourcesMutation.isPending || deleteAppMutation.isPending}>
+              취소
+            </Button>
+          </S.ActionModalButtonGroup>
+        </S.ActionModalContent>
+      </Modal>
+
+      <Modal open={isDnsEditModalOpen} onClose={closeDnsEditModal} width={460} height="auto">
+        <S.DnsModalContent>
+          <S.DnsModalTitle>DNS Endpoint 수정</S.DnsModalTitle>
+          <S.DnsModalDescription>
+            변경할 서브도메인을 입력하세요. (영문 소문자, 숫자, 하이픈)
+          </S.DnsModalDescription>
+          <Input
+            label="Subdomain"
+            name="subdomain"
+            value={dnsEditValue}
+            onChange={(event) => {
+              setDnsEditValue(event.target.value.toLowerCase());
+              if (dnsEditError) {
+                setDnsEditError('');
+              }
+            }}
+            placeholder="예: new-app"
+            maxLength={63}
+            autoFocus
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
+                event.preventDefault();
+                void handleDnsEditSubmit();
+              }
+            }}
+          />
+          {dnsEditError ? <S.DnsModalError>{dnsEditError}</S.DnsModalError> : null}
+          <S.DnsModalButtonGroup>
+            <Button variant="cancel" onClick={closeDnsEditModal}>
+              취소
+            </Button>
+            <Button variant="confirm" onClick={() => void handleDnsEditSubmit()} disabled={updateDnsMutation.isPending}>
+              {updateDnsMutation.isPending ? '수정 중...' : '수정'}
+            </Button>
+          </S.DnsModalButtonGroup>
+        </S.DnsModalContent>
+      </Modal>
     </S.PageWrapper>
   );
 }
