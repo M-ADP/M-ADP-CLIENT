@@ -2,7 +2,7 @@ import styled from '@emotion/styled';
 import { colors } from '@/styles/colors';
 import { typography } from '@/styles/typography';
 
-export const SearchContainer = styled.div`
+export const SearchContainer = styled.form`
   display: flex;
   align-items: center;
   justify-content: space-between;

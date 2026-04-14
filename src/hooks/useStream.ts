@@ -29,7 +29,7 @@ export const useStream = (sessionId: number, requestId: number | null) => {
           headers['Last-Event-ID'] = lastEventIdRef.current;
         }
 
-        const url = `${BASE_URL}/sessions/${sessionId}/requests/${requestId}/stream?follow=true`;
+        const url = `${BASE_URL}/chatops/sessions/${sessionId}/requests/${requestId}/stream?follow=true`;
 
         const response = await fetch(url, {
           headers,

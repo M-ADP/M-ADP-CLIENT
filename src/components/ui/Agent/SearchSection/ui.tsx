@@ -5,11 +5,12 @@ interface SearchSectionProps {
   setInputValue: (value: string) => void;
   handleSearch: (e?: React.FormEvent) => void;
   handleKeyDown: (e: React.KeyboardEvent) => void;
+  disabled?: boolean;
 }
 
-export default function SearchSection({ inputValue, setInputValue, handleSearch, handleKeyDown }: SearchSectionProps) {
+export default function SearchSection({ inputValue, setInputValue, handleSearch, handleKeyDown, disabled }: SearchSectionProps) {
   return (
-    <S.SearchContainer>
+    <S.SearchContainer onSubmit={handleSearch}>
       <S.InputWrapper>
         <S.IconCircle>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -20,11 +21,17 @@ export default function SearchSection({ inputValue, setInputValue, handleSearch,
           placeholder="무엇을 원하시나요?"
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={handleKeyDown}
+          disabled={disabled}
         />
       </S.InputWrapper>
 
-      <S.IconCircle className="send-button" onClick={handleSearch}>
+      <S.IconCircle
+        as="button"
+        type="submit"
+        className="send-button"
+        disabled={disabled}
+        style={{ opacity: disabled ? 0.5 : 1, cursor: disabled ? 'not-allowed' : 'pointer', border: 'none' }}
+      >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M12 19V5M12 5L5 12M12 5L19 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
