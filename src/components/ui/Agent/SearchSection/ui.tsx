@@ -21,21 +21,16 @@ export default function SearchSection({ inputValue, setInputValue, handleSearch,
           placeholder="무엇을 원하시나요?"
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
           disabled={disabled}
         />
       </S.InputWrapper>
 
-      <S.IconCircle
-        as="button"
-        type="submit"
-        className="send-button"
-        disabled={disabled}
-        style={{ opacity: disabled ? 0.5 : 1, cursor: disabled ? 'not-allowed' : 'pointer', border: 'none' }}
-      >
+      <S.SendButton type="submit" disabled={disabled} aria-label="메시지 전송">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M12 19V5M12 5L5 12M12 5L19 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
-      </S.IconCircle>
+      </S.SendButton>
     </S.SearchContainer>
   );
 }

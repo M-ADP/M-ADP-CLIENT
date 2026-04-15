@@ -46,6 +46,25 @@ export const IconCircle = styled.div`
   }
 `;
 
+export const SendButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: ${colors.primary.default};
+  cursor: pointer;
+  border: 1px solid ${colors.primary.default};
+  padding: 0;
+  transition: opacity 0.15s ease;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
 export const SearchInput = styled.input`
   border: none;
   background: transparent;

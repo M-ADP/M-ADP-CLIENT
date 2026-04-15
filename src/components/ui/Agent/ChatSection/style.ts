@@ -23,6 +23,31 @@ export const MessageRow = styled.div`
   margin: 0 auto;
 `;
 
+export const ThinkingRow = styled.div`
+  display: flex;
+  width: 100%;
+  max-width: 800px;
+  margin: -6px auto -4px;
+
+  @media (max-width: 768px) {
+    margin: -2px auto 0;
+  }
+`;
+
+export const ThinkingOffset = styled.div`
+  width: 48px;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    width: 0;
+  }
+`;
+
+export const ThinkingPanelWrap = styled.div`
+  flex: 1;
+  min-width: 0;
+`;
+
 export const UserMessageRow = styled.div`
   display: flex;
   justify-content: flex-end;

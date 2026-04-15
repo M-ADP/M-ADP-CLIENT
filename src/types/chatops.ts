@@ -1,7 +1,7 @@
 export interface TaskInputField {
   key: string;
   label: string;
-  value: unknown;
+  value?: unknown;
 }
 
 export interface TaskSnapshot {
@@ -163,6 +163,11 @@ export interface SSERejectedEvent extends Partial<SSEAuditMeta> {
 }
 
 export type SSEEvent = SSETaskEvent | SSEDeltaEvent | SSESupersededEvent | SSERejectedEvent;
+
+export interface SSEEventRecord {
+  sequence: number | null;
+  event: SSEEvent;
+}
 
 // ----- History API -----
 

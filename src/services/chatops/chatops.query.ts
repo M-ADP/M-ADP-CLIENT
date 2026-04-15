@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getSessions, getSession, getSessionMessages } from './chatops.api';
+import { getSessions, getSession, getSessionMessages, getRequestEvents } from './chatops.api';
 
 export const chatopsKeys = {
   all: ['chatops'] as const,
@@ -7,6 +7,8 @@ export const chatopsKeys = {
   sessionDetails: () => [...chatopsKeys.all, 'session'] as const,
   sessionDetail: (id: number | null) => [...chatopsKeys.sessionDetails(), id] as const,
   sessionMessages: (id: number | null) => [...chatopsKeys.sessionDetails(), id, 'messages'] as const,
+  requestEvents: (sessionId: number | null, requestId: number | null) =>
+    [...chatopsKeys.all, 'request-events', sessionId, requestId] as const,
 };
 
 export const useSessions = () => {
@@ -35,5 +37,19 @@ export const useSessionMessages = (sessionId: number | null, before?: string) =>
       return getSessionMessages(sessionId, before);
     },
     enabled: sessionId !== null,
+  });
+};
+
+export const useRequestEvents = (sessionId: number | null, requestId: number | null) => {
+  return useQuery({
+    queryKey: chatopsKeys.requestEvents(sessionId, requestId),
+    queryFn: () => {
+      if (sessionId === null || requestId === null) {
+        throw new Error('sessionId or requestId is null');
+      }
+      return getRequestEvents(sessionId, requestId, 100);
+    },
+    enabled: sessionId !== null && requestId !== null,
+    staleTime: 5_000,
   });
 };

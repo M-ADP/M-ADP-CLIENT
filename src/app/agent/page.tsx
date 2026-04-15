@@ -10,8 +10,8 @@ import SearchSection from '@/components/ui/Agent/SearchSection/ui';
 import { useChatStore } from '@/store/chatStore';
 import { useStream } from '@/hooks/useStream';
 import {
-  useSessions,
   useSession,
+  useRequestEvents,
   chatopsKeys
 } from '@/services/chatops/chatops.query';
 import {
@@ -20,7 +20,12 @@ import {
   useRejectRequest,
   useCreateSession
 } from '@/services/chatops/chatops.mutation';
-import { isTerminalStatus } from '@/types/chatops';
+import {
+  ConversationMessage,
+  isTerminalStatus,
+  SSEEvent,
+  SSEEventRecord,
+} from '@/types/chatops';
 
 export default function AgentPage() {
   const queryClient = useQueryClient();
@@ -30,7 +35,6 @@ export default function AgentPage() {
     setActiveSessionId,
     pendingRequestId,
     setPendingRequestId,
-    isStreaming,
     streamingText,
     clearStreamingText,
     resetRequest,
@@ -41,21 +45,84 @@ export default function AgentPage() {
     isApprovalPending,
     setIsApprovalPending,
     supersededBy,
+    sseEventLog,
   } = useChatStore();
 
   const [inputValue, setInputValue] = useState("");
-  const [optimisticMessage, setOptimisticMessage] = useState<any>(null);
-
-  const { data: sessionList, isLoading: isSessionsLoading, isError: isSessionsError } = useSessions();
-  const { data: sessionDetail, isLoading: isDetailLoading } = useSession(activeSessionId);
+  const [optimisticMessage, setOptimisticMessage] = useState<ConversationMessage | null>(null);
+  const { data: sessionDetail } = useSession(activeSessionId);
 
   const createSessionMutation = useCreateSession();
   const postMessageMutation = usePostMessage();
   const approveMutation = useApproveRequest();
   const rejectMutation = useRejectRequest();
+  const isSubmittingMessage =
+    createSessionMutation.isPending ||
+    postMessageMutation.isPending;
+  const isRequestActive =
+    isSubmittingMessage ||
+    pendingRequestId !== null;
 
   // SSE Stream 훅
   useStream(activeSessionId || 0, pendingRequestId);
+
+  const sendUserMessage = async (rawMessage: string, options?: { clearComposer?: boolean }) => {
+    const inputText = rawMessage.trim();
+    if (!inputText || isSubmittingMessage) return;
+
+    let targetSessionId = activeSessionId;
+
+    if (options?.clearComposer) {
+      setInputValue("");
+    }
+
+    resetRequest();
+
+    setOptimisticMessage({
+      message_id: 'temp-' + Date.now(),
+      request_id: null,
+      role: 'user',
+      type: 'text',
+      text: inputText,
+      task: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+
+    try {
+      if (!targetSessionId) {
+        const newSession = await createSessionMutation.mutateAsync({ title: inputText.slice(0, 20) });
+        targetSessionId = newSession.session_id;
+        setActiveSessionId(targetSessionId);
+      }
+
+      postMessageMutation.mutate(
+        { sessionId: targetSessionId, message: inputText },
+        {
+          onSuccess: async (res) => {
+            const msgsWithReqId = res.messages.filter((message) => message.request_id !== null);
+            const targetMsg = msgsWithReqId[msgsWithReqId.length - 1];
+
+            if (targetMsg?.request_id) {
+              setPendingRequestId(targetMsg.request_id);
+            }
+
+            clearStreamingText();
+            await queryClient.invalidateQueries({ queryKey: chatopsKeys.sessionDetail(targetSessionId) });
+            setOptimisticMessage(null);
+            queryClient.invalidateQueries({ queryKey: chatopsKeys.sessions() });
+          },
+          onError: (error) => {
+            console.error('[ChatOps] POST message error:', error);
+            setOptimisticMessage(null);
+          }
+        }
+      );
+    } catch (error) {
+      console.error('[ChatOps] Failed to create session or send message', error);
+      setOptimisticMessage(null);
+    }
+  };
 
   // 스트리밍/terminal 종료 시 처리
   useEffect(() => {
@@ -70,64 +137,7 @@ export default function AgentPage() {
   // 전송 핸들러
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    const inputText = inputValue.trim();
-    if (!inputText || isStreaming) return;
-
-    let targetSessionId = activeSessionId;
-
-    // 입력창 즉시 초기화 (빠른 반응성)
-    setInputValue("");
-
-    // 이전 요청 상태 초기화
-    resetRequest();
-
-    // 로컬 상태로 즉시 화면에 노출 (안전하고 빠름)
-    setOptimisticMessage({
-      message_id: 'temp-' + Date.now(),
-      request_id: null,
-      role: 'user',
-      type: 'text',
-      text: inputText,
-      task: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    });
-
-    try {
-      // 세션이 없으면 메시지 전송 직전에 새로 생성
-      if (!targetSessionId) {
-        const newSession = await createSessionMutation.mutateAsync({ title: inputText.slice(0, 20) });
-        targetSessionId = newSession.session_id;
-        setActiveSessionId(targetSessionId);
-      }
-
-      postMessageMutation.mutate(
-        { sessionId: targetSessionId, message: inputText },
-        {
-          onSuccess: async (res) => {
-            const msgsWithReqId = res.messages.filter((m: any) => m.request_id !== null);
-            const targetMsg = msgsWithReqId[msgsWithReqId.length - 1];
-
-            if (targetMsg?.request_id) {
-              setPendingRequestId(targetMsg.request_id);
-            }
-
-            clearStreamingText();
-            // 서버 데이터가 도착한 뒤에 optimistic 메시지를 제거해야 깜빡임이 없다
-            await queryClient.invalidateQueries({ queryKey: chatopsKeys.sessionDetail(targetSessionId) });
-            setOptimisticMessage(null);
-            queryClient.invalidateQueries({ queryKey: chatopsKeys.sessions() });
-          },
-          onError: (error) => {
-            console.error('[ChatOps] POST message error:', error);
-            setOptimisticMessage(null); // 실패 시 가짜 메시지 롤백
-          }
-        }
-      );
-    } catch (error) {
-      console.error('[ChatOps] Failed to create session or send message', error);
-      setOptimisticMessage(null); // 통신 에러 시 가짜 메시지 롤백
-    }
+    await sendUserMessage(inputValue, { clearComposer: true });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -167,15 +177,28 @@ export default function AgentPage() {
     );
   };
 
-  const isLoading =
-    isSessionsLoading ||
-    (activeSessionId && isDetailLoading) ||
-    (sessionList && sessionList.sessions.length === 0 && createSessionMutation.isPending) ||
-    (!isSessionsError && !createSessionMutation.isError && (activeSessionId === null || activeSessionId === undefined));
+  const handleSubmitMissingInputs = (requestId: number, message: string) => {
+    if (requestId <= 0) return;
+    void sendUserMessage(message);
+  };
 
   // --- 메시지 리스트 조합 ---
   const serverMessages = sessionDetail?.messages || [];
   const messages = [...serverMessages];
+  const { data: requestEvents } = useRequestEvents(activeSessionId, pendingRequestId);
+
+  const historyEventLog: SSEEventRecord[] =
+    requestEvents?.items
+      .filter((item) => item.type !== 'response.delta')
+      .map((item) => ({
+        sequence: item.sequence,
+        event: item.data as unknown as SSEEvent,
+      })) ?? [];
+
+  const thinkingEventLog =
+    pendingRequestId !== null
+      ? (sseEventLog.length > 0 ? sseEventLog : historyEventLog)
+      : [];
 
   // 1. optimistic user message (전송 중)
   if (optimisticMessage) {
@@ -190,13 +213,13 @@ export default function AgentPage() {
     );
     const liveText = finalResponse || streamingText;
 
-    if (!hasServerResponse && (liveText || isStreaming)) {
+    if (!hasServerResponse) {
       messages.push({
         message_id: `sse-live-${pendingRequestId}`,
         request_id: pendingRequestId,
         role: 'assistant' as const,
         type: (currentTask ? 'task' : 'text') as 'text' | 'task',
-        text: liveText || '...',
+        text: liveText || null,
         task: currentTask,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -204,20 +227,33 @@ export default function AgentPage() {
     }
   }
 
+  if ((createSessionMutation.isPending || postMessageMutation.isPending) && pendingRequestId === null) {
+    messages.push({
+      message_id: 'sse-live-pending',
+      request_id: null,
+      role: 'assistant',
+      type: 'text',
+      text: null,
+      task: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+  }
+
   const hasMessages = messages.length > 0;
 
   return (
-    <S.Container isChat={hasMessages || isStreaming}>
+    <S.Container isChat={hasMessages || isRequestActive}>
       {hasMessages ? (
         <ChatSection
           messages={messages}
-          streamingText={streamingText}
-          isStreaming={isStreaming}
-          activeSessionId={activeSessionId || 0}
+          isThinking={isRequestActive}
+          isMessageSubmitting={isSubmittingMessage}
           currentTask={currentTask}
-          finalResponse={finalResponse}
           isApprovalPending={isApprovalPending}
           supersededBy={supersededBy}
+          sseEventLog={thinkingEventLog}
+          onSubmitMissingInputs={handleSubmitMissingInputs}
           onApprove={handleApprove}
           onReject={handleReject}
         />
@@ -239,7 +275,7 @@ export default function AgentPage() {
         setInputValue={setInputValue}
         handleSearch={handleSearch}
         handleKeyDown={handleKeyDown}
-        disabled={isStreaming}
+        disabled={isSubmittingMessage}
       />
     </S.Container>
   );
