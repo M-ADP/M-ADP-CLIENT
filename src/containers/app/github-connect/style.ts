@@ -32,10 +32,28 @@ export const Title = styled.h1`
 export const SelectsRow = styled.div`
   display: flex;
   gap: 12px;
-  margin-bottom: 4rem;
+  margin-bottom: 1.5rem;
   width: 100%;
   max-width: 600px;
   justify-content: center;
+`;
+
+export const AppInstallPrompt = styled.div`
+  margin-bottom: 4rem;
+  font-family: ${FONT_FAMILY};
+  font-size: 14px;
+  color: #8b949e;
+
+  a {
+    color: #4078c0;
+    text-decoration: none;
+    font-weight: 500;
+    margin-left: 6px;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
 `;
 
 export const SelectWrapper = styled.div<{ width?: string }>`

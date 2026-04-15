@@ -21,14 +21,21 @@ export const SummaryMetricsCard = ({ title, metrics }: SummaryMetricsCardProps) 
             <S.LabelGroup>
               <S.MetricLabel>{metric.label}</S.MetricLabel>
               <S.MetricValue>{metric.value}</S.MetricValue>
+              {metric.comingSoon ? (
+                <S.ComingSoonText>{metric.helperText || '추후 추가 예정'}</S.ComingSoonText>
+              ) : null}
             </S.LabelGroup>
 
             <S.ProgressBarWrapper>
-              <ProgressBar
-                value={metric.percentage}
-                max={100}
-                height={4}
-              />
+              {metric.comingSoon ? (
+                <S.ComingSoonBar aria-hidden />
+              ) : (
+                <ProgressBar
+                  value={metric.percentage}
+                  max={100}
+                  height={4}
+                />
+              )}
             </S.ProgressBarWrapper>
           </S.MetricCard>
         ))}

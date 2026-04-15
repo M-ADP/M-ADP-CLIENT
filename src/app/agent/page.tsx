@@ -65,10 +65,10 @@ export default function AgentPage() {
     if (!inputText || isStreaming) return;
 
     let targetSessionId = activeSessionId;
-    
+
     // 입력창 즉시 초기화 (빠른 반응성)
     setInputValue("");
-    
+
     // 로컬 상태로 즉시 화면에 노출 (안전하고 빠름)
     setOptimisticMessage({
       message_id: 'temp-' + Date.now(),
@@ -95,11 +95,11 @@ export default function AgentPage() {
           onSuccess: (res) => {
             const msgsWithReqId = res.messages.filter((m: any) => m.request_id !== null);
             const targetMsg = msgsWithReqId[msgsWithReqId.length - 1];
-            
+
             if (targetMsg?.request_id) {
               setPendingRequestId(targetMsg.request_id);
             }
-            
+
             setOptimisticMessage(null); // 전송 완료 후 가짜 메시지 지움
             clearStreamingText();
             queryClient.invalidateQueries({ queryKey: chatopsKeys.sessionDetail(targetSessionId) });
@@ -129,7 +129,7 @@ export default function AgentPage() {
       { sessionId: activeSessionId, requestId },
       {
         onSuccess: () => {
-           queryClient.invalidateQueries({ queryKey: chatopsKeys.sessionDetail(activeSessionId) });
+          queryClient.invalidateQueries({ queryKey: chatopsKeys.sessionDetail(activeSessionId) });
         }
       }
     );
@@ -141,15 +141,15 @@ export default function AgentPage() {
       { sessionId: activeSessionId, requestId },
       {
         onSuccess: () => {
-           queryClient.invalidateQueries({ queryKey: chatopsKeys.sessionDetail(activeSessionId) });
+          queryClient.invalidateQueries({ queryKey: chatopsKeys.sessionDetail(activeSessionId) });
         }
       }
     );
   };
 
-  const isLoading = 
-    isSessionsLoading || 
-    (activeSessionId && isDetailLoading) || 
+  const isLoading =
+    isSessionsLoading ||
+    (activeSessionId && isDetailLoading) ||
     (sessionList && sessionList.sessions.length === 0 && createSessionMutation.isPending) ||
     (!isSessionsError && !createSessionMutation.isError && (activeSessionId === null || activeSessionId === undefined));
 

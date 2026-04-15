@@ -19,6 +19,13 @@ export default function ProjectCreateContainer() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    if (name === 'projectName') {
+      const sanitizedName = value
+        .toLowerCase()
+        .replace(/[ㄱ-ㅎㅏ-ㅣ가-힣]/g, '');
+      setFormData((prev) => ({ ...prev, [name]: sanitizedName }));
+      return;
+    }
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -27,6 +34,11 @@ export default function ProjectCreateContainer() {
 
     if (!formData.projectName.trim()) {
       alert('프로젝트 이름을 입력해주세요.');
+      return;
+    }
+
+    if (/[A-Z]/.test(formData.projectName) || /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(formData.projectName)) {
+      alert('프로젝트 이름에는 대문자와 한글을 사용할 수 없습니다.');
       return;
     }
 
@@ -64,6 +76,7 @@ export default function ProjectCreateContainer() {
           onChange={handleChange}
           placeholder="예: Kill Dongwookki"
           maxLength={20}
+          autoComplete="off"
         />
         <Input
           label="CPU (0.1v ~ 4.0v)"
@@ -87,7 +100,7 @@ export default function ProjectCreateContainer() {
           placeholder="예: 4"
         />
         <S.NoticeText>
-          {`※ 메모리와 디스크는 모두 GB 단위로 입력해 주세요.\n※ 주의: 디스크 용량은 이후 확장만 가능하며, 축소는 불가능합니다.`}
+          {`※ 프로젝트 이름에는 대문자와 한글을 사용할 수 없습니다.\n※ 메모리와 디스크는 모두 GB 단위로 입력해 주세요.\n※ 주의: 디스크 용량은 이후 확장만 가능하며, 축소는 불가능합니다.`}
         </S.NoticeText>
         <S.ButtonGroup>
           <Button variant="confirm" type="submit" disabled={createProjectMutation.isPending}>

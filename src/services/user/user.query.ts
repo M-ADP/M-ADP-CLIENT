@@ -1,20 +1,21 @@
 import { useQuery } from '@tanstack/react-query';
 import { getMyUserProfile, getUserByNickname, UserProfile } from './user.api';
 import { useUserStore } from '@/store/userStore';
-import { useAuthStore } from '@/store/authStore';
 import { useEffect } from 'react';
-import Cookies from 'js-cookie';
 
 export const useUserProfileQuery = () => {
     const setUser = useUserStore((state) => state.setUser);
-    const step = useAuthStore((state: { step: string }) => state.step);
-    const token = Cookies.get('token');
 
     const query = useQuery<UserProfile>({
         queryKey: ['userProfile'],
-        queryFn: () => getMyUserProfile(),
+        queryFn: async () => {
+            const response = await getMyUserProfile();
+            if (!response?.data) {
+                throw new Error('사용자 프로필 형식이 올바르지 않습니다.');
+            }
+            return response.data;
+        },
         staleTime: 1000 * 60 * 5,
-        enabled: !!token && step !== 'github',
     });
 
     useEffect(() => {

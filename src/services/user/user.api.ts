@@ -1,5 +1,10 @@
 import { api } from '@/utils/api';
 
+export interface ApiResponse<T> {
+    message?: string;
+    data: T;
+}
+
 export interface UserProfile {
     id: string;
     github_id: string;
@@ -9,9 +14,9 @@ export interface UserProfile {
 
 export const getMyUserProfile = (userId?: string) => {
     const query = userId ? `?userId=${userId}` : '';
-    return api(`/user/profile${query}`, {
+    return api<ApiResponse<UserProfile>>(`/user/profile${query}`, {
         method: 'GET',
-    }) as Promise<UserProfile>;
+    });
 };
 
 export interface UserProfileByNickname {
