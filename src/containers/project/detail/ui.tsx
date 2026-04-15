@@ -85,12 +85,25 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
 
   const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    if (name === 'name') {
+      const sanitizedName = value
+        .toLowerCase()
+        .replace(/[ㄱ-ㅎㅏ-ㅣ가-힣]/g, '');
+      setEditForm((prev) => ({ ...prev, [name]: sanitizedName }));
+      return;
+    }
     setEditForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleEditSubmit = async () => {
     try {
-      if (editForm.name && editForm.name !== project?.name) {
+      const isNameChanged = Boolean(editForm.name && editForm.name !== project?.name);
+      if (isNameChanged && (/[A-Z]/.test(editForm.name) || /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(editForm.name))) {
+        alert('프로젝트 이름에는 대문자와 한글을 사용할 수 없습니다.');
+        return;
+      }
+
+      if (isNameChanged) {
         await updateNameMutation.mutateAsync({
           projectId,
           payload: { name: editForm.name },
@@ -175,6 +188,11 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
     }
   };
 
+  const handleOpenAppDetail = (appName: string, appId: string | number) => {
+    const query = new URLSearchParams({ appName, appId: String(appId) });
+    router.push(`/project/manage/${projectId}/app?${query.toString()}`);
+  };
+
   if (isLoading) {
     return (
       <S.PageWrapper>
@@ -191,15 +209,17 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
     );
   }
 
-  const getStatusVariant = (status: string): 'healthy' | 'unhealthy' | 'stopped' => {
+  const getStatusVariant = (status: string): 'healthy' | 'unhealthy' | 'warning' | 'stopped' => {
     const s = status.toUpperCase();
     switch (s) {
       case 'HEALTHY':
       case 'RUNNING':
         return 'healthy';
+      case 'BUILDING':
+      case 'PENDING':
+        return 'warning';
       case 'UNHEALTHY':
         return 'unhealthy';
-      case 'PENDING':
       case 'STOPPED':
       default:
         return 'stopped';
@@ -243,17 +263,23 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
           ) : (
             project.deployments.map((app) => {
               const variant = getStatusVariant(app.health_status);
-              const isUnhealthy = variant === 'unhealthy' || variant === 'stopped';
+              const normalizedStatus = String(app.health_status || '').toUpperCase();
+              const showStatusMessage = variant === 'unhealthy' || variant === 'stopped' || variant === 'warning';
               return (
                 <Card
                   key={app.id}
                   title={app.name}
+                  onClick={() => handleOpenAppDetail(app.name, app.id)}
                   footer={
                     <>
-                      {isUnhealthy && (
+                      {showStatusMessage && (
                         <FooterMessage>
                           <Image src="/icons/project/warning.svg" alt="warning" width={12} height={12} />
-                          {app.health_status === 'Stopped' ? '애플리케이션이 정지 상태입니다.' : '애플리케이션에 오류가 발생했습니다.'}
+                          {variant === 'warning'
+                            ? '애플리케이션을 빌드 중입니다. 잠시만 기다려주세요.'
+                            : normalizedStatus === 'STOPPED'
+                              ? '애플리케이션이 정지 상태입니다.'
+                              : '애플리케이션에 오류가 발생했습니다.'}
                         </FooterMessage>
                       )}
                       <StatusBadge $variant={variant}>

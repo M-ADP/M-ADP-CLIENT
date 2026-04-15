@@ -3,6 +3,8 @@ export interface SummaryMetric {
   label: string;
   value: string;
   percentage: number;
+  comingSoon?: boolean;
+  helperText?: string;
 }
 
 export interface ResourceAllocationItem {

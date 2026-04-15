@@ -6,7 +6,7 @@ import Image from 'next/image';
 import * as S from './style';
 import { useUserStore } from '@/store/userStore';
 import { useUserProfileQuery } from '@/services/user/user.query';
-import { useProjectListQuery } from '@/services/project/project.query';
+import { useProjectListQuery, useProjectDetailQuery } from '@/services/project/project.query';
 import { useAuthStore } from '@/store/authStore';
 import { postLogout } from '@/services/login/login.api';
 import Cookies from 'js-cookie';
@@ -20,7 +20,6 @@ interface SidebarChildItem {
   key: string;
   label: string;
   path: string;
-  detailChildren?: DetailNavItem[];
 }
 
 interface SidebarItem {
@@ -33,7 +32,6 @@ interface SidebarItem {
 
 const DETAIL_TABS: DetailNavItem[] = [
   { key: 'project-info', label: '프로젝트 정보' },
-  { key: 'project-app', label: '앱' },
 ];
 
 const PRIMARY_NAV: SidebarItem[] = [
@@ -57,6 +55,35 @@ const SECONDARY_NAV = [
   { key: 'support', label: '서포트', icon: '/icons/sidebar/support.svg', path: '/support' },
 ];
 
+const extractAppName = (app: Record<string, unknown>, index: number) => {
+  const candidates: unknown[] = [
+    app.name,
+    app.app_name,
+    app.application_name,
+    app.deployment_name,
+    app.service_name,
+    (app.application as Record<string, unknown> | undefined)?.name,
+    (app.deployment as Record<string, unknown> | undefined)?.name,
+  ];
+
+  const matched = candidates.find((value) => typeof value === 'string' && value.trim().length > 0);
+  if (typeof matched === 'string') return matched.trim();
+  return `앱 ${index + 1}`;
+};
+
+const extractAppId = (app: Record<string, unknown>) => {
+  const candidates: unknown[] = [
+    app.id,
+    app.app_id,
+    app.application_id,
+    app.deployment_id,
+    (app.application as Record<string, unknown> | undefined)?.id,
+    (app.deployment as Record<string, unknown> | undefined)?.id,
+  ];
+  const matched = candidates.find((value) => value !== undefined && value !== null && String(value).trim().length > 0);
+  return matched ? String(matched).trim() : '';
+};
+
 export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
@@ -64,6 +91,7 @@ export default function Sidebar() {
   const { user, setUser } = useUserStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedMenu, setExpandedMenu] = useState<string | null>('project');
+  const [currentAppName, setCurrentAppName] = useState('');
 
   useUserProfileQuery();
   const { data: projectListData } = useProjectListQuery();
@@ -73,6 +101,12 @@ export default function Sidebar() {
       setStep('google');
     }
   }, [pathname, step, setStep]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const queryAppName = new URLSearchParams(window.location.search).get('appName') || '';
+    setCurrentAppName(queryAppName.trim());
+  }, [pathname]);
 
   const handleLogout = async () => {
     try {
@@ -116,6 +150,8 @@ export default function Sidebar() {
   const currentProjectId = pathname?.match(/^\/project\/manage\/([^/]+)/)?.[1] ?? null;
   const inProjectDetail = Boolean(currentProjectId);
   const inAppManage = Boolean(pathname?.match(/^\/project\/manage\/[^/]+\/app(?:\/|$)/));
+  const { data: currentProjectDetail, isPending: isAppsPending } = useProjectDetailQuery(currentProjectId || '');
+  const currentProjectApps = currentProjectDetail?.deployments ?? [];
 
   if (pathname?.startsWith('/login') || pathname?.startsWith('/oauth2/callback')) {
     return null;
@@ -183,16 +219,12 @@ export default function Sidebar() {
                           {isThisProject && (
                             <S.DeepNavContainer data-open="true">
                               {DETAIL_TABS.map((detail) => {
-                                const detailActive = detail.key === 'project-app'
-                                  ? inAppManage
-                                  : detail.key === 'project-info'
-                                    ? inProjectDetail && !inAppManage
-                                    : false;
-                                const detailPath = detail.key === 'project-app'
-                                  ? `/project/manage/${project.id}/app`
-                                  : detail.key === 'project-info'
-                                    ? `/project/manage/${project.id}`
-                                    : null;
+                                const detailActive = detail.key === 'project-info'
+                                  ? inProjectDetail && !inAppManage
+                                  : false;
+                                const detailPath = detail.key === 'project-info'
+                                  ? `/project/manage/${project.id}`
+                                  : null;
 
                                 return (
                                   <S.DeepNavItem
@@ -208,6 +240,45 @@ export default function Sidebar() {
                                   </S.DeepNavItem>
                                 );
                               })}
+
+                              {currentProjectId === project.id && (
+                                <>
+                                  {isAppsPending ? (
+                                    <S.DeepNavItem>
+                                      <S.NavLabel>앱 불러오는 중...</S.NavLabel>
+                                    </S.DeepNavItem>
+                                  ) : currentProjectApps.length === 0 ? (
+                                    <S.DeepNavItem>
+                                      <S.NavLabel>앱 없음</S.NavLabel>
+                                    </S.DeepNavItem>
+                                  ) : (
+                                    currentProjectApps.map((app, index) => {
+                                      const appRecord = app as unknown as Record<string, unknown>;
+                                      const displayName = extractAppName(appRecord, index);
+                                      const appId = extractAppId(appRecord);
+                                      const query = new URLSearchParams({ appName: displayName });
+                                      if (appId) {
+                                        query.set('appId', appId);
+                                      }
+                                      const appPath = `/project/manage/${project.id}/app?${query.toString()}`;
+                                      const isAppActive = inAppManage
+                                        && (currentAppName ? currentAppName === displayName : index === 0);
+                                      return (
+                                        <S.DeepNavItem
+                                          key={`${project.id}-${displayName}-${index}`}
+                                          $clickable
+                                          onClick={() => {
+                                            setCurrentAppName(displayName);
+                                            handleNavigation(appPath);
+                                          }}
+                                        >
+                                          <S.NavLabel $active={isAppActive}>{displayName}</S.NavLabel>
+                                        </S.DeepNavItem>
+                                      );
+                                    })
+                                  )}
+                                </>
+                              )}
                             </S.DeepNavContainer>
                           )}
                         </div>

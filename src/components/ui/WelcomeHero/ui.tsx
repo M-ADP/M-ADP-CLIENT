@@ -1,11 +1,12 @@
+import React from 'react';
 import * as S from './style';
 import { normalizeDisplayName } from '@/utils/userDisplay';
 
-interface WelcomeHeroCardProps {
+interface WelcomeHeroProps {
   userName: string;
 }
 
-export const WelcomeHeroCard = ({ userName }: WelcomeHeroCardProps) => {
+export const WelcomeHero: React.FC<WelcomeHeroProps> = ({ userName }) => {
   const normalizedUserName = normalizeDisplayName(userName);
 
   return (

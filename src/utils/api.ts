@@ -58,6 +58,8 @@ const parseResponse = async <T>(response: Response): Promise<T> => {
 
 export const api = async <T = unknown>(endpoint: string, options: RequestInit = {}, requireAuth: boolean = true): Promise<T> => {
     const token = Cookies.get('token');
+    const isLocalProxyEndpoint = endpoint.startsWith('/api/');
+    const requestUrl = `${isLocalProxyEndpoint ? '' : BASE_URL}${endpoint}`;
 
     const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -70,7 +72,7 @@ export const api = async <T = unknown>(endpoint: string, options: RequestInit = 
 
     let response: Response;
     try {
-        response = await fetch(`${BASE_URL}${endpoint}`, {
+        response = await fetch(requestUrl, {
             ...options,
             headers,
             credentials: 'include',
@@ -78,6 +80,9 @@ export const api = async <T = unknown>(endpoint: string, options: RequestInit = 
     } catch (error) {
         // 백엔드에서 401 시 CORS 헤더를 누락하여 브라우저가 TypeError(Failed to fetch)를 던지는 경우를 대비한 우회(편법) 처리
         if (error instanceof TypeError) {
+            if (isLocalProxyEndpoint) {
+                throw new Error('요청을 전송하지 못했습니다. 잠시 후 다시 시도해주세요.');
+            }
             console.error('>>> [api.ts] 네트워크 에러(CORS 차단 등) 감지됨. 401 만료로 가정하고 토큰 갱신 시도');
             try {
                 const newToken = await getRefreshedToken();
@@ -85,7 +90,7 @@ export const api = async <T = unknown>(endpoint: string, options: RequestInit = 
                     throw new Error('인증 갱신에 실패했습니다.');
                 }
 
-                const retryResponse = await fetch(`${BASE_URL}${endpoint}`, {
+                const retryResponse = await fetch(requestUrl, {
                     ...options,
                     headers: {
                         ...options.headers,
@@ -108,13 +113,17 @@ export const api = async <T = unknown>(endpoint: string, options: RequestInit = 
     }
 
     if (response.status === 401) {
+        if (isLocalProxyEndpoint) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || '인증이 필요합니다. 다시 로그인해주세요.');
+        }
         const newToken = await getRefreshedToken();
 
         if (!newToken) {
             throw new Error('인증 갱신에 실패했습니다.');
         }
 
-        const retryResponse = await fetch(`${BASE_URL}${endpoint}`, {
+        const retryResponse = await fetch(requestUrl, {
             ...options,
             headers: {
                 ...options.headers,
@@ -139,4 +148,3 @@ export const api = async <T = unknown>(endpoint: string, options: RequestInit = 
 
     return parseResponse<T>(response);
 };
-
