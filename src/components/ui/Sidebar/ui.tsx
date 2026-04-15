@@ -8,6 +8,8 @@ import { useUserStore } from '@/store/userStore';
 import { useUserProfileQuery } from '@/services/user/user.query';
 import { useProjectListQuery } from '@/services/project/project.query';
 import { useAuthStore } from '@/store/authStore';
+import { useChatStore } from '@/store/chatStore';
+import { useSessions } from '@/services/chatops/chatops.query';
 import { postLogout } from '@/services/login/login.api';
 import Cookies from 'js-cookie';
 
@@ -48,7 +50,7 @@ const PRIMARY_NAV: SidebarItem[] = [
     ],
   },
   { key: 'report', label: '분석', icon: '/icons/sidebar/analytics.svg', path: '/report' },
-  { key: 'agent', label: 'ChatOps', icon: '/icons/sidebar/chat.svg', path: '/agent' },
+  { key: 'agent', label: 'ChatOps', icon: '/icons/sidebar/chat.svg', path: '/agent', children: [] },
 ];
 
 const SECONDARY_NAV = [
@@ -67,6 +69,8 @@ export default function Sidebar() {
 
   useUserProfileQuery();
   const { data: projectListData } = useProjectListQuery();
+  const { activeSessionId, setActiveSessionId } = useChatStore();
+  const { data: sessionListData } = useSessions();
 
   useEffect(() => {
     if (pathname !== '/login' && step === 'github') {
@@ -210,6 +214,30 @@ export default function Sidebar() {
                               })}
                             </S.DeepNavContainer>
                           )}
+                        </div>
+                      );
+                    })}
+                    {item.key === 'agent' && (
+                      <S.SubNavItem onClick={() => {
+                        setActiveSessionId(null);
+                        handleNavigation('/agent');
+                      }}>
+                        <S.NavLabel $active={!activeSessionId && pathname === '/agent'}>+ 새 채팅</S.NavLabel>
+                      </S.SubNavItem>
+                    )}
+                    {item.key === 'agent' && sessionListData?.sessions && sessionListData.sessions.length > 0 && (
+                      <S.SubNavLabel />
+                    )}
+                    {item.key === 'agent' && sessionListData?.sessions?.map((session) => {
+                      const isThisSession = activeSessionId === session.session_id && pathname === '/agent';
+                      return (
+                        <div key={session.session_id}>
+                          <S.SubNavItem onClick={() => {
+                            setActiveSessionId(session.session_id);
+                            handleNavigation('/agent');
+                          }}>
+                            <S.NavLabel $active={isThisSession}>{session.title || '새 채팅'}</S.NavLabel>
+                          </S.SubNavItem>
                         </div>
                       );
                     })}

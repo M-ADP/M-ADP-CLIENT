@@ -35,6 +35,7 @@ export default function AgentPage() {
   } = useChatStore();
 
   const [inputValue, setInputValue] = useState("");
+  const [optimisticMessage, setOptimisticMessage] = useState<any>(null);
 
   const { data: sessionList, isLoading: isSessionsLoading, isError: isSessionsError, error: sessionsError } = useSessions();
   const { data: sessionDetail, isLoading: isDetailLoading, isError: isDetailError } = useSession(activeSessionId);
@@ -43,16 +44,6 @@ export default function AgentPage() {
   const postMessageMutation = usePostMessage();
   const approveMutation = useApproveRequest();
   const rejectMutation = useRejectRequest();
-
-  // 1. 초기 세션 설정
-  useEffect(() => {
-    if (sessionList && activeSessionId === null) {
-      if (sessionList.sessions.length > 0) {
-        setActiveSessionId(sessionList.sessions[0].session_id);
-      }
-      // 세션이 없으면 이제 첫 메시지 전송 시 생성합니다.
-    }
-  }, [sessionList, activeSessionId, setActiveSessionId]);
 
   // 4. SSE Stream 훅
   useStream(activeSessionId || 0, pendingRequestId);
@@ -70,41 +61,59 @@ export default function AgentPage() {
   // 전송 핸들러
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!inputValue.trim() || isStreaming) return;
+    const inputText = inputValue.trim();
+    if (!inputText || isStreaming) return;
 
     let targetSessionId = activeSessionId;
+    
+    // 입력창 즉시 초기화 (빠른 반응성)
+    setInputValue("");
+    
+    // 로컬 상태로 즉시 화면에 노출 (안전하고 빠름)
+    setOptimisticMessage({
+      message_id: 'temp-' + Date.now(),
+      request_id: null,
+      role: 'user',
+      type: 'text',
+      text: inputText,
+      task: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
 
     try {
       // 세션이 없으면 메시지 전송 직전에 새로 생성
       if (!targetSessionId) {
-        const newSession = await createSessionMutation.mutateAsync({ title: inputValue.slice(0, 20) });
+        const newSession = await createSessionMutation.mutateAsync({ title: inputText.slice(0, 20) });
         targetSessionId = newSession.session_id;
         setActiveSessionId(targetSessionId);
       }
 
       postMessageMutation.mutate(
-        { sessionId: targetSessionId, message: inputValue.trim() },
+        { sessionId: targetSessionId, message: inputText },
         {
           onSuccess: (res) => {
-            const msgsWithReqId = res.messages.filter((m) => m.request_id !== null);
+            const msgsWithReqId = res.messages.filter((m: any) => m.request_id !== null);
             const targetMsg = msgsWithReqId[msgsWithReqId.length - 1];
             
             if (targetMsg?.request_id) {
               setPendingRequestId(targetMsg.request_id);
             }
             
+            setOptimisticMessage(null); // 전송 완료 후 가짜 메시지 지움
             clearStreamingText();
             queryClient.invalidateQueries({ queryKey: chatopsKeys.sessionDetail(targetSessionId) });
             queryClient.invalidateQueries({ queryKey: chatopsKeys.sessions() });
           },
           onError: (error) => {
             console.error('[ChatOps] POST message error:', error);
+            setOptimisticMessage(null); // 실패 시 가짜 메시지 롤백
           }
         }
       );
-      setInputValue("");
     } catch (error) {
       console.error('[ChatOps] Failed to create session or send message', error);
+      setOptimisticMessage(null); // 통신 에러 시 가짜 메시지 롤백
     }
   };
 
@@ -144,7 +153,8 @@ export default function AgentPage() {
     (sessionList && sessionList.sessions.length === 0 && createSessionMutation.isPending) ||
     (!isSessionsError && !createSessionMutation.isError && (activeSessionId === null || activeSessionId === undefined));
 
-  const messages = sessionDetail?.messages || [];
+  const serverMessages = sessionDetail?.messages || [];
+  const messages = optimisticMessage ? [...serverMessages, optimisticMessage] : serverMessages;
   const hasMessages = messages.length > 0;
 
   return (
@@ -168,9 +178,6 @@ export default function AgentPage() {
             priority
           />
           <S.LogoTitle>M-ADP</S.LogoTitle>
-          {isLoading && <div style={{ marginTop: '20px', color: '#64748b' }}>로딩 중...</div>}
-          {isSessionsError && <div style={{ marginTop: '20px', color: '#ef4444' }}>세션 목록 통신 실패 (API 백엔드를 확인해주세요)</div>}
-          {createSessionMutation.isError && <div style={{ marginTop: '20px', color: '#ef4444' }}>새 세션 생성 실패 (API 백엔드를 확인해주세요)</div>}
         </S.LogoSection>
       )}
 

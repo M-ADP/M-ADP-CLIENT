@@ -16,15 +16,24 @@ export const ChatArea = styled.div`
 
 export const MessageRow = styled.div`
   display: flex;
-  gap: 20px;
+  gap: 16px;
   align-items: flex-start;
   width: 100%;
-  justify-content: center;
+  max-width: 800px;
+  margin: 0 auto;
+`;
+
+export const UserMessageRow = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
 `;
 
 export const Avatar = styled.div<{ color?: string }>`
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background-color: ${({ color }) => color || '#e2e8f0'};
   flex-shrink: 0;
@@ -33,25 +42,24 @@ export const Avatar = styled.div<{ color?: string }>`
   justify-content: center;
   overflow: hidden;
   font-family: ${typography.text16Regular.fontFamily};
-  font-size: ${typography.text16Regular.fontSize};
+  font-size: 13px;
   font-weight: ${typography.text16Regular.fontWeight};
   line-height: ${typography.text16Regular.lineHeight};
   color: #ffffff;
 `;
 
 export const UserMessageCard = styled.div`
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  padding: 15px 21px;
-  width: 100%;
-  max-width: 800px;
+  border-radius: 20px 20px 4px 20px;
+  padding: 12px 18px;
+  max-width: 70%;
   box-sizing: border-box;
-  background-color: #ffffff;
-  color: ${colors.primary.default};
-  font-family: ${typography.text18Regular.fontFamily};
-  font-size: ${typography.text18Regular.fontSize};
-  font-weight: ${typography.text18Regular.fontWeight};
-  line-height: ${typography.text18Regular.lineHeight};
+  background-color: ${colors.primary.default};
+  color: #ffffff;
+  font-family: ${typography.text16Regular.fontFamily};
+  font-size: ${typography.text16Regular.fontSize};
+  font-weight: ${typography.text16Regular.fontWeight};
+  line-height: 1.5;
+  word-break: break-word;
 `;
 
 export const AIMessageCard = styled.div`

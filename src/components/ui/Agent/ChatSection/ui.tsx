@@ -24,10 +24,9 @@ export default function ChatSection({
       {messages.map((message) => {
         if (message.role === 'user') {
           return (
-            <S.MessageRow key={message.message_id}>
-              <S.Avatar color={colors.primary.default}>N</S.Avatar>
+            <S.UserMessageRow key={message.message_id}>
               <S.UserMessageCard>{message.text}</S.UserMessageCard>
-            </S.MessageRow>
+            </S.UserMessageRow>
           );
         }
 
