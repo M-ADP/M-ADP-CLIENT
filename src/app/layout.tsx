@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import MainLayout from "@/components/layout/MainLayout";
 import QueryProvider from "@/components/providers/QueryProvider";
+import ClarityProvider from "@/components/providers/ClarityProvider";
 
 export const metadata: Metadata = {
   title: "M-ADP",
@@ -15,6 +16,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body style={{ margin: 0 }}>
+        <ClarityProvider />
         <QueryProvider>
           <MainLayout>
             {children}
