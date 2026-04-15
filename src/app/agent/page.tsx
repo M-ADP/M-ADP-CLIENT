@@ -20,6 +20,7 @@ import {
   useRejectRequest,
   useCreateSession
 } from '@/services/chatops/chatops.mutation';
+import { isTerminalStatus } from '@/types/chatops';
 
 export default function AgentPage() {
   const queryClient = useQueryClient();
@@ -32,31 +33,39 @@ export default function AgentPage() {
     isStreaming,
     streamingText,
     clearStreamingText,
+    resetRequest,
+    // SSE 계약 추가 상태
+    currentTask,
+    requestStatus,
+    finalResponse,
+    isApprovalPending,
+    setIsApprovalPending,
+    supersededBy,
   } = useChatStore();
 
   const [inputValue, setInputValue] = useState("");
   const [optimisticMessage, setOptimisticMessage] = useState<any>(null);
 
-  const { data: sessionList, isLoading: isSessionsLoading, isError: isSessionsError, error: sessionsError } = useSessions();
-  const { data: sessionDetail, isLoading: isDetailLoading, isError: isDetailError } = useSession(activeSessionId);
+  const { data: sessionList, isLoading: isSessionsLoading, isError: isSessionsError } = useSessions();
+  const { data: sessionDetail, isLoading: isDetailLoading } = useSession(activeSessionId);
 
   const createSessionMutation = useCreateSession();
   const postMessageMutation = usePostMessage();
   const approveMutation = useApproveRequest();
   const rejectMutation = useRejectRequest();
 
-  // 4. SSE Stream 훅
+  // SSE Stream 훅
   useStream(activeSessionId || 0, pendingRequestId);
 
-  // 5. 스트리밍 종료 시 처리
+  // 스트리밍/terminal 종료 시 처리
   useEffect(() => {
-    if (!isStreaming && pendingRequestId) {
+    if (pendingRequestId && requestStatus && isTerminalStatus(requestStatus)) {
       if (activeSessionId) {
         queryClient.invalidateQueries({ queryKey: chatopsKeys.sessionDetail(activeSessionId) });
       }
       setPendingRequestId(null);
     }
-  }, [isStreaming, pendingRequestId, activeSessionId, queryClient, setPendingRequestId]);
+  }, [requestStatus, pendingRequestId, activeSessionId, queryClient, setPendingRequestId]);
 
   // 전송 핸들러
   const handleSearch = async (e?: React.FormEvent) => {
@@ -68,6 +77,9 @@ export default function AgentPage() {
 
     // 입력창 즉시 초기화 (빠른 반응성)
     setInputValue("");
+
+    // 이전 요청 상태 초기화
+    resetRequest();
 
     // 로컬 상태로 즉시 화면에 노출 (안전하고 빠름)
     setOptimisticMessage({
@@ -92,7 +104,7 @@ export default function AgentPage() {
       postMessageMutation.mutate(
         { sessionId: targetSessionId, message: inputText },
         {
-          onSuccess: (res) => {
+          onSuccess: async (res) => {
             const msgsWithReqId = res.messages.filter((m: any) => m.request_id !== null);
             const targetMsg = msgsWithReqId[msgsWithReqId.length - 1];
 
@@ -100,9 +112,10 @@ export default function AgentPage() {
               setPendingRequestId(targetMsg.request_id);
             }
 
-            setOptimisticMessage(null); // 전송 완료 후 가짜 메시지 지움
             clearStreamingText();
-            queryClient.invalidateQueries({ queryKey: chatopsKeys.sessionDetail(targetSessionId) });
+            // 서버 데이터가 도착한 뒤에 optimistic 메시지를 제거해야 깜빡임이 없다
+            await queryClient.invalidateQueries({ queryKey: chatopsKeys.sessionDetail(targetSessionId) });
+            setOptimisticMessage(null);
             queryClient.invalidateQueries({ queryKey: chatopsKeys.sessions() });
           },
           onError: (error) => {
@@ -125,11 +138,18 @@ export default function AgentPage() {
 
   const handleApprove = (requestId: number) => {
     if (activeSessionId === null || activeSessionId === undefined) return;
+    setIsApprovalPending(true);
     approveMutation.mutate(
       { sessionId: activeSessionId, requestId },
       {
         onSuccess: () => {
+          // approval pending UX 유지 → SSE execution.completed/failed 에서 해제됨
           queryClient.invalidateQueries({ queryKey: chatopsKeys.sessionDetail(activeSessionId) });
+          // SSE에서 terminal 이벤트를 받기 위해 pendingRequestId 유지
+          setPendingRequestId(requestId);
+        },
+        onError: () => {
+          setIsApprovalPending(false);
         }
       }
     );
@@ -153,8 +173,37 @@ export default function AgentPage() {
     (sessionList && sessionList.sessions.length === 0 && createSessionMutation.isPending) ||
     (!isSessionsError && !createSessionMutation.isError && (activeSessionId === null || activeSessionId === undefined));
 
+  // --- 메시지 리스트 조합 ---
   const serverMessages = sessionDetail?.messages || [];
-  const messages = optimisticMessage ? [...serverMessages, optimisticMessage] : serverMessages;
+  const messages = [...serverMessages];
+
+  // 1. optimistic user message (전송 중)
+  if (optimisticMessage) {
+    messages.push(optimisticMessage);
+  }
+
+  // 2. SSE 실시간 응답 합성 메시지
+  //    서버 refetch 전에도 응답이 바로 보이게 한다
+  if (pendingRequestId) {
+    const hasServerResponse = serverMessages.some(
+      (m) => m.request_id === pendingRequestId && m.role === 'assistant'
+    );
+    const liveText = finalResponse || streamingText;
+
+    if (!hasServerResponse && (liveText || isStreaming)) {
+      messages.push({
+        message_id: `sse-live-${pendingRequestId}`,
+        request_id: pendingRequestId,
+        role: 'assistant' as const,
+        type: (currentTask ? 'task' : 'text') as 'text' | 'task',
+        text: liveText || '...',
+        task: currentTask,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+    }
+  }
+
   const hasMessages = messages.length > 0;
 
   return (
@@ -165,6 +214,10 @@ export default function AgentPage() {
           streamingText={streamingText}
           isStreaming={isStreaming}
           activeSessionId={activeSessionId || 0}
+          currentTask={currentTask}
+          finalResponse={finalResponse}
+          isApprovalPending={isApprovalPending}
+          supersededBy={supersededBy}
           onApprove={handleApprove}
           onReject={handleReject}
         />

@@ -80,3 +80,102 @@ export interface RejectRequestResponse {
   assistant_message: string | null;
   task: TaskSnapshot | null;
 }
+
+// ----- SSE Event Types (2026-04-15 계약 기준) -----
+
+export type SSEPhase = 'request' | 'planning' | 'approval' | 'response' | 'execution';
+
+export const TERMINAL_STATUSES = [
+  'executed', 'completed', 'failed', 'escalated',
+  'cancelled', 'rejected', 'approval_expired', 'superseded',
+] as const;
+
+export type TerminalStatus = (typeof TERMINAL_STATUSES)[number];
+
+export function isTerminalStatus(status: string): status is TerminalStatus {
+  return (TERMINAL_STATUSES as readonly string[]).includes(status);
+}
+
+/** 구조화 이벤트 공통 필드 */
+export interface SSEBaseEvent {
+  type: string;
+  phase?: SSEPhase;
+  step?: string;
+  message?: string;
+  request_id: number;
+  session_id: number;
+  status?: string;
+  progress?: number;
+}
+
+/** 감사 메타데이터 (일부 이벤트에 추가됨) */
+export interface SSEAuditMeta {
+  user_id?: string;
+  operation?: string;
+  latency_ms?: number;
+  downstream?: string;
+  status_code?: number;
+  fallback_used?: boolean;
+  clarification_type?: string | null;
+}
+
+/** task, final_response 등을 포함하는 구조화 이벤트 */
+export interface SSETaskEvent extends SSEBaseEvent, Partial<SSEAuditMeta> {
+  task?: TaskSnapshot | null;
+  final_response?: string;
+  missing_inputs?: string[] | null;
+  request_type?: string;
+  intent?: string;
+  selected_operation_ids?: string[];
+  resolved_references?: Record<string, unknown>;
+  // context.hydrated 전용
+  project_context_count?: number;
+  application_context_count?: number;
+  user_context_count?: number;
+  request_trail_count?: number;
+}
+
+/** response.delta 청크 이벤트 (구조화 필드 없음) */
+export interface SSEDeltaEvent {
+  type: 'response.delta';
+  request_id: number;
+  session_id: number;
+  text: string;
+}
+
+/** approval.superseded 이벤트 */
+export interface SSESupersededEvent {
+  type: 'approval.superseded';
+  request_id: number;
+  session_id: number;
+  status: 'superseded';
+  superseded_by: number;
+  task?: TaskSnapshot | null;
+}
+
+/** approval.rejected 이벤트 (구조화 형식 아님) */
+export interface SSERejectedEvent extends Partial<SSEAuditMeta> {
+  type: 'approval.rejected';
+  request_id: number;
+  session_id: number;
+  status: 'rejected';
+  task?: TaskSnapshot | null;
+}
+
+export type SSEEvent = SSETaskEvent | SSEDeltaEvent | SSESupersededEvent | SSERejectedEvent;
+
+// ----- History API -----
+
+export interface RequestEventItem {
+  sequence: number;
+  type: string;
+  data: Record<string, unknown>;
+  timestamp: string;
+}
+
+export interface RequestEventsResponse {
+  items: RequestEventItem[];
+  total: number;
+  limit: number;
+  offset: number;
+}

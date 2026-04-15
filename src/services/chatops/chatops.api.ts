@@ -4,7 +4,8 @@ import {
   SessionDetailResponse,
   CreateSessionMessageResponse,
   ApproveRequestResponse,
-  RejectRequestResponse
+  RejectRequestResponse,
+  RequestEventsResponse,
 } from '@/types/chatops';
 
 export const getSessions = async (limit?: number, cursor?: string) => {
@@ -58,4 +59,21 @@ export const rejectRequest = async (sessionId: number, requestId: number) => {
   return api<RejectRequestResponse>(`/chatops/sessions/${sessionId}/requests/${requestId}/reject`, {
     method: 'POST',
   });
+};
+
+export const getRequestEvents = async (
+  sessionId: number,
+  requestId: number,
+  limit?: number,
+  offset?: number
+) => {
+  const query = new URLSearchParams();
+  if (limit !== undefined) query.append('limit', limit.toString());
+  if (offset !== undefined) query.append('offset', offset.toString());
+
+  const queryString = query.toString() ? `?${query.toString()}` : '';
+  return api<RequestEventsResponse>(
+    `/chatops/sessions/${sessionId}/requests/${requestId}/events${queryString}`,
+    { method: 'GET' }
+  );
 };

@@ -99,8 +99,14 @@ export const TaskCardHeader = styled.div`
   align-items: center;
 `;
 
+export const HeaderBadges = styled.div`
+  display: flex;
+  gap: 6px;
+  align-items: center;
+`;
+
 export const TaskCardTitle = styled.h3`
-  font-family: ${typography.text22Bold?.fontFamily || typography.text18Regular.fontFamily};
+  font-family: ${typography.text18Regular.fontFamily};
   font-size: 18px;
   font-weight: 600;
   color: #1b2559;
@@ -124,6 +130,23 @@ export const Badge = styled.span<{ level?: string }>`
   }};
 `;
 
+const STATE_BADGE_COLORS: Record<string, { bg: string; color: string }> = {
+  info: { bg: '#e0f2fe', color: '#0369a1' },
+  warning: { bg: '#fff3e0', color: '#ef6c00' },
+  success: { bg: '#dcfce7', color: '#15803d' },
+  danger: { bg: '#ffebee', color: '#c62828' },
+  neutral: { bg: '#f1f5f9', color: '#64748b' },
+};
+
+export const StateBadge = styled.span<{ variant?: string }>`
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  background-color: ${({ variant }) => STATE_BADGE_COLORS[variant || 'neutral'].bg};
+  color: ${({ variant }) => STATE_BADGE_COLORS[variant || 'neutral'].color};
+`;
+
 export const TaskCardSummary = styled.p`
   margin: 0;
   font-size: 16px;
@@ -136,6 +159,7 @@ export const TaskCardActions = styled.div`
   display: flex;
   gap: 10px;
   margin-top: 8px;
+  align-items: center;
 `;
 
 export const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
@@ -145,6 +169,7 @@ export const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
+  transition: opacity 0.15s ease;
   
   background-color: ${({ variant }) => {
     if (variant === 'primary') return colors.primary.default;
@@ -157,10 +182,115 @@ export const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 
     opacity: 0.5;
     cursor: not-allowed;
   }
+
+  &:hover:not(:disabled) {
+    opacity: 0.85;
+  }
 `;
 
 export const TaskStatusText = styled.div<{ status?: string }>`
   font-size: 14px;
   font-weight: 600;
-  color: ${({ status }) => (status === 'completed' ? '#10b981' : '#ef4444')};
+  color: ${({ status }) => {
+    if (status === 'completed') return '#10b981';
+    if (status === 'superseded') return '#94a3b8';
+    return '#ef4444';
+  }};
+`;
+
+export const PendingIndicator = styled.span`
+  font-size: 13px;
+  color: #64748b;
+  animation: pulse 1.5s ease-in-out infinite;
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+`;
+
+// --- filled_inputs 확인 패널 ---
+
+export const FilledInputs = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+`;
+
+export const FilledInputRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+`;
+
+export const FilledInputLabel = styled.span`
+  color: #64748b;
+  font-weight: 500;
+`;
+
+export const FilledInputValue = styled.span`
+  color: #1e293b;
+  font-weight: 600;
+`;
+
+// --- missing_inputs 인라인 폼 ---
+
+export const MissingInputs = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: #fffbeb;
+  border-radius: 8px;
+  border: 1px solid #fde68a;
+`;
+
+export const MissingInputsTitle = styled.span`
+  font-size: 13px;
+  font-weight: 600;
+  color: #92400e;
+`;
+
+export const MissingInputRow = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+`;
+
+export const MissingInputLabel = styled.label`
+  font-size: 13px;
+  color: #78716c;
+  font-weight: 500;
+`;
+
+export const MissingInputField = styled.input`
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  font-size: 14px;
+  background: #ffffff;
+
+  &:disabled {
+    background: #f8fafc;
+    cursor: not-allowed;
+  }
+`;
+
+// --- clarification 배지 ---
+
+export const ClarificationBadge = styled.span`
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  background: #f0f9ff;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
 `;
