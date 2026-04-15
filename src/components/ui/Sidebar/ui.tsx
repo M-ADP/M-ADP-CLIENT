@@ -55,6 +55,35 @@ const SECONDARY_NAV = [
   { key: 'support', label: '서포트', icon: '/icons/sidebar/support.svg', path: '/support' },
 ];
 
+const extractAppName = (app: Record<string, unknown>, index: number) => {
+  const candidates: unknown[] = [
+    app.name,
+    app.app_name,
+    app.application_name,
+    app.deployment_name,
+    app.service_name,
+    (app.application as Record<string, unknown> | undefined)?.name,
+    (app.deployment as Record<string, unknown> | undefined)?.name,
+  ];
+
+  const matched = candidates.find((value) => typeof value === 'string' && value.trim().length > 0);
+  if (typeof matched === 'string') return matched.trim();
+  return `앱 ${index + 1}`;
+};
+
+const extractAppId = (app: Record<string, unknown>) => {
+  const candidates: unknown[] = [
+    app.id,
+    app.app_id,
+    app.application_id,
+    app.deployment_id,
+    (app.application as Record<string, unknown> | undefined)?.id,
+    (app.deployment as Record<string, unknown> | undefined)?.id,
+  ];
+  const matched = candidates.find((value) => value !== undefined && value !== null && String(value).trim().length > 0);
+  return matched ? String(matched).trim() : '';
+};
+
 export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
@@ -224,8 +253,14 @@ export default function Sidebar() {
                                     </S.DeepNavItem>
                                   ) : (
                                     currentProjectApps.map((app, index) => {
-                                      const displayName = app.name?.trim() || `앱 ${index + 1}`;
-                                      const appPath = `/project/manage/${project.id}/app?appName=${encodeURIComponent(displayName)}`;
+                                      const appRecord = app as unknown as Record<string, unknown>;
+                                      const displayName = extractAppName(appRecord, index);
+                                      const appId = extractAppId(appRecord);
+                                      const query = new URLSearchParams({ appName: displayName });
+                                      if (appId) {
+                                        query.set('appId', appId);
+                                      }
+                                      const appPath = `/project/manage/${project.id}/app?${query.toString()}`;
                                       const isAppActive = inAppManage
                                         && (currentAppName ? currentAppName === displayName : index === 0);
                                       return (

@@ -137,17 +137,17 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
   const router = useRouter();
   const searchParams = useSearchParams();
   const appNameFromQuery = (searchParams.get('appName') || '').trim();
+  const appIdFromQuery = (searchParams.get('appId') || '').trim();
+  const hasQueryTarget = Boolean(appNameFromQuery || appIdFromQuery);
   const appDeploymentsQuery = useAppDeploymentsQuery(projectId);
   const deployments = appDeploymentsQuery.data ?? [];
   const appName = useMemo(() => {
-    if (deployments.length === 0) return appNameFromQuery;
-    if (appNameFromQuery && deployments.some((deployment) => deployment.name === appNameFromQuery)) {
-      return appNameFromQuery;
-    }
-    return deployments[0]?.name ?? appNameFromQuery;
+    if (appNameFromQuery) return appNameFromQuery;
+    return deployments[0]?.name ?? '';
   }, [deployments, appNameFromQuery]);
   const appDetailsQuery = useAppDetailsQuery(projectId, appName || null);
   const appDetails = appDetailsQuery.data;
+  const effectiveApplicationId = appDetails?.app_id ?? (appIdFromQuery || undefined);
   const appLogsQuery = useAppLogsQuery(projectId, appName || null);
   const appStatusQuery = useAppResourceStatusQuery(projectId, appName || null);
   const dnsQuery = useDnsEndpointsQuery(projectId, undefined, 20);
@@ -196,12 +196,12 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
       : repositoryUrl
         ? `${repositoryLabel} 저장소가 현재 앱과 연결되어 있습니다.`
         : 'GitHub 저장소가 아직 연결되지 않았습니다.';
-  const appIdValue = appDetails?.app_id ? String(appDetails.app_id) : '-';
+  const appIdValue = effectiveApplicationId ? String(effectiveApplicationId) : '-';
   const topSummaryMetrics: Array<{ id: string; label: string; value: string; fullValue?: string }> = [
     {
       id: 'app_id',
       label: '앱 ID',
-      value: detailValue(appDetails?.app_id),
+      value: appIdValue !== '-' ? appIdValue : detailValue(appDetails?.app_id),
       fullValue: appIdValue,
     },
     {
@@ -273,8 +273,8 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
     window.open(repositoryUrl, '_blank', 'noopener,noreferrer');
   };
   const dnsItems = dnsQuery.data?.items ?? [];
-  const relatedDnsItems = appDetails?.app_id
-    ? dnsItems.filter((item) => String(item.deployment_id) === String(appDetails.app_id))
+  const relatedDnsItems = effectiveApplicationId
+    ? dnsItems.filter((item) => String(item.deployment_id) === String(effectiveApplicationId))
     : [];
   const isDnsActionPending = createDnsMutation.isPending || deleteDnsMutation.isPending || updateDnsMutation.isPending;
   const [isDnsEditModalOpen, setIsDnsEditModalOpen] = useState(false);
@@ -282,12 +282,12 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
   const [dnsEditInitialValue, setDnsEditInitialValue] = useState('');
   const [dnsEditValue, setDnsEditValue] = useState('');
   const [dnsEditError, setDnsEditError] = useState('');
-  const canCreateDns = Boolean(appDetails?.app_id) && !dnsQuery.isPending && !dnsQuery.isError && relatedDnsItems.length === 0;
+  const canCreateDns = Boolean(effectiveApplicationId) && !dnsQuery.isPending && !dnsQuery.isError && relatedDnsItems.length === 0;
   const isSubdomainFormatValid = (value: string) => /^[a-z0-9-]{1,63}$/.test(value);
 
   const handlePatchResources = async () => {
     if (patchResourcesMutation.isPending) return;
-    const applicationId = appDetails?.app_id;
+    const applicationId = effectiveApplicationId;
     if (!applicationId) {
       alert('앱 ID를 확인할 수 없습니다.');
       return;
@@ -337,7 +337,7 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
 
   const handleDeleteApp = async () => {
     if (deleteAppMutation.isPending) return;
-    const applicationId = appDetails?.app_id;
+    const applicationId = effectiveApplicationId;
     if (!applicationId) {
       alert('앱 ID를 확인할 수 없습니다.');
       return;
@@ -368,7 +368,7 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
 
   const handleActionMenu = () => {
     if (patchResourcesMutation.isPending || deleteAppMutation.isPending) return;
-    if (!appName) {
+    if (!appName && !effectiveApplicationId) {
       alert('조회 가능한 애플리케이션이 없습니다.');
       return;
     }
@@ -387,7 +387,8 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
 
   const handleCreateDns = async () => {
     if (isDnsActionPending) return;
-    if (!appDetails?.app_id) {
+    const applicationId = effectiveApplicationId;
+    if (!applicationId) {
       alert('앱 ID를 확인할 수 없습니다.');
       return;
     }
@@ -400,7 +401,7 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
 
     try {
       const result = await createDnsMutation.mutateAsync({
-        deploymentId: appDetails.app_id,
+        deploymentId: applicationId,
         project_id: parsedProjectId,
         deployment_type: 'App Deployment',
       });
@@ -484,7 +485,7 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
     }
   };
 
-  if (appDeploymentsQuery.isPending && deployments.length === 0) {
+  if (appDeploymentsQuery.isPending && deployments.length === 0 && !hasQueryTarget) {
     return (
       <S.PageWrapper>
         <p>애플리케이션 목록을 불러오는 중입니다.</p>
@@ -492,7 +493,7 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
     );
   }
 
-  if (appDeploymentsQuery.isError) {
+  if (appDeploymentsQuery.isError && !hasQueryTarget) {
     return (
       <S.PageWrapper>
         <p>애플리케이션 목록 조회에 실패했습니다.</p>
@@ -500,7 +501,7 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
     );
   }
 
-  if (deployments.length === 0) {
+  if (deployments.length === 0 && !hasQueryTarget) {
     return (
       <S.PageWrapper>
         <p>배포된 애플리케이션이 없습니다.</p>

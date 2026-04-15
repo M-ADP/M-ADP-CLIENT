@@ -188,8 +188,8 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
     }
   };
 
-  const handleOpenAppDetail = (appName: string) => {
-    const query = new URLSearchParams({ appName });
+  const handleOpenAppDetail = (appName: string, appId: string | number) => {
+    const query = new URLSearchParams({ appName, appId: String(appId) });
     router.push(`/project/manage/${projectId}/app?${query.toString()}`);
   };
 
@@ -269,7 +269,7 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
                 <Card
                   key={app.id}
                   title={app.name}
-                  onClick={() => handleOpenAppDetail(app.name)}
+                  onClick={() => handleOpenAppDetail(app.name, app.id)}
                   footer={
                     <>
                       {showStatusMessage && (

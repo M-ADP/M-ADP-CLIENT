@@ -77,14 +77,14 @@ export interface AppResourceStatus {
 }
 
 export interface PatchAppResourcesPayload {
-    application_id: number;
+    application_id: string | number;
     max_cpu: number;
     max_memory: number;
     max_disk: number;
 }
 
 export interface DeleteAppPayload {
-    application_id: number;
+    application_id: string | number;
 }
 
 export interface DnsEndpointItem {
