@@ -1,32 +1,36 @@
 import { jwtDecode } from 'jwt-decode';
 
 interface JwtPayload {
-    sub?: string;
-    role?: string;
-    [key: string]: unknown;
+  sub?: string;
+  role?: string;
+  [key: string]: unknown;
 }
 
-/**
- * Clarity에 사용자 식별 정보를 전송합니다.
- * 로그인 성공 후 호출해야 합니다.
- */
 export function identifyClarity(accessToken: string) {
-    if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined') return;
 
-    const clarity = (window as any).clarity;
-    if (!clarity) return;
+  try {
+    const decoded = jwtDecode<JwtPayload>(accessToken);
 
-    try {
-        const decoded = jwtDecode<JwtPayload>(accessToken);
+    const identify = () => {
+      const clarity = (window as any).clarity;
+      if (!clarity) return;
+      if (decoded.sub) clarity('identify', decoded.sub);
+      if (decoded.role) clarity('set', 'role', decoded.role);
+    };
 
-        if (decoded.sub) {
-            clarity('identify', decoded.sub);
+    if ((window as any).clarity) {
+      identify();
+    } else {
+      const interval = setInterval(() => {
+        if ((window as any).clarity) {
+          identify();
+          clearInterval(interval);
         }
-
-        if (decoded.role) {
-            clarity('set', 'role', decoded.role);
-        }
-    } catch (e) {
-        console.error('[Clarity] 사용자 식별 실패:', e);
+      }, 100);
+      setTimeout(() => clearInterval(interval), 5000);
     }
+  } catch (e) {
+    console.error('[Clarity] 사용자 식별 실패:', e);
+  }
 }
