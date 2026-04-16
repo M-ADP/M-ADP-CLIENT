@@ -25,17 +25,14 @@ export default function SearchSection({ inputValue, setInputValue, handleSearch,
         />
       </S.InputWrapper>
 
-      <S.IconCircle
-        as="button"
+      <S.SendButton
         type="submit"
-        className="send-button"
         disabled={disabled}
-        style={{ opacity: disabled ? 0.5 : 1, cursor: disabled ? 'not-allowed' : 'pointer', border: 'none' }}
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M12 19V5M12 5L5 12M12 5L19 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
-      </S.IconCircle>
+      </S.SendButton>
     </S.SearchContainer>
   );
 }
