@@ -366,3 +366,21 @@ export const ClarificationBadge = styled.span`
   color: #0369a1;
   border: 1px solid #bae6fd;
 `;
+
+// --- 스트리밍 커서 ---
+
+export const StreamingCursor = styled.span`
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background-color: #1b2559;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  border-radius: 1px;
+  animation: blink 1s step-start infinite;
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+`;

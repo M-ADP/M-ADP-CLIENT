@@ -141,43 +141,34 @@ export default function AgentPage() {
 
   // 스트리밍/terminal 종료 시 처리
   useEffect(() => {
-    if (pendingRequestId && requestStatus && isTerminalStatus(requestStatus)) {
+    const targetText = finalResponse ?? streamingText ?? '';
+    const hasFinishedAnimation = displayedStreamingText === targetText;
+    const isTerminal = pendingRequestId && requestStatus && isTerminalStatus(requestStatus);
+    // not_ready 상태면 사용자 입력이 필요한 상태 → pendingRequestId 유지
+    const needsUserInput = currentTask?.approval_state === 'not_ready';
+
+    if (isTerminal && hasFinishedAnimation && !needsUserInput) {
       if (activeSessionId) {
         queryClient.invalidateQueries({ queryKey: chatopsKeys.sessionDetail(activeSessionId) });
       }
       setPendingRequestId(null);
     }
-  }, [requestStatus, pendingRequestId, activeSessionId, queryClient, setPendingRequestId]);
+  }, [requestStatus, pendingRequestId, activeSessionId, queryClient, setPendingRequestId, displayedStreamingText, finalResponse, streamingText, currentTask]);
 
+  // 텍스트 타이핑 애니메이션
   useEffect(() => {
-    const targetText = finalResponse ?? streamingText;
+    const targetText = finalResponse ?? streamingText ?? '';
 
-    if (animationFrameRef.current !== null) {
-      window.clearTimeout(animationFrameRef.current);
-      animationFrameRef.current = null;
-    }
-
-    if (!pendingRequestId) {
-      animationFrameRef.current = window.setTimeout(() => {
-        setDisplayedStreamingText('');
-      }, 0);
+    // 애니메이션이 이미 목표에 도달했거나 진행할 텍스트가 없는 경우
+    if (!pendingRequestId || displayedStreamingText === targetText) {
       return;
     }
 
-    if (!targetText) {
-      animationFrameRef.current = window.setTimeout(() => {
-        setDisplayedStreamingText('');
-      }, 0);
-      return;
-    }
-
-    if (displayedStreamingText === targetText) {
-      return;
-    }
-
-    const revealNext = () => {
+    const timeoutId = window.setTimeout(() => {
       setDisplayedStreamingText((current) => {
         if (!targetText.startsWith(current)) {
+          // 동기화가 깨졌을 때 (예: SSE 이벤트 재연결 등으로 인한 재시작)
+          // 혹은 \r\n 차이 등. 바로 targetText로 맞춘다.
           return targetText;
         }
 
@@ -186,20 +177,13 @@ export default function AgentPage() {
           return current;
         }
 
-        return targetText.slice(0, current.length + 1);
+        // 남은 텍스트가 많으면 한 번에 여러 글자를 추가하여 속도 향상
+        const advance = Math.max(1, Math.floor(remaining / 10));
+        return targetText.slice(0, current.length + advance);
       });
+    }, 15);
 
-      animationFrameRef.current = window.setTimeout(revealNext, 16);
-    };
-
-    animationFrameRef.current = window.setTimeout(revealNext, 16);
-
-    return () => {
-      if (animationFrameRef.current !== null) {
-        window.clearTimeout(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
-    };
+    return () => window.clearTimeout(timeoutId);
   }, [displayedStreamingText, finalResponse, pendingRequestId, streamingText]);
 
   // 전송 핸들러
@@ -259,7 +243,13 @@ export default function AgentPage() {
   };
 
   // --- 메시지 리스트 조합 ---
-  const serverMessages = sessionDetail?.messages || [];
+  const rawServerMessages = sessionDetail?.messages || [];
+  const serverMessages =
+    pendingRequestId !== null
+      ? rawServerMessages.filter(
+          (message) => !(message.request_id === pendingRequestId && message.role === 'assistant')
+        )
+      : rawServerMessages;
   const messages = [...serverMessages];
   const { data: requestEvents } = useRequestEvents(activeSessionId, pendingRequestId);
 
@@ -284,23 +274,18 @@ export default function AgentPage() {
   // 2. SSE 실시간 응답 합성 메시지
   //    서버 refetch 전에도 응답이 바로 보이게 한다
   if (pendingRequestId) {
-    const hasServerResponse = serverMessages.some(
-      (m) => m.request_id === pendingRequestId && m.role === 'assistant'
-    );
     const liveText = displayedStreamingText;
 
-    if (!hasServerResponse) {
-      messages.push({
-        message_id: `sse-live-${pendingRequestId}`,
-        request_id: pendingRequestId,
-        role: 'assistant' as const,
-        type: (currentTask ? 'task' : 'text') as 'text' | 'task',
-        text: liveText || null,
-        task: currentTask,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
-    }
+    messages.push({
+      message_id: `sse-live-${pendingRequestId}`,
+      request_id: pendingRequestId,
+      role: 'assistant' as const,
+      type: (currentTask ? 'task' : 'text') as 'text' | 'task',
+      text: liveText || null,
+      task: currentTask,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
   }
 
   if ((createSessionMutation.isPending || postMessageMutation.isPending) && pendingRequestId === null) {
