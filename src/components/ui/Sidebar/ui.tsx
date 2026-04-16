@@ -3,13 +3,15 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
+import { useQueryClient } from '@tanstack/react-query';
 import * as S from './style';
 import { useUserStore } from '@/store/userStore';
 import { useUserProfileQuery } from '@/services/user/user.query';
 import { useProjectListQuery, useProjectDetailQuery } from '@/services/project/project.query';
 import { useAuthStore } from '@/store/authStore';
 import { useChatStore } from '@/store/chatStore';
-import { useSessions } from '@/services/chatops/chatops.query';
+import { useSessions, chatopsKeys } from '@/services/chatops/chatops.query';
+import { useDeleteSession } from '@/services/chatops/chatops.mutation';
 import { postLogout } from '@/services/login/login.api';
 import Cookies from 'js-cookie';
 
@@ -89,6 +91,7 @@ const extractAppId = (app: Record<string, unknown>) => {
 export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
+  const queryClient = useQueryClient();
   const { step, setStep } = useAuthStore();
   const { user, setUser } = useUserStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -97,8 +100,9 @@ export default function Sidebar() {
 
   useUserProfileQuery();
   const { data: projectListData } = useProjectListQuery();
-  const { activeSessionId, setActiveSessionId } = useChatStore();
+  const { activeSessionId, setActiveSessionId, resetRequest } = useChatStore();
   const { data: sessionListData } = useSessions();
+  const deleteSessionMutation = useDeleteSession();
 
   useEffect(() => {
     if (pathname !== '/login' && step === 'github') {
@@ -142,6 +146,29 @@ export default function Sidebar() {
     if (!hasChildren) {
       router.push(path);
     }
+  };
+
+  const handleDeleteSession = (sessionId: number) => {
+    if (deleteSessionMutation.isPending) return;
+    if (!window.confirm('이 대화를 삭제할까요?')) return;
+
+    deleteSessionMutation.mutate(
+      { sessionId },
+      {
+        onSuccess: async () => {
+          if (activeSessionId === sessionId) {
+            setActiveSessionId(null);
+            resetRequest();
+            if (pathname === '/agent') {
+              router.push('/agent');
+            }
+          }
+
+          await queryClient.invalidateQueries({ queryKey: chatopsKeys.sessions() });
+          queryClient.removeQueries({ queryKey: chatopsKeys.sessionDetail(sessionId) });
+        },
+      }
+    );
   };
 
   const isActive = (path: string, hasChildren?: boolean) => {
@@ -302,14 +329,24 @@ export default function Sidebar() {
                     {item.key === 'agent' && sessionListData?.sessions?.map((session) => {
                       const isThisSession = activeSessionId === session.session_id && pathname === '/agent';
                       return (
-                        <div key={session.session_id}>
+                        <S.SessionRow key={session.session_id}>
                           <S.SubNavItem onClick={() => {
                             setActiveSessionId(session.session_id);
                             handleNavigation('/agent');
                           }}>
                             <S.NavLabel $active={isThisSession}>{session.title || '새 채팅'}</S.NavLabel>
                           </S.SubNavItem>
-                        </div>
+                          <S.SessionDeleteButton
+                            type="button"
+                            aria-label={`${session.title || '새 채팅'} 삭제`}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleDeleteSession(session.session_id);
+                            }}
+                          >
+                            ×
+                          </S.SessionDeleteButton>
+                        </S.SessionRow>
                       );
                     })}
                   </S.SubNavContainer>

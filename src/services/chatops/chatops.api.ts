@@ -24,6 +24,12 @@ export const createSession = async (title?: string) => {
   });
 };
 
+export const deleteSession = async (sessionId: number) => {
+  return api<string>(`/chatops/sessions/${sessionId}`, {
+    method: 'DELETE',
+  });
+};
+
 export const getSession = async (sessionId: number, limit?: number) => {
   const query = new URLSearchParams();
   if (limit !== undefined) query.append('limit', limit.toString());
@@ -38,7 +44,7 @@ export const getSessionMessages = async (sessionId: number, before?: string, lim
   if (limit !== undefined) query.append('limit', limit.toString());
 
   const queryString = query.toString() ? `?${query.toString()}` : '';
-  return api<{ messages: any[]; next_cursor: string | null; has_more: boolean }>(`/chatops/sessions/${sessionId}/messages${queryString}`, { method: 'GET' });
+  return api<{ messages: unknown[]; next_cursor: string | null; has_more: boolean }>(`/chatops/sessions/${sessionId}/messages${queryString}`, { method: 'GET' });
 };
 
 export const postSessionMessage = async (sessionId: number, message: string) => {

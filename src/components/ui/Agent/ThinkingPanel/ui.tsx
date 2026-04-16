@@ -54,21 +54,6 @@ function getPanelTone(type: string | null, isLive: boolean): 'live' | 'paused' |
   return isLive ? 'live' : 'paused';
 }
 
-function getStatusLabel(tone: 'live' | 'paused' | 'done' | 'failed' | 'cancelled'): string {
-  switch (tone) {
-    case 'live':
-      return '';
-    case 'paused':
-      return '확인 필요';
-    case 'done':
-      return '완료';
-    case 'failed':
-      return '실패';
-    case 'cancelled':
-      return '중단됨';
-  }
-}
-
 function getHeaderSummary(events: SSEEventRecord[], isLive: boolean): string {
   if (events.length === 0) return '요청을 분석하고 있습니다';
 
@@ -124,7 +109,6 @@ export default function ThinkingPanel({ events, isLive }: ThinkingPanelProps) {
   const panelTone = getPanelTone(lastType, isLive);
   const isActive = panelTone === 'live';
   const headerText = getHeaderSummary(events, isLive);
-  const statusLabel = getStatusLabel(panelTone);
 
   useEffect(() => {
     if (isLive) {
@@ -167,11 +151,9 @@ export default function ThinkingPanel({ events, isLive }: ThinkingPanelProps) {
           {panelTone === 'cancelled' && <S.CancelIcon>-</S.CancelIcon>}
           <S.HeaderCopy>
             <S.HeaderText>Thinking</S.HeaderText>
-            {statusLabel && <S.HeaderStatus>{statusLabel}</S.HeaderStatus>}
           </S.HeaderCopy>
         </S.HeaderGroup>
         <S.HeaderRight>
-          {statusLabel && <S.HeaderStatus>{statusLabel}</S.HeaderStatus>}
           <S.ChevronIcon open={isOpen}>▼</S.ChevronIcon>
         </S.HeaderRight>
       </S.PanelHeader>

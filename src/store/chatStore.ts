@@ -4,6 +4,7 @@ import {
   SSEPhase,
   SSEEvent,
   SSEEventRecord,
+  CreateSessionMessageResponse,
 } from '@/types/chatops';
 
 interface ChatState {
@@ -32,6 +33,7 @@ interface ChatState {
   clearStreamingText: () => void;
   setIsStreaming: (v: boolean) => void;
   setIsApprovalPending: (v: boolean) => void;
+  bootstrapRequest: (payload: Pick<CreateSessionMessageResponse, 'request_id' | 'request_status' | 'final_response' | 'task'>) => void;
   updateFromSSE: (event: SSEEvent, sequence?: number | null) => void;
   resetRequest: () => void;
 }
@@ -63,6 +65,13 @@ export const useChatStore = create<ChatState>((set) => ({
   clearStreamingText: () => set({ streamingText: '' }),
   setIsStreaming: (v) => set({ isStreaming: v }),
   setIsApprovalPending: (v) => set({ isApprovalPending: v }),
+  bootstrapRequest: (payload) =>
+    set((state) => ({
+      pendingRequestId: payload.request_id ?? state.pendingRequestId,
+      requestStatus: payload.request_status ?? state.requestStatus,
+      finalResponse: payload.final_response ?? state.finalResponse,
+      currentTask: payload.task ?? state.currentTask,
+    })),
 
   // --- SSE 이벤트 기반 상태 갱신 ---
   updateFromSSE: (event, sequence) =>
@@ -122,6 +131,10 @@ export const useChatStore = create<ChatState>((set) => ({
         case 'request.ambiguous':
         case 'request.input_required':
           patch.isStreaming = false;
+          break;
+
+        case 'execution.started':
+          patch.isApprovalPending = true;
           break;
 
         case 'response.completed':

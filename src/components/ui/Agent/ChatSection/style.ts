@@ -7,11 +7,29 @@ export const ChatArea = styled.div`
   flex-direction: column;
   width: 100%;
   max-width: 1240px;
-  height: 100%;
+  height: auto;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 20px;
   gap: 20px;
   flex: 1;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+  scroll-padding-top: 24px;
+`;
+
+export const ScrollSpacer = styled.div`
+  flex-shrink: 0;
+  height: calc(100vh - 260px);
+  min-height: 360px;
+  max-height: 720px;
+
+  @media (max-width: 768px) {
+    height: calc(100vh - 220px);
+    min-height: 260px;
+    max-height: 520px;
+  }
 `;
 
 export const MessageRow = styled.div`
@@ -19,15 +37,17 @@ export const MessageRow = styled.div`
   gap: 16px;
   align-items: flex-start;
   width: 100%;
-  max-width: 800px;
+  max-width: 848px;
   margin: 0 auto;
+  min-width: 0;
 `;
 
 export const ThinkingRow = styled.div`
   display: flex;
   width: 100%;
-  max-width: 800px;
+  max-width: 848px;
   margin: -6px auto -4px;
+  min-width: 0;
 
   @media (max-width: 768px) {
     margin: -2px auto 0;
@@ -54,6 +74,8 @@ export const UserMessageRow = styled.div`
   width: 100%;
   max-width: 800px;
   margin: 0 auto;
+  min-width: 0;
+  scroll-margin-top: 24px;
 `;
 
 export const Avatar = styled.div<{ color?: string }>`
@@ -85,14 +107,17 @@ export const UserMessageCard = styled.div`
   font-weight: ${typography.text16Regular.fontWeight};
   line-height: 1.5;
   word-break: break-word;
+  overflow-wrap: anywhere;
 `;
 
 export const AIMessageCard = styled.div`
   background: #ffffff;
   border-radius: 14px;
   padding: 22px;
-  width: 100%;
-  max-width: 800px;
+  flex: 1;
+  width: auto;
+  max-width: none;
+  min-width: 0;
   box-sizing: border-box;
   box-shadow: 14px 27px 45px 4px rgba(112, 144, 176, 0.2);
   color: #1b2559;
@@ -101,6 +126,8 @@ export const AIMessageCard = styled.div`
   font-weight: ${typography.text18Regular.fontWeight};
   line-height: ${typography.text18Regular.lineHeight};
   white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
   min-height: 100px;
 `;
 
@@ -108,14 +135,17 @@ export const TaskCard = styled.div`
   background: #ffffff;
   border-radius: 14px;
   padding: 22px;
-  width: 100%;
-  max-width: 800px;
+  flex: 1;
+  width: auto;
+  max-width: none;
+  min-width: 0;
   box-sizing: border-box;
   box-shadow: 14px 27px 45px 4px rgba(112, 144, 176, 0.2);
   border: 1px solid #e2e8f0;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  font-family: ${typography.text16Regular.fontFamily};
 `;
 
 export const TaskCardHeader = styled.div`
@@ -174,10 +204,12 @@ export const StateBadge = styled.span<{ variant?: string }>`
 
 export const TaskCardSummary = styled.p`
   margin: 0;
+  font-family: ${typography.text16Regular.fontFamily};
   font-size: 16px;
   color: #475569;
   line-height: 1.5;
   white-space: pre-wrap;
+  word-break: break-word;
 `;
 
 export const TaskCardActions = styled.div`
@@ -185,12 +217,14 @@ export const TaskCardActions = styled.div`
   gap: 10px;
   margin-top: 8px;
   align-items: center;
+  flex-wrap: wrap;
 `;
 
 export const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
   padding: 8px 16px;
   border-radius: 8px;
   border: none;
+  font-family: ${typography.text14Medium.fontFamily};
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -214,6 +248,7 @@ export const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 
 `;
 
 export const TaskStatusText = styled.div<{ status?: string }>`
+  font-family: ${typography.text14Medium.fontFamily};
   font-size: 14px;
   font-weight: 600;
   color: ${({ status }) => {
@@ -224,6 +259,7 @@ export const TaskStatusText = styled.div<{ status?: string }>`
 `;
 
 export const PendingIndicator = styled.span`
+  font-family: ${typography.text12Regular.fontFamily};
   font-size: 13px;
   color: #64748b;
   animation: pulse 1.5s ease-in-out infinite;
@@ -244,6 +280,8 @@ export const FilledInputs = styled.div`
   background: #f8fafc;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
+  font-family: ${typography.text14Regular.fontFamily};
+  min-width: 0;
 `;
 
 export const FilledInputRow = styled.div`
@@ -251,16 +289,24 @@ export const FilledInputRow = styled.div`
   justify-content: space-between;
   align-items: center;
   font-size: 14px;
+  gap: 12px;
+  min-width: 0;
 `;
 
 export const FilledInputLabel = styled.span`
+  font-family: ${typography.text14Medium.fontFamily};
   color: #64748b;
   font-weight: 500;
+  min-width: 0;
 `;
 
 export const FilledInputValue = styled.span`
+  font-family: ${typography.text14Semibold.fontFamily};
   color: #1e293b;
   font-weight: 600;
+  min-width: 0;
+  text-align: right;
+  word-break: break-word;
 `;
 
 // --- missing_inputs 인라인 폼 ---
@@ -276,6 +322,7 @@ export const MissingInputs = styled.div`
 `;
 
 export const MissingInputsTitle = styled.span`
+  font-family: ${typography.text14Medium.fontFamily};
   font-size: 13px;
   font-weight: 600;
   color: #92400e;

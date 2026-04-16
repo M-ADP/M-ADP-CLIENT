@@ -1,44 +1,37 @@
 import { Fragment } from 'react';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import * as S from './style';
 import { ConversationMessage, TaskSnapshot, SSEEventRecord } from '@/types/chatops';
 import ThinkingPanel from '@/components/ui/Agent/ThinkingPanel/ui';
 
-// approval_state 한글 매핑
-const APPROVAL_STATE_LABEL: Record<string, string> = {
-  not_ready: '입력 필요',
-  needs_clarification: '확인 필요',
-  awaiting_approval: '승인 대기',
-  approved: '실행 중',
-  completed: '완료',
-  failed: '실패',
-  cancelled: '취소됨',
-  expired: '만료됨',
+const FIELD_LABELS: Record<string, string> = {
+  name: '프로젝트 이름',
+  project_name: '프로젝트 이름',
+  application_name: '애플리케이션 이름',
+  cpu: 'CPU',
+  max_cpu: '최대 CPU',
+  memory: '메모리',
+  max_memory: '최대 메모리',
+  disk: '디스크',
+  max_disk: '최대 디스크',
 };
 
-// approval_state → 배지 색상 variant
-const APPROVAL_STATE_VARIANT: Record<string, 'info' | 'warning' | 'success' | 'danger' | 'neutral'> = {
-  not_ready: 'warning',
-  needs_clarification: 'warning',
-  awaiting_approval: 'info',
-  approved: 'info',
-  completed: 'success',
-  failed: 'danger',
-  cancelled: 'neutral',
-  expired: 'neutral',
-};
+function toFieldLabel(key: string) {
+  return FIELD_LABELS[key] || key.replace(/_/g, ' ');
+}
 
 interface ChatSectionProps {
   messages: ConversationMessage[];
   isThinking: boolean;
-  isMessageSubmitting: boolean;
   // SSE 계약 추가 상태
   currentTask: TaskSnapshot | null;
   isApprovalPending: boolean;
   supersededBy: number | null;
   sseEventLog: SSEEventRecord[];
-  onSubmitMissingInputs: (requestId: number, message: string) => void;
+  activeRequestId: number | null;
+  scrollToLatestToken: number;
+  onEditTask: (requestId: number) => void;
   onApprove: (requestId: number) => void;
   onReject: (requestId: number) => void;
 }
@@ -60,28 +53,51 @@ function resolveTask(
 export default function ChatSection({
   messages,
   isThinking,
-  isMessageSubmitting,
   currentTask,
   isApprovalPending,
   supersededBy,
   sseEventLog,
-  onSubmitMissingInputs,
+  activeRequestId,
+  scrollToLatestToken,
+  onEditTask,
   onApprove,
   onReject,
 }: ChatSectionProps) {
-  const [missingInputValues, setMissingInputValues] = useState<Record<number, Record<string, string>>>({});
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const latestUserMessageRef = useRef<HTMLDivElement>(null);
 
   const pendingRequestId = messages
     .filter((m) => m.request_id !== null)
     .at(-1)?.request_id ?? null;
   const thinkingRequestId = sseEventLog.at(-1)?.event.request_id ?? null;
+  const latestUserMessageId = [...messages].reverse().find((message) => message.role === 'user')?.message_id ?? null;
+  const scrollLatestTurnIntoView = useCallback((behavior: ScrollBehavior) => {
+    latestUserMessageRef.current?.scrollIntoView({
+      behavior,
+      block: 'start',
+      inline: 'nearest',
+    });
+  }, []);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      scrollLatestTurnIntoView('smooth');
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [scrollToLatestToken, scrollLatestTurnIntoView]);
 
   return (
-    <S.ChatArea>
+    <S.ChatArea ref={scrollRef}>
       {messages.map((message) => {
         if (message.role === 'user') {
           return (
-            <S.UserMessageRow key={message.message_id}>
+            <S.UserMessageRow
+              key={message.message_id}
+              ref={message.message_id === latestUserMessageId ? latestUserMessageRef : null}
+            >
               <S.UserMessageCard>{message.text}</S.UserMessageCard>
             </S.UserMessageRow>
           );
@@ -129,22 +145,9 @@ export default function ChatSection({
             if (!task) {
               return thinkingRow ? <Fragment key={message.message_id}>{thinkingRow}</Fragment> : null;
             }
-            const requestId = message.request_id;
-            const inputValues = requestId !== null ? (missingInputValues[requestId] ?? {}) : {};
-            const missingInputs = task.missing_inputs ?? [];
-
             const isSuperseded = supersededBy !== null && message.request_id !== null;
             const isTerminal = ['completed', 'failed', 'cancelled', 'expired'].includes(task.approval_state);
             const disableActions = isSuperseded || isTerminal || isApprovalPending;
-            const canSubmitMissingInputs =
-              requestId !== null &&
-              !disableActions &&
-              !isMessageSubmitting &&
-              missingInputs.length > 0 &&
-              missingInputs.every((input) => (inputValues[input.key] ?? '').trim().length > 0);
-
-            const approvalLabel = APPROVAL_STATE_LABEL[task.approval_state] || task.approval_state;
-            const approvalVariant = APPROVAL_STATE_VARIANT[task.approval_state] || 'neutral';
 
             return (
               <Fragment key={message.message_id}>
@@ -156,12 +159,6 @@ export default function ChatSection({
                   <S.TaskCard>
                     <S.TaskCardHeader>
                       <S.TaskCardTitle>{task.title}</S.TaskCardTitle>
-                      <S.HeaderBadges>
-                        {task.risk_level && (
-                          <S.Badge level={task.risk_level.toLowerCase()}>{task.risk_level}</S.Badge>
-                        )}
-                        <S.StateBadge variant={approvalVariant}>{approvalLabel}</S.StateBadge>
-                      </S.HeaderBadges>
                     </S.TaskCardHeader>
                     <S.TaskCardSummary>{task.summary}</S.TaskCardSummary>
 
@@ -170,46 +167,14 @@ export default function ChatSection({
                       <S.FilledInputs>
                         {Object.entries(task.filled_inputs).map(([key, value]) => (
                           <S.FilledInputRow key={key}>
-                            <S.FilledInputLabel>{key}</S.FilledInputLabel>
+                            <S.FilledInputLabel>{toFieldLabel(key)}</S.FilledInputLabel>
                             <S.FilledInputValue>{String(value)}</S.FilledInputValue>
                           </S.FilledInputRow>
                         ))}
                       </S.FilledInputs>
                     )}
 
-                    {/* missing_inputs 인라인 폼 (UI 껍데기) */}
-                    {missingInputs.length > 0 && !isTerminal && (
-                      <S.MissingInputs>
-                        <S.MissingInputsTitle>추가 입력 필요</S.MissingInputsTitle>
-                        {missingInputs.map((input) => (
-                          <S.MissingInputRow key={input.key}>
-                            <S.MissingInputLabel>{input.label}</S.MissingInputLabel>
-                            <S.MissingInputField
-                              placeholder={input.label}
-                              value={inputValues[input.key] ?? ''}
-                              onChange={(event) => {
-                                if (requestId === null) return;
-                                const nextValue = event.target.value;
-                                setMissingInputValues((state) => ({
-                                  ...state,
-                                  [requestId]: {
-                                    ...(state[requestId] ?? {}),
-                                    [input.key]: nextValue,
-                                  },
-                                }));
-                              }}
-                              disabled={isMessageSubmitting}
-                            />
-                          </S.MissingInputRow>
-                        ))}
-                      </S.MissingInputs>
-                    )}
-
                     {/* fallback_used 배지 */}
-                    {task.clarification_type && (
-                      <S.ClarificationBadge>{task.clarification_type}</S.ClarificationBadge>
-                    )}
-
                     {/* 액션 버튼 or 상태 텍스트 */}
                     {isSuperseded ? (
                       <S.TaskStatusText status="superseded">
@@ -217,7 +182,15 @@ export default function ChatSection({
                       </S.TaskStatusText>
                     ) : isTerminal ? (
                       <S.TaskStatusText status={task.approval_state}>
-                        {approvalLabel}
+                        {task.approval_state === 'completed'
+                          ? '완료'
+                          : task.approval_state === 'failed'
+                            ? '실패'
+                            : task.approval_state === 'cancelled'
+                              ? '취소됨'
+                              : task.approval_state === 'expired'
+                                ? '만료됨'
+                                : task.approval_state}
                       </S.TaskStatusText>
                     ) : (
                       <S.TaskCardActions>
@@ -255,7 +228,15 @@ export default function ChatSection({
                           }
                           if (action === 'edit') {
                             return (
-                              <S.ActionButton key={action} variant="secondary" disabled={disableActions}>
+                              <S.ActionButton
+                                key={action}
+                                variant="secondary"
+                                disabled={disableActions || !message.request_id || message.request_id !== activeRequestId}
+                                onClick={() => {
+                                  if (!message.request_id) return;
+                                  onEditTask(message.request_id);
+                                }}
+                              >
                                 수정
                               </S.ActionButton>
                             );
@@ -275,22 +256,7 @@ export default function ChatSection({
                             );
                           }
                           if (action === 'fill_inputs') {
-                            return (
-                              <S.ActionButton
-                                key={action}
-                                variant="primary"
-                                disabled={!canSubmitMissingInputs}
-                                onClick={() => {
-                                  if (!requestId || missingInputs.length === 0) return;
-                                  const messageText = missingInputs
-                                    .map((input) => `${input.label}: ${inputValues[input.key] ?? ''}`)
-                                    .join('\n');
-                                  onSubmitMissingInputs(requestId, messageText);
-                                }}
-                              >
-                                입력하기
-                              </S.ActionButton>
-                            );
+                            return null;
                           }
                           if (action === 'choose_option') {
                             return (
@@ -318,6 +284,7 @@ export default function ChatSection({
         }
         return null;
       })}
+      <S.ScrollSpacer />
     </S.ChatArea>
   );
 }

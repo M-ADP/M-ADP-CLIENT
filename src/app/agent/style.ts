@@ -5,12 +5,15 @@ export const Container = styled.div<{ isChat?: boolean }>`
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: ${({ isChat }) => (isChat ? 'space-between' : 'center')};
+  justify-content: ${({ isChat }) => (isChat ? 'flex-start' : 'center')};
   width: 100%;
   height: 100%;
+  min-height: 100vh;
   background-color: #ffffff;
-  padding: ${({ isChat }) => (isChat ? '40px 0' : '0')};
+  padding: ${({ isChat }) => (isChat ? '40px 0 24px' : '0')};
   box-sizing: border-box;
+  overflow: hidden;
+  gap: ${({ isChat }) => (isChat ? '16px' : '0')};
 `;
 
 export const LogoSection = styled.div`

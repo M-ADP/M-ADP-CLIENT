@@ -64,6 +64,11 @@ export interface SessionDetailResponse {
 }
 
 export interface CreateSessionMessageResponse {
+  request_id?: number | null;
+  request_status?: string | null;
+  request_type?: string | null;
+  final_response?: string | null;
+  task?: TaskSnapshot | null;
   messages: ConversationMessage[];
 }
 
@@ -141,6 +146,8 @@ export interface SSEDeltaEvent {
   request_id: number;
   session_id: number;
   text: string;
+  source?: 'model_stream' | 'final_response' | 'execution_summary';
+  synthetic?: boolean;
 }
 
 /** approval.superseded 이벤트 */

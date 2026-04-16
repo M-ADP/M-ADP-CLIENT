@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { postSessionMessage, approveRequest, rejectRequest, createSession } from './chatops.api';
+import { postSessionMessage, approveRequest, rejectRequest, createSession, deleteSession } from './chatops.api';
 
 export const usePostMessage = () => {
   return useMutation({
@@ -25,5 +25,11 @@ export const useRejectRequest = () => {
 export const useCreateSession = () => {
   return useMutation({
     mutationFn: ({ title }: { title?: string }) => createSession(title),
+  });
+};
+
+export const useDeleteSession = () => {
+  return useMutation({
+    mutationFn: ({ sessionId }: { sessionId: number }) => deleteSession(sessionId),
   });
 };

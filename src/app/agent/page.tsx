@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useQueryClient } from '@tanstack/react-query';
 import * as S from './style';
@@ -44,12 +44,17 @@ export default function AgentPage() {
     finalResponse,
     isApprovalPending,
     setIsApprovalPending,
+    bootstrapRequest,
     supersededBy,
     sseEventLog,
   } = useChatStore();
 
   const [inputValue, setInputValue] = useState("");
   const [optimisticMessage, setOptimisticMessage] = useState<ConversationMessage | null>(null);
+  const [displayedStreamingText, setDisplayedStreamingText] = useState('');
+  const [composerAssistMode, setComposerAssistMode] = useState<'default' | 'edit'>('default');
+  const [scrollToLatestToken, setScrollToLatestToken] = useState(0);
+  const animationFrameRef = useRef<number | null>(null);
   const { data: sessionDetail } = useSession(activeSessionId);
 
   const createSessionMutation = useCreateSession();
@@ -76,6 +81,8 @@ export default function AgentPage() {
       setInputValue("");
     }
 
+    setScrollToLatestToken((value) => value + 1);
+    setComposerAssistMode('default');
     resetRequest();
 
     setOptimisticMessage({
@@ -102,9 +109,17 @@ export default function AgentPage() {
           onSuccess: async (res) => {
             const msgsWithReqId = res.messages.filter((message) => message.request_id !== null);
             const targetMsg = msgsWithReqId[msgsWithReqId.length - 1];
+            const resolvedRequestId = res.request_id ?? targetMsg?.request_id ?? null;
 
-            if (targetMsg?.request_id) {
-              setPendingRequestId(targetMsg.request_id);
+            bootstrapRequest({
+              request_id: resolvedRequestId,
+              request_status: res.request_status ?? null,
+              final_response: res.final_response ?? null,
+              task: res.task ?? null,
+            });
+
+            if (resolvedRequestId !== null) {
+              setPendingRequestId(resolvedRequestId);
             }
 
             clearStreamingText();
@@ -134,6 +149,59 @@ export default function AgentPage() {
     }
   }, [requestStatus, pendingRequestId, activeSessionId, queryClient, setPendingRequestId]);
 
+  useEffect(() => {
+    const targetText = finalResponse ?? streamingText;
+
+    if (animationFrameRef.current !== null) {
+      window.clearTimeout(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+
+    if (!pendingRequestId) {
+      animationFrameRef.current = window.setTimeout(() => {
+        setDisplayedStreamingText('');
+      }, 0);
+      return;
+    }
+
+    if (!targetText) {
+      animationFrameRef.current = window.setTimeout(() => {
+        setDisplayedStreamingText('');
+      }, 0);
+      return;
+    }
+
+    if (displayedStreamingText === targetText) {
+      return;
+    }
+
+    const revealNext = () => {
+      setDisplayedStreamingText((current) => {
+        if (!targetText.startsWith(current)) {
+          return targetText;
+        }
+
+        const remaining = targetText.length - current.length;
+        if (remaining <= 0) {
+          return current;
+        }
+
+        return targetText.slice(0, current.length + 1);
+      });
+
+      animationFrameRef.current = window.setTimeout(revealNext, 16);
+    };
+
+    animationFrameRef.current = window.setTimeout(revealNext, 16);
+
+    return () => {
+      if (animationFrameRef.current !== null) {
+        window.clearTimeout(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+    };
+  }, [displayedStreamingText, finalResponse, pendingRequestId, streamingText]);
+
   // 전송 핸들러
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -148,6 +216,7 @@ export default function AgentPage() {
 
   const handleApprove = (requestId: number) => {
     if (activeSessionId === null || activeSessionId === undefined) return;
+    setComposerAssistMode('default');
     setIsApprovalPending(true);
     approveMutation.mutate(
       { sessionId: activeSessionId, requestId },
@@ -167,6 +236,7 @@ export default function AgentPage() {
 
   const handleReject = (requestId: number) => {
     if (activeSessionId === null || activeSessionId === undefined) return;
+    setComposerAssistMode('default');
     rejectMutation.mutate(
       { sessionId: activeSessionId, requestId },
       {
@@ -179,7 +249,13 @@ export default function AgentPage() {
 
   const handleSubmitMissingInputs = (requestId: number, message: string) => {
     if (requestId <= 0) return;
+    setComposerAssistMode('default');
     void sendUserMessage(message);
+  };
+
+  const handleEditTask = (requestId: number) => {
+    if (!pendingRequestId || requestId !== pendingRequestId) return;
+    setComposerAssistMode('edit');
   };
 
   // --- 메시지 리스트 조합 ---
@@ -211,7 +287,7 @@ export default function AgentPage() {
     const hasServerResponse = serverMessages.some(
       (m) => m.request_id === pendingRequestId && m.role === 'assistant'
     );
-    const liveText = finalResponse || streamingText;
+    const liveText = displayedStreamingText;
 
     if (!hasServerResponse) {
       messages.push({
@@ -248,12 +324,13 @@ export default function AgentPage() {
         <ChatSection
           messages={messages}
           isThinking={isRequestActive}
-          isMessageSubmitting={isSubmittingMessage}
           currentTask={currentTask}
           isApprovalPending={isApprovalPending}
           supersededBy={supersededBy}
           sseEventLog={thinkingEventLog}
-          onSubmitMissingInputs={handleSubmitMissingInputs}
+          activeRequestId={pendingRequestId}
+          scrollToLatestToken={scrollToLatestToken}
+          onEditTask={handleEditTask}
           onApprove={handleApprove}
           onReject={handleReject}
         />
@@ -271,11 +348,18 @@ export default function AgentPage() {
       )}
 
       <SearchSection
+        key={`${pendingRequestId ?? 'composer'}:${composerAssistMode}:${currentTask?.approval_state ?? 'none'}:${Object.keys(currentTask?.filled_inputs ?? {}).length}:${(currentTask?.missing_inputs ?? []).length}`}
         inputValue={inputValue}
         setInputValue={setInputValue}
         handleSearch={handleSearch}
         handleKeyDown={handleKeyDown}
         disabled={isSubmittingMessage}
+        activeTask={currentTask}
+        activeRequestId={pendingRequestId}
+        assistMode={composerAssistMode}
+        onSubmitMissingInputs={handleSubmitMissingInputs}
+        onDismissAssist={() => setComposerAssistMode('default')}
+        onRejectRequest={handleReject}
       />
     </S.Container>
   );
