@@ -1,4 +1,7 @@
+import { Suspense } from 'react';
 import AppManageContainer from '@/containers/app/manage/ui';
+
+export const dynamic = 'force-dynamic';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -6,5 +9,9 @@ interface PageProps {
 
 export default async function AppManagePage({ params }: PageProps) {
   const { id } = await params;
-  return <AppManageContainer projectId={id} />;
+  return (
+    <Suspense>
+      <AppManageContainer projectId={id} />
+    </Suspense>
+  );
 }
