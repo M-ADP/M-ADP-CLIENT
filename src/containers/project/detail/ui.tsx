@@ -190,7 +190,7 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
 
   const handleOpenAppDetail = (appName: string, appId: string | number) => {
     const query = new URLSearchParams({ appName, appId: String(appId) });
-    router.push(`/project/manage/${projectId}/app?${query.toString()}`);
+    router.push(`/project/manage/${projectId}/application?${query.toString()}`);
   };
 
   if (isLoading) {

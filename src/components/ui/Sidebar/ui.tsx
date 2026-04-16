@@ -153,7 +153,7 @@ export default function Sidebar() {
 
   const currentProjectId = pathname?.match(/^\/project\/manage\/([^/]+)/)?.[1] ?? null;
   const inProjectDetail = Boolean(currentProjectId);
-  const inAppManage = Boolean(pathname?.match(/^\/project\/manage\/[^/]+\/app(?:\/|$)/));
+  const inAppManage = Boolean(pathname?.match(/^\/project\/manage\/[^/]+\/application(?:\/|$)/));
   const { data: currentProjectDetail, isPending: isAppsPending } = useProjectDetailQuery(currentProjectId || '');
   const currentProjectApps = currentProjectDetail?.deployments ?? [];
 
@@ -264,7 +264,7 @@ export default function Sidebar() {
                                       if (appId) {
                                         query.set('appId', appId);
                                       }
-                                      const appPath = `/project/manage/${project.id}/app?${query.toString()}`;
+                                      const appPath = `/project/manage/${project.id}/application?${query.toString()}`;
                                       const isAppActive = inAppManage
                                         && (currentAppName ? currentAppName === displayName : index === 0);
                                       return (
