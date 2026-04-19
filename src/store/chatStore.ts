@@ -10,6 +10,7 @@ import {
 interface ChatState {
   // --- 기존 ---
   activeSessionId: number | null;
+  hiddenDeletedSessionIds: number[];
   streamingText: string;
   isStreaming: boolean;
   pendingRequestId: number | null;
@@ -28,6 +29,8 @@ interface ChatState {
 
   // --- 액션 ---
   setActiveSessionId: (id: number | null) => void;
+  hideDeletedSession: (id: number) => void;
+  restoreDeletedSession: (id: number) => void;
   setPendingRequestId: (id: number | null) => void;
   appendStreamingText: (text: string) => void;
   clearStreamingText: () => void;
@@ -41,6 +44,7 @@ interface ChatState {
 export const useChatStore = create<ChatState>((set) => ({
   // --- 기존 ---
   activeSessionId: null,
+  hiddenDeletedSessionIds: [],
   streamingText: '',
   isStreaming: false,
   pendingRequestId: null,
@@ -59,6 +63,16 @@ export const useChatStore = create<ChatState>((set) => ({
 
   // --- 기존 액션 ---
   setActiveSessionId: (id) => set({ activeSessionId: id }),
+  hideDeletedSession: (id) =>
+    set((state) => ({
+      hiddenDeletedSessionIds: state.hiddenDeletedSessionIds.includes(id)
+        ? state.hiddenDeletedSessionIds
+        : [...state.hiddenDeletedSessionIds, id],
+    })),
+  restoreDeletedSession: (id) =>
+    set((state) => ({
+      hiddenDeletedSessionIds: state.hiddenDeletedSessionIds.filter((sessionId) => sessionId !== id),
+    })),
   setPendingRequestId: (id) => set({ pendingRequestId: id }),
   appendStreamingText: (text) =>
     set((state) => ({ streamingText: state.streamingText + text })),

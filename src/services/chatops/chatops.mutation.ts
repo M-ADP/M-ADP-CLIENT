@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { postSessionMessage, approveRequest, rejectRequest, createSession, deleteSession } from './chatops.api';
 import { chatopsKeys } from './chatops.query';
 import { SessionListResponse } from '@/types/chatops';
+import { useChatStore } from '@/store/chatStore';
 
 const removeSessionFromList = (
   previous: SessionListResponse | undefined,
@@ -44,11 +45,14 @@ export const useCreateSession = () => {
 
 export const useDeleteSession = () => {
   const queryClient = useQueryClient();
+  const hideDeletedSession = useChatStore((state) => state.hideDeletedSession);
+  const restoreDeletedSession = useChatStore((state) => state.restoreDeletedSession);
 
   return useMutation({
     mutationFn: ({ sessionId }: { sessionId: number }) => deleteSession(sessionId),
     onMutate: async ({ sessionId }) => {
       await queryClient.cancelQueries({ queryKey: chatopsKeys.sessions() });
+      hideDeletedSession(sessionId);
 
       const previousSessions = queryClient.getQueryData<SessionListResponse>(chatopsKeys.sessions());
 
@@ -60,6 +64,7 @@ export const useDeleteSession = () => {
       return { previousSessions };
     },
     onError: (_error, _variables, context) => {
+      restoreDeletedSession(_variables.sessionId);
       if (!context?.previousSessions) return;
 
       queryClient.setQueryData(chatopsKeys.sessions(), context.previousSessions);

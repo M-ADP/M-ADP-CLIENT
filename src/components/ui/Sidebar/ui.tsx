@@ -98,14 +98,16 @@ export default function Sidebar() {
 
   useUserProfileQuery();
   const { data: projectListData } = useProjectListQuery();
-  const { activeSessionId, setActiveSessionId, resetRequest } = useChatStore();
+  const { activeSessionId, hiddenDeletedSessionIds, setActiveSessionId, resetRequest } = useChatStore();
   const {
     data: sessionListData,
     isPending: isSessionsPending,
     isError: isSessionsError,
   } = useSessions();
   const deleteSessionMutation = useDeleteSession();
-  const sessions = sessionListData?.sessions ?? [];
+  const sessions = (sessionListData?.sessions ?? []).filter(
+    (session) => !hiddenDeletedSessionIds.includes(session.session_id)
+  );
 
   useEffect(() => {
     if (pathname !== '/login' && step === 'github') {

@@ -25,8 +25,79 @@ import {
   isTerminalStatus,
   SSEEvent,
   SSEEventRecord,
+  TaskSnapshot,
 } from '@/types/chatops';
 import { normalizeSSEEvent } from '@/services/chatops/chatops.sse';
+
+const PAUSE_EVENT_TYPES = new Set([
+  'approval.required',
+  'request.input_required',
+  'request.ambiguous',
+]);
+
+function createFallbackTask(
+  eventType: string | null,
+  eventMessage?: string | null
+): TaskSnapshot | null {
+  if (eventType === 'approval.required') {
+    return {
+      kind: 'approval',
+      title: '승인 필요',
+      status: 'interrupted',
+      request_type: null,
+      approval_state: 'pending',
+      operation_id: null,
+      risk_level: null,
+      target: null,
+      filled_inputs: null,
+      missing_inputs: null,
+      next_actions: ['approve', 'cancel'],
+      summary: eventMessage || '이 작업을 실행하려면 승인이 필요합니다.',
+      clarification_type: null,
+      is_ambiguous: false,
+    };
+  }
+
+  return null;
+}
+
+function getLatestTaskFromEvents(
+  events: SSEEventRecord[],
+  requestId: number | null
+): TaskSnapshot | null {
+  for (let index = events.length - 1; index >= 0; index -= 1) {
+    const event = events[index].event;
+
+    if (requestId !== null && event.request_id !== requestId) {
+      continue;
+    }
+
+    if ('task' in event && event.task) {
+      return event.task;
+    }
+  }
+
+  return null;
+}
+
+function getLatestTaskFromMessages(
+  messages: ConversationMessage[],
+  requestId: number | null
+): TaskSnapshot | null {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+
+    if (requestId !== null && message.request_id !== requestId) {
+      continue;
+    }
+
+    if (message.task) {
+      return message.task;
+    }
+  }
+
+  return null;
+}
 
 export default function AgentPage() {
   const queryClient = useQueryClient();
@@ -274,6 +345,34 @@ export default function AgentPage() {
     pendingRequestId !== null
       ? (sseEventLog.length > 0 ? sseEventLog : historyEventLog)
       : [];
+  const lastThinkingEvent = thinkingEventLog.at(-1)?.event ?? null;
+  const lastThinkingEventType = lastThinkingEvent?.type ?? null;
+  const taskFromSources =
+    currentTask
+    ?? getLatestTaskFromEvents(sseEventLog, pendingRequestId)
+    ?? getLatestTaskFromEvents(historyEventLog, pendingRequestId)
+    ?? getLatestTaskFromMessages(rawServerMessages, pendingRequestId);
+  const effectiveTask =
+    taskFromSources
+    ?? createFallbackTask(
+      lastThinkingEventType,
+      lastThinkingEvent && 'message' in lastThinkingEvent ? lastThinkingEvent.message ?? null : null
+    );
+
+  useEffect(() => {
+    if (activeSessionId === null || pendingRequestId === null || !lastThinkingEventType) {
+      return;
+    }
+
+    if (!PAUSE_EVENT_TYPES.has(lastThinkingEventType)) {
+      return;
+    }
+
+    void queryClient.invalidateQueries({ queryKey: chatopsKeys.sessionDetail(activeSessionId) });
+    void queryClient.invalidateQueries({
+      queryKey: chatopsKeys.requestEvents(activeSessionId, pendingRequestId),
+    });
+  }, [activeSessionId, lastThinkingEventType, pendingRequestId, queryClient]);
 
   // 1. optimistic user message (전송 중)
   if (optimisticMessage) {
@@ -289,9 +388,9 @@ export default function AgentPage() {
       message_id: `sse-live-${pendingRequestId}`,
       request_id: pendingRequestId,
       role: 'assistant' as const,
-      type: (currentTask ? 'task' : 'text') as 'text' | 'task',
+      type: (effectiveTask ? 'task' : 'text') as 'text' | 'task',
       text: liveText || null,
-      task: currentTask,
+      task: effectiveTask,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     });
@@ -318,7 +417,7 @@ export default function AgentPage() {
         <ChatSection
           messages={messages}
           isThinking={isRequestActive}
-          currentTask={currentTask}
+          currentTask={effectiveTask}
           isApprovalPending={isApprovalPending}
           supersededBy={supersededBy}
           sseEventLog={thinkingEventLog}
@@ -342,13 +441,13 @@ export default function AgentPage() {
       )}
 
       <SearchSection
-        key={`${pendingRequestId ?? 'composer'}:${composerAssistMode}:${currentTask?.approval_state ?? 'none'}:${Object.keys(currentTask?.filled_inputs ?? {}).length}:${(currentTask?.missing_inputs ?? []).length}`}
+        key={`${pendingRequestId ?? 'composer'}:${composerAssistMode}:${effectiveTask?.approval_state ?? 'none'}:${Object.keys(effectiveTask?.filled_inputs ?? {}).length}:${(effectiveTask?.missing_inputs ?? []).length}`}
         inputValue={inputValue}
         setInputValue={setInputValue}
         handleSearch={handleSearch}
         handleKeyDown={handleKeyDown}
         disabled={isSubmittingMessage}
-        activeTask={currentTask}
+        activeTask={effectiveTask}
         activeRequestId={pendingRequestId}
         assistMode={composerAssistMode}
         onSubmitMissingInputs={handleSubmitMissingInputs}
