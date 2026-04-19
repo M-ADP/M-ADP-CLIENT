@@ -26,6 +26,7 @@ import {
   SSEEvent,
   SSEEventRecord,
 } from '@/types/chatops';
+import { normalizeSSEEvent } from '@/services/chatops/chatops.sse';
 
 export default function AgentPage() {
   const queryClient = useQueryClient();
@@ -255,11 +256,19 @@ export default function AgentPage() {
 
   const historyEventLog: SSEEventRecord[] =
     requestEvents?.items
-      .filter((item) => item.type !== 'response.delta')
-      .map((item) => ({
-        sequence: item.sequence,
-        event: item.data as unknown as SSEEvent,
-      })) ?? [];
+      .reduce<SSEEventRecord[]>((acc, item) => {
+        const event = normalizeSSEEvent(item.data, item.type);
+        if (!event || event.type === 'response.delta') {
+          return acc;
+        }
+
+        acc.push({
+          sequence: item.sequence,
+          event: event as SSEEvent,
+        });
+
+        return acc;
+      }, []) ?? [];
 
   const thinkingEventLog =
     pendingRequestId !== null

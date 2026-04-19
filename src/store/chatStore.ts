@@ -93,7 +93,7 @@ export const useChatStore = create<ChatState>((set) => ({
       };
 
       // response.delta: 텍스트만 누적하고 패널 로그에는 남기지 않는다.
-      if (eventType === 'response.delta') {
+      if (eventType === 'response.delta' || eventType === 'response_delta') {
         return {
           ...patch,
           streamingText: state.streamingText + (event as { text: string }).text,
@@ -124,6 +124,7 @@ export const useChatStore = create<ChatState>((set) => ({
       // 이벤트별 특수 처리
       switch (eventType) {
         case 'response.started':
+        case 'response_stream_start':
           patch.isStreaming = true;
           break;
 

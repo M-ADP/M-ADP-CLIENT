@@ -125,10 +125,59 @@ export const AIMessageCard = styled.div`
   font-size: ${typography.text18Regular.fontSize};
   font-weight: ${typography.text18Regular.fontWeight};
   line-height: ${typography.text18Regular.lineHeight};
-  white-space: pre-wrap;
   word-break: break-word;
   overflow-wrap: anywhere;
   min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+`;
+
+export const MarkdownParagraph = styled.p`
+  margin: 0;
+  color: #1b2559;
+`;
+
+export const MarkdownOrderedList = styled.ol`
+  margin: 0;
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+export const MarkdownUnorderedList = styled.ul`
+  margin: 0;
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+export const InlineCode = styled.code`
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: #eef2ff;
+  color: #334155;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  font-size: 0.92em;
+`;
+
+export const CodeBlock = styled.pre`
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: #0f172a;
+  color: #e2e8f0;
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+
+  code {
+    font-family: inherit;
+  }
 `;
 
 export const TaskCard = styled.div`

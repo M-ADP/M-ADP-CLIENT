@@ -15,6 +15,8 @@ export const useSessions = () => {
   return useQuery({
     queryKey: chatopsKeys.sessions(),
     queryFn: () => getSessions(),
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
   });
 };
 

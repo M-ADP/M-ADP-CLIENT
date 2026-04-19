@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useChatStore } from '@/store/chatStore';
 import { isTerminalStatus, SSEEvent } from '@/types/chatops';
+import { normalizeSSEEvent } from '@/services/chatops/chatops.sse';
 import Cookies from 'js-cookie';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
@@ -97,10 +98,11 @@ export const useStream = (sessionId: number, requestId: number | null) => {
 
           let dataStr = '';
           let eventId: string | null = null;
+          let eventType: string | null = null;
 
           for (const line of lines) {
             if (line.startsWith('event:')) {
-              continue;
+              eventType = line.replace(/^event:\s*/, '');
             } else if (line.startsWith('data:')) {
               const part = line.replace(/^data:\s*/, '');
               dataStr += dataStr ? '\n' + part : part;
@@ -116,7 +118,11 @@ export const useStream = (sessionId: number, requestId: number | null) => {
           // JSON 파싱
           let parsed: SSEEvent;
           try {
-            parsed = JSON.parse(dataStr);
+            const normalized = normalizeSSEEvent(JSON.parse(dataStr), eventType ?? undefined);
+            if (!normalized) {
+              continue;
+            }
+            parsed = normalized;
           } catch {
             console.warn('[SSE] JSON parse failed:', dataStr);
             continue;

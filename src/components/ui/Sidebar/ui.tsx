@@ -3,14 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
-import { useQueryClient } from '@tanstack/react-query';
 import * as S from './style';
 import { useUserStore } from '@/store/userStore';
 import { useUserProfileQuery } from '@/services/user/user.query';
 import { useProjectListQuery, useProjectDetailQuery } from '@/services/project/project.query';
 import { useAuthStore } from '@/store/authStore';
 import { useChatStore } from '@/store/chatStore';
-import { useSessions, chatopsKeys } from '@/services/chatops/chatops.query';
+import { useSessions } from '@/services/chatops/chatops.query';
 import { useDeleteSession } from '@/services/chatops/chatops.mutation';
 import { postLogout } from '@/services/login/login.api';
 import Cookies from 'js-cookie';
@@ -91,24 +90,41 @@ const extractAppId = (app: Record<string, unknown>) => {
 export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
-  const queryClient = useQueryClient();
   const { step, setStep } = useAuthStore();
   const { user, setUser } = useUserStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [expandedMenu, setExpandedMenu] = useState<string | null>('project');
+  const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
   const [currentAppName, setCurrentAppName] = useState('');
 
   useUserProfileQuery();
   const { data: projectListData } = useProjectListQuery();
   const { activeSessionId, setActiveSessionId, resetRequest } = useChatStore();
-  const { data: sessionListData } = useSessions();
+  const {
+    data: sessionListData,
+    isPending: isSessionsPending,
+    isError: isSessionsError,
+  } = useSessions();
   const deleteSessionMutation = useDeleteSession();
+  const sessions = sessionListData?.sessions ?? [];
 
   useEffect(() => {
     if (pathname !== '/login' && step === 'github') {
       setStep('google');
     }
   }, [pathname, step, setStep]);
+
+  useEffect(() => {
+    if (isCollapsed) return;
+
+    if (pathname?.startsWith('/agent')) {
+      setExpandedMenu('agent');
+      return;
+    }
+
+    if (pathname?.startsWith('/project')) {
+      setExpandedMenu('project');
+    }
+  }, [isCollapsed, pathname]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -156,16 +172,13 @@ export default function Sidebar() {
       { sessionId },
       {
         onSuccess: async () => {
-          if (activeSessionId === sessionId) {
+          const isDeletingActiveSession = activeSessionId === sessionId;
+
+          if (isDeletingActiveSession) {
             setActiveSessionId(null);
             resetRequest();
-            if (pathname === '/agent') {
-              router.push('/agent');
-            }
+            router.replace('/agent');
           }
-
-          await queryClient.invalidateQueries({ queryKey: chatopsKeys.sessions() });
-          queryClient.removeQueries({ queryKey: chatopsKeys.sessionDetail(sessionId) });
         },
       }
     );
@@ -205,6 +218,7 @@ export default function Sidebar() {
         <S.Section>
           {PRIMARY_NAV.map((item) => {
             const active = isActive(item.path, !!item.children);
+            const isSubNavOpen = expandedMenu === item.key || active;
             return (
               <div key={item.key}>
                 <S.NavItem
@@ -225,7 +239,7 @@ export default function Sidebar() {
                 </S.NavItem>
 
                 {!isCollapsed && item.children && (
-                  <S.SubNavContainer data-open={expandedMenu === item.key ? 'true' : 'false'}>
+                  <S.SubNavContainer data-open={isSubNavOpen ? 'true' : 'false'}>
                     {item.children.map((child) => {
                       const childActive = pathname === child.path;
                       return (
@@ -323,22 +337,38 @@ export default function Sidebar() {
                         <S.NavLabel $active={!activeSessionId && pathname === '/agent'}>+ 새 채팅</S.NavLabel>
                       </S.SubNavItem>
                     )}
-                    {item.key === 'agent' && sessionListData?.sessions && sessionListData.sessions.length > 0 && (
+                    {item.key === 'agent' && isSessionsPending && (
+                      <S.SubNavItem>
+                        <S.NavLabel>세션 불러오는 중...</S.NavLabel>
+                      </S.SubNavItem>
+                    )}
+                    {item.key === 'agent' && isSessionsError && (
+                      <S.SubNavItem>
+                        <S.NavLabel>세션을 불러오지 못했습니다</S.NavLabel>
+                      </S.SubNavItem>
+                    )}
+                    {item.key === 'agent' && !isSessionsPending && !isSessionsError && sessions.length === 0 && (
+                      <S.SubNavItem>
+                        <S.NavLabel>세션 없음</S.NavLabel>
+                      </S.SubNavItem>
+                    )}
+                    {item.key === 'agent' && sessions.length > 0 && (
                       <S.SubNavLabel />
                     )}
-                    {item.key === 'agent' && sessionListData?.sessions?.map((session) => {
+                    {item.key === 'agent' && sessions.map((session) => {
                       const isThisSession = activeSessionId === session.session_id && pathname === '/agent';
+                      const sessionLabel = session.title || session.last_message_preview || '새 채팅';
                       return (
                         <S.SessionRow key={session.session_id}>
                           <S.SubNavItem onClick={() => {
                             setActiveSessionId(session.session_id);
                             handleNavigation('/agent');
                           }}>
-                            <S.NavLabel $active={isThisSession}>{session.title || '새 채팅'}</S.NavLabel>
+                            <S.NavLabel $active={isThisSession}>{sessionLabel}</S.NavLabel>
                           </S.SubNavItem>
                           <S.SessionDeleteButton
                             type="button"
-                            aria-label={`${session.title || '새 채팅'} 삭제`}
+                            aria-label={`${sessionLabel} 삭제`}
                             onClick={(event) => {
                               event.stopPropagation();
                               handleDeleteSession(session.session_id);

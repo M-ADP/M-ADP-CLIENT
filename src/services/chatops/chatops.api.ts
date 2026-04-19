@@ -25,7 +25,7 @@ export const createSession = async (title?: string) => {
 };
 
 export const deleteSession = async (sessionId: number) => {
-  return api<string>(`/chatops/sessions/${sessionId}`, {
+  return api<Record<string, never>>(`/chatops/sessions/${sessionId}`, {
     method: 'DELETE',
   });
 };

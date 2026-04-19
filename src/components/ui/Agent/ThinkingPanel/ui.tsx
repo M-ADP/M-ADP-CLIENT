@@ -6,6 +6,7 @@ import { SSEEventRecord } from '@/types/chatops';
 
 /** 이벤트 타입 → 사용자 친화적 라벨 */
 const EVENT_LABEL: Record<string, string> = {
+  processing: '처리 중',
   'request.created': '요청 접수',
   'context.hydrated': '문맥 분석',
   'parsing.completed': '의도 파악 완료',
@@ -13,12 +14,14 @@ const EVENT_LABEL: Record<string, string> = {
   'request.ambiguous': '추가 확인 필요',
   'request.input_required': '추가 입력 필요',
   'response.started': '응답 생성 시작',
+  response_stream_start: '응답 생성 시작',
   'response.completed': '응답 생성 완료',
   'request.failed': '요청 실패',
   'execution.completed': '실행 완료',
   'execution.failed': '실행 실패',
   'approval.rejected': '승인 거절됨',
   'approval.superseded': '요청 대체됨',
+  completed: '응답 생성 완료',
 };
 
 function isPauseEvent(type: string): boolean {
@@ -69,7 +72,10 @@ function getHeaderSummary(events: SSEEventRecord[], isLive: boolean): string {
     case 'parsing.completed':
       return isLive ? '요청을 해석했고 다음 단계를 정리하고 있습니다' : '요청 해석을 마쳤습니다';
     case 'response.started':
+    case 'response_stream_start':
       return '답변을 작성하고 있습니다';
+    case 'processing':
+      return '요청을 처리하고 있습니다';
     case 'approval.required':
       return '실행 전 승인을 기다리고 있습니다';
     case 'request.input_required':
@@ -77,6 +83,7 @@ function getHeaderSummary(events: SSEEventRecord[], isLive: boolean): string {
     case 'request.ambiguous':
       return '어떤 작업인지 조금 더 확인이 필요합니다';
     case 'response.completed':
+    case 'completed':
       return `생각 ${stepCount}단계 완료`;
     case 'execution.completed':
       return '실행이 완료되었습니다';

@@ -47,11 +47,15 @@ const parseResponse = async <T>(response: Response): Promise<T> => {
     const contentType = response.headers.get('content-type');
     if (contentType && contentType.includes('application/json')) {
         const text = await response.text();
-        const safeParsed = text.replace(
-            /(?<=[:{[,])\s*(\d{16,})\s*(?=[,}\]])/g,
-            '"$1"'
-        );
-        return JSON.parse(safeParsed) as T;
+        try {
+            return JSON.parse(text) as T;
+        } catch {
+            const safeParsed = text.replace(
+                /(?<=[:{[,])\s*(\d{16,})\s*(?=[,}\]])/g,
+                '"$1"'
+            );
+            return JSON.parse(safeParsed) as T;
+        }
     }
     return response.text() as T;
 };

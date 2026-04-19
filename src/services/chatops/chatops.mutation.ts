@@ -1,5 +1,19 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { postSessionMessage, approveRequest, rejectRequest, createSession, deleteSession } from './chatops.api';
+import { chatopsKeys } from './chatops.query';
+import { SessionListResponse } from '@/types/chatops';
+
+const removeSessionFromList = (
+  previous: SessionListResponse | undefined,
+  sessionId: number
+): SessionListResponse | undefined => {
+  if (!previous) return previous;
+
+  return {
+    ...previous,
+    sessions: previous.sessions.filter((session) => session.session_id !== sessionId),
+  };
+};
 
 export const usePostMessage = () => {
   return useMutation({
@@ -29,7 +43,31 @@ export const useCreateSession = () => {
 };
 
 export const useDeleteSession = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: ({ sessionId }: { sessionId: number }) => deleteSession(sessionId),
+    onMutate: async ({ sessionId }) => {
+      await queryClient.cancelQueries({ queryKey: chatopsKeys.sessions() });
+
+      const previousSessions = queryClient.getQueryData<SessionListResponse>(chatopsKeys.sessions());
+
+      queryClient.setQueryData<SessionListResponse | undefined>(
+        chatopsKeys.sessions(),
+        (current) => removeSessionFromList(current, sessionId)
+      );
+
+      return { previousSessions };
+    },
+    onError: (_error, _variables, context) => {
+      if (!context?.previousSessions) return;
+
+      queryClient.setQueryData(chatopsKeys.sessions(), context.previousSessions);
+    },
+    onSuccess: (_data, { sessionId }) => {
+      queryClient.removeQueries({ queryKey: chatopsKeys.sessionDetail(sessionId) });
+      queryClient.removeQueries({ queryKey: chatopsKeys.sessionMessages(sessionId), exact: false });
+      queryClient.removeQueries({ queryKey: ['chatops', 'request-events', sessionId], exact: false });
+    },
   });
 };

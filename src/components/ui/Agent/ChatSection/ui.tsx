@@ -1,4 +1,4 @@
-import { Fragment } from 'react';
+import { Fragment, ReactNode } from 'react';
 import Image from 'next/image';
 import { useCallback, useEffect, useRef } from 'react';
 import * as S from './style';
@@ -19,6 +19,84 @@ const FIELD_LABELS: Record<string, string> = {
 
 function toFieldLabel(key: string) {
   return FIELD_LABELS[key] || key.replace(/_/g, ' ');
+}
+
+function renderInlineMarkdown(text: string): ReactNode[] {
+  const tokens = text.split(/(`[^`]+`|\*\*[^*]+\*\*)/g).filter(Boolean);
+
+  return tokens.map((token, index) => {
+    if (token.startsWith('**') && token.endsWith('**')) {
+      return <strong key={`${token}-${index}`}>{token.slice(2, -2)}</strong>;
+    }
+
+    if (token.startsWith('`') && token.endsWith('`')) {
+      return <S.InlineCode key={`${token}-${index}`}>{token.slice(1, -1)}</S.InlineCode>;
+    }
+
+    return <Fragment key={`${token}-${index}`}>{token}</Fragment>;
+  });
+}
+
+function renderParagraph(text: string, key: string) {
+  const lines = text.split('\n');
+
+  return (
+    <S.MarkdownParagraph key={key}>
+      {lines.map((line, index) => (
+        <Fragment key={`${key}-${index}`}>
+          {index > 0 && <br />}
+          {renderInlineMarkdown(line)}
+        </Fragment>
+      ))}
+    </S.MarkdownParagraph>
+  );
+}
+
+function renderMarkdown(text: string): ReactNode[] {
+  const segments = text.split(/```([\s\S]*?)```/g);
+
+  return segments.flatMap((segment, segmentIndex) => {
+    if (segmentIndex % 2 === 1) {
+      const codeText = segment.replace(/^\n+|\n+$/g, '');
+      return (
+        <S.CodeBlock key={`code-${segmentIndex}`}>
+          <code>{codeText}</code>
+        </S.CodeBlock>
+      );
+    }
+
+    return segment
+      .split(/\n{2,}/)
+      .map((block) => block.trim())
+      .filter(Boolean)
+      .map((block, blockIndex) => {
+        const orderedLines = block.match(/^\d+\.\s+.+(?:\n\d+\.\s+.+)*$/);
+        if (orderedLines) {
+          const items = block.split('\n').map((line) => line.replace(/^\d+\.\s+/, ''));
+          return (
+            <S.MarkdownOrderedList key={`ol-${segmentIndex}-${blockIndex}`}>
+              {items.map((item, itemIndex) => (
+                <li key={`ol-item-${itemIndex}`}>{renderInlineMarkdown(item)}</li>
+              ))}
+            </S.MarkdownOrderedList>
+          );
+        }
+
+        const unorderedLines = block.match(/^[-*]\s+.+(?:\n[-*]\s+.+)*$/);
+        if (unorderedLines) {
+          const items = block.split('\n').map((line) => line.replace(/^[-*]\s+/, ''));
+          return (
+            <S.MarkdownUnorderedList key={`ul-${segmentIndex}-${blockIndex}`}>
+              {items.map((item, itemIndex) => (
+                <li key={`ul-item-${itemIndex}`}>{renderInlineMarkdown(item)}</li>
+              ))}
+            </S.MarkdownUnorderedList>
+          );
+        }
+
+        return renderParagraph(block, `p-${segmentIndex}-${blockIndex}`);
+      });
+  });
 }
 
 interface ChatSectionProps {
@@ -93,14 +171,14 @@ export default function ChatSection({
     <S.ChatArea ref={scrollRef}>
       {messages.map((message) => {
         if (message.role === 'user') {
-          return (
-            <S.UserMessageRow
-              key={message.message_id}
-              ref={message.message_id === latestUserMessageId ? latestUserMessageRef : null}
-            >
+            return (
+              <S.UserMessageRow
+                key={message.message_id}
+                ref={message.message_id === latestUserMessageId ? latestUserMessageRef : null}
+              >
               <S.UserMessageCard>{message.text}</S.UserMessageCard>
-            </S.UserMessageRow>
-          );
+              </S.UserMessageRow>
+            );
         }
 
         if (message.role === 'assistant') {
@@ -134,7 +212,7 @@ export default function ChatSection({
                   <S.Avatar>
                     <Image src="/assets/logo.svg" alt="AI Avatar" width={24} height={24} />
                   </S.Avatar>
-                  <S.AIMessageCard>{message.text}</S.AIMessageCard>
+                  <S.AIMessageCard>{renderMarkdown(message.text)}</S.AIMessageCard>
                 </S.MessageRow>
               </Fragment>
             );
