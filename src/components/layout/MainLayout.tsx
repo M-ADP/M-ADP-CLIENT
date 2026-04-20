@@ -9,9 +9,12 @@ export default function MainLayout({
     children: React.ReactNode;
 }) {
     const pathname = usePathname();
-    const isAuthPage = pathname === '/login' || pathname.startsWith('/oauth2/callback');
+    const isStandalonePage =
+        pathname === '/login' ||
+        pathname.startsWith('/oauth2/callback') ||
+        pathname.startsWith('/system-error');
 
-    if (isAuthPage) {
+    if (isStandalonePage) {
         return <>{children}</>;
     }
 
