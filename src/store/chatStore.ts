@@ -81,10 +81,22 @@ export const useChatStore = create<ChatState>((set) => ({
   setIsApprovalPending: (v) => set({ isApprovalPending: v }),
   bootstrapRequest: (payload) =>
     set((state) => ({
-      pendingRequestId: payload.request_id ?? state.pendingRequestId,
-      requestStatus: payload.request_status ?? state.requestStatus,
-      finalResponse: payload.final_response ?? state.finalResponse,
-      currentTask: payload.task ?? state.currentTask,
+      pendingRequestId:
+        Object.prototype.hasOwnProperty.call(payload, 'request_id')
+          ? payload.request_id ?? null
+          : state.pendingRequestId,
+      requestStatus:
+        Object.prototype.hasOwnProperty.call(payload, 'request_status')
+          ? payload.request_status ?? null
+          : state.requestStatus,
+      finalResponse:
+        Object.prototype.hasOwnProperty.call(payload, 'final_response')
+          ? payload.final_response ?? null
+          : state.finalResponse,
+      currentTask:
+        Object.prototype.hasOwnProperty.call(payload, 'task')
+          ? payload.task ?? null
+          : state.currentTask,
     })),
 
   // --- SSE 이벤트 기반 상태 갱신 ---

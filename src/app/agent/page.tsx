@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useQueryClient } from '@tanstack/react-query';
 import * as S from './style';
@@ -33,6 +33,19 @@ const PAUSE_EVENT_TYPES = new Set([
   'approval.required',
   'request.input_required',
   'request.ambiguous',
+]);
+const ACTIONABLE_TASK_ACTIONS = new Set([
+  'approve',
+  'cancel',
+  'edit',
+  'fill_inputs',
+  'choose_option',
+]);
+const TERMINAL_APPROVAL_STATES = new Set([
+  'completed',
+  'failed',
+  'cancelled',
+  'expired',
 ]);
 
 function createFallbackTask(
@@ -99,6 +112,45 @@ function getLatestTaskFromMessages(
   return null;
 }
 
+function getLatestAssistantMessage(
+  messages: ConversationMessage[],
+  requestId: number | null
+): ConversationMessage | null {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+
+    if (requestId !== null && message.request_id !== requestId) {
+      continue;
+    }
+
+    if (message.role === 'assistant') {
+      return message;
+    }
+  }
+
+  return null;
+}
+
+function taskNeedsUserAction(task: TaskSnapshot | null | undefined): boolean {
+  if (!task) {
+    return false;
+  }
+
+  if (task.approval_state === 'pending' || task.approval_state === 'not_ready') {
+    return true;
+  }
+
+  return task.next_actions.some((action) => ACTIONABLE_TASK_ACTIONS.has(action));
+}
+
+function isTerminalApprovalState(task: TaskSnapshot | null | undefined): boolean {
+  if (!task) {
+    return false;
+  }
+
+  return TERMINAL_APPROVAL_STATES.has(task.approval_state);
+}
+
 export default function AgentPage() {
   const queryClient = useQueryClient();
 
@@ -126,7 +178,6 @@ export default function AgentPage() {
   const [displayedStreamingText, setDisplayedStreamingText] = useState('');
   const [composerAssistMode, setComposerAssistMode] = useState<'default' | 'edit'>('default');
   const [scrollToLatestToken, setScrollToLatestToken] = useState(0);
-  const animationFrameRef = useRef<number | null>(null);
   const { data: sessionDetail } = useSession(activeSessionId);
 
   const createSessionMutation = useCreateSession();
@@ -227,6 +278,21 @@ export default function AgentPage() {
     }
   }, [requestStatus, pendingRequestId, activeSessionId, queryClient, setPendingRequestId, displayedStreamingText, finalResponse, streamingText, currentTask]);
 
+  useEffect(() => {
+    if (activeSessionId === null || pendingRequestId === null) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      void queryClient.invalidateQueries({ queryKey: chatopsKeys.sessionDetail(activeSessionId) });
+      void queryClient.invalidateQueries({
+        queryKey: chatopsKeys.requestEvents(activeSessionId, pendingRequestId),
+      });
+    }, 2500);
+
+    return () => window.clearInterval(intervalId);
+  }, [activeSessionId, pendingRequestId, queryClient]);
+
   // 텍스트 타이핑 애니메이션
   useEffect(() => {
     const targetText = finalResponse ?? streamingText ?? '';
@@ -277,11 +343,25 @@ export default function AgentPage() {
     approveMutation.mutate(
       { sessionId: activeSessionId, requestId },
       {
-        onSuccess: () => {
-          // approval pending UX 유지 → SSE execution.completed/failed 에서 해제됨
+        onSuccess: (response) => {
+          const pausedAfterApproval =
+            response.status === 'interrupted' ||
+            response.task?.approval_state === 'not_ready';
+          const completedWithoutStream = isTerminalStatus(response.status);
+
+          bootstrapRequest({
+            request_id: response.request_id,
+            request_status: response.status,
+            final_response: response.assistant_message,
+            task: response.task,
+          });
+
+          setIsApprovalPending(!(pausedAfterApproval || completedWithoutStream));
           queryClient.invalidateQueries({ queryKey: chatopsKeys.sessionDetail(activeSessionId) });
-          // SSE에서 terminal 이벤트를 받기 위해 pendingRequestId 유지
-          setPendingRequestId(requestId);
+          queryClient.invalidateQueries({
+            queryKey: chatopsKeys.requestEvents(activeSessionId, requestId),
+          });
+          setPendingRequestId(response.request_id);
         },
         onError: () => {
           setIsApprovalPending(false);
@@ -316,6 +396,17 @@ export default function AgentPage() {
 
   // --- 메시지 리스트 조합 ---
   const rawServerMessages = sessionDetail?.messages || [];
+  const latestServerAssistantMessage =
+    pendingRequestId !== null
+      ? getLatestAssistantMessage(rawServerMessages, pendingRequestId)
+      : null;
+  const hasServerSettledMessage =
+    latestServerAssistantMessage !== null &&
+    !taskNeedsUserAction(latestServerAssistantMessage.task) &&
+    (
+      Boolean(latestServerAssistantMessage.text?.trim()) ||
+      isTerminalApprovalState(latestServerAssistantMessage.task)
+    );
   const serverMessages =
     pendingRequestId !== null
       ? rawServerMessages.filter(
@@ -347,17 +438,32 @@ export default function AgentPage() {
       : [];
   const lastThinkingEvent = thinkingEventLog.at(-1)?.event ?? null;
   const lastThinkingEventType = lastThinkingEvent?.type ?? null;
+  const shouldPreferAssistantMessage =
+    requestStatus === 'interrupted' &&
+    Boolean(finalResponse) &&
+    currentTask === null;
   const taskFromSources =
-    currentTask
-    ?? getLatestTaskFromEvents(sseEventLog, pendingRequestId)
-    ?? getLatestTaskFromEvents(historyEventLog, pendingRequestId)
-    ?? getLatestTaskFromMessages(rawServerMessages, pendingRequestId);
+    shouldPreferAssistantMessage
+      ? null
+      : currentTask
+        ?? getLatestTaskFromEvents(sseEventLog, pendingRequestId)
+        ?? getLatestTaskFromEvents(historyEventLog, pendingRequestId)
+        ?? getLatestTaskFromMessages(rawServerMessages, pendingRequestId);
   const effectiveTask =
     taskFromSources
     ?? createFallbackTask(
       lastThinkingEventType,
       lastThinkingEvent && 'message' in lastThinkingEvent ? lastThinkingEvent.message ?? null : null
     );
+
+  useEffect(() => {
+    if (!pendingRequestId || !hasServerSettledMessage) {
+      return;
+    }
+
+    setIsApprovalPending(false);
+    setPendingRequestId(null);
+  }, [hasServerSettledMessage, pendingRequestId, setIsApprovalPending, setPendingRequestId]);
 
   useEffect(() => {
     if (activeSessionId === null || pendingRequestId === null || !lastThinkingEventType) {
