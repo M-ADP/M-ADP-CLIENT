@@ -459,15 +459,13 @@ function MiniJumpGame() {
             left: metrics.playerX,
             bottom: metrics.groundHeight + snapshot.playerY,
             width: metrics.playerSize,
-            height: playerHeight,
+            height: metrics.playerSize,
           }}
         >
-          <S.GamePlayerSprite
-            style={{
-              backgroundImage: `url(${SPRITE_URL})`,
-              backgroundSize: `${SPRITE_SIZE.width * playerScale}px ${SPRITE_SIZE.height * playerScale}px`,
-              backgroundPosition: `-${(TREX_BASE_X + snapshot.playerFrameOffset) * playerScale}px -${TREX_SPRITE.y * playerScale}px`,
-            }}
+          <S.GamePlayerLogo
+            src="/assets/logo.svg"
+            alt="M-ADP"
+            $isJumping={snapshot.playerY > 0}
           />
         </S.GamePlayer>
 
@@ -495,6 +493,17 @@ function MiniJumpGame() {
             </S.GameObstacle>
           );
         })}
+
+        <S.GameScoreDisplay>
+          <S.GameScoreItem>
+            <S.GameScoreLabel>SCORE</S.GameScoreLabel>
+            <S.GameScoreNumber>{String(snapshot.score).padStart(5, '0')}</S.GameScoreNumber>
+          </S.GameScoreItem>
+          <S.GameScoreItem>
+            <S.GameScoreLabel>BEST</S.GameScoreLabel>
+            <S.GameScoreNumber>{String(snapshot.bestScore).padStart(5, '0')}</S.GameScoreNumber>
+          </S.GameScoreItem>
+        </S.GameScoreDisplay>
 
         {snapshot.status !== 'running' ? (
           <S.GameOverlay>

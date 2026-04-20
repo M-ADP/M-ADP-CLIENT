@@ -383,6 +383,28 @@ export const GameHud = styled.div`
   display: none;
 `;
 
+export const GameScoreDisplay = styled.div`
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  display: flex;
+  gap: 16px;
+  z-index: 10;
+`;
+
+export const GameScoreItem = styled.div`
+  text-align: right;
+`;
+
+export const GameScoreNumber = styled.span`
+  display: block;
+  font-family: ${FONT_FAMILY};
+  font-size: 16px;
+  font-weight: ${fontWeights.bold};
+  font-variant-numeric: tabular-nums;
+  color: ${gray[700]};
+`;
+
 export const GameLabel = styled.span`
   display: inline-flex;
   min-height: 26px;
@@ -495,6 +517,23 @@ export const GamePlayerSprite = styled.div`
   height: 100%;
   background-repeat: no-repeat;
   image-rendering: pixelated;
+`;
+
+export const GamePlayerLogo = styled.img<{ $isJumping: boolean }>`
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 0.1s ease-out;
+  animation: ${({ $isJumping }) => ($isJumping ? 'spin 0.4s linear infinite' : 'none')};
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
 `;
 
 export const GameObstacle = styled.div`
