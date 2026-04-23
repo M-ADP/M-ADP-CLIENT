@@ -95,10 +95,31 @@ export const TERMINAL_STATUSES = [
   'cancelled', 'rejected', 'approval_expired', 'superseded',
 ] as const;
 
+export const TERMINAL_EVENT_TYPES = [
+  'response.completed',
+  'request.failed',
+  'execution.completed',
+  'execution.failed',
+  'approval.rejected',
+  'approval.superseded',
+] as const;
+
 export type TerminalStatus = (typeof TERMINAL_STATUSES)[number];
+export type TerminalEventType = (typeof TERMINAL_EVENT_TYPES)[number];
 
 export function isTerminalStatus(status: string): status is TerminalStatus {
   return (TERMINAL_STATUSES as readonly string[]).includes(status);
+}
+
+export function isTerminalEventType(type: string): type is TerminalEventType {
+  return (TERMINAL_EVENT_TYPES as readonly string[]).includes(type);
+}
+
+export function isTerminalSSEEvent(event: SSEEvent): boolean {
+  return (
+    isTerminalEventType(event.type) ||
+    ('status' in event && typeof event.status === 'string' && isTerminalStatus(event.status))
+  );
 }
 
 /** 구조화 이벤트 공통 필드 */
