@@ -7,9 +7,14 @@ import { useAuthStore } from '@/store/authStore';
 import Cookies from 'js-cookie';
 import { jwtDecode } from 'jwt-decode';
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { Suspense } from 'react';
+
+interface AuthTokenPayload {
+  exp: number;
+  role?: string;
+}
 
 export default function LoginContainer() {
   return (
@@ -21,34 +26,41 @@ export default function LoginContainer() {
 
 function LoginContainerInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { step } = useAuthStore();
   const token = Cookies.get('token');
   const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+  const nextPath = searchParams.get('next') || '/';
 
   useEffect(() => {
     if (token) {
       try {
-        const decoded: any = jwtDecode(token);
+        const decoded = jwtDecode<AuthTokenPayload>(token);
         const isExpired = decoded.exp * 1000 < Date.now();
         if (!isExpired) {
           // PARTIAL_AUTH이면 깃허브 연동이 필요한 상태이므로 홈으로 보내지 않음
           if (decoded.role !== 'PARTIAL_AUTH') {
-            router.replace('/');
+            router.replace(nextPath);
           }
         }
-      } catch (e) {
+      } catch {
         // Invalid token format
       }
     }
-  }, [token, router]);
+  }, [nextPath, token, router]);
 
   const handleGoogleLogin = () => {
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.setItem('post_login_redirect', nextPath);
+    }
     window.location.href = `${baseUrl}/auth/oauth2/authorization/google`;
   };
 
   const handleGithubLogin = async () => {
     try {
-
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.setItem('post_login_redirect', nextPath);
+      }
       const response = await fetch(`/api/auth/github`, {
         method: 'GET',
         headers: {
