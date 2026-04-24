@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { getProjects, getProjectById, getProjectMembers } from './project.api';
-import { ProjectListParams } from '@/types/project';
+import { getProjects, getProjectById, getProjectMembers, getProjectMemberInvitations } from './project.api';
+import { ProjectListParams, ProjectMemberInvitationsParams } from '@/types/project';
 
 export const useProjectListQuery = (params?: ProjectListParams) => {
     return useQuery({
@@ -26,6 +26,18 @@ export const useProjectMembersQuery = (projectId: string, params?: ProjectListPa
     return useQuery({
         queryKey: ['projectMembers', projectId, params],
         queryFn: () => getProjectMembers(projectId, params),
+        select: (data) => data.data,
+        enabled: !!projectId,
+    });
+};
+
+export const useProjectMemberInvitationsQuery = (
+    projectId: string,
+    params?: ProjectMemberInvitationsParams
+) => {
+    return useQuery({
+        queryKey: ['projectMemberInvitations', projectId, params],
+        queryFn: () => getProjectMemberInvitations(projectId, params),
         select: (data) => data.data,
         enabled: !!projectId,
     });

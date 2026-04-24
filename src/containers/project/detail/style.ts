@@ -340,6 +340,44 @@ export const ModalButtonGroup = styled.div`
   margin-top: 0.5rem;
 `;
 
+export const MemberTabBar = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.25rem;
+  border-radius: 12px;
+  background: ${gray[100]};
+`;
+
+export const MemberTabButton = styled.button<{ $active: boolean }>`
+  flex: 1;
+  border: none;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  background: ${({ $active }) => ($active ? '#ffffff' : 'transparent')};
+  color: ${({ $active }) => ($active ? black[300] : black[75])};
+  font-family: ${FONT_FAMILY};
+  font-size: 14px;
+  font-weight: ${({ $active }) => ($active ? fontWeights.semibold : fontWeights.medium)};
+  box-shadow: ${({ $active }) => ($active ? '0 1px 3px rgba(15, 23, 42, 0.08)' : 'none')};
+  cursor: pointer;
+  transition: all 0.2s ease;
+`;
+
+export const MemberSectionHeading = styled.p`
+  margin: 0.25rem 0 0;
+  font-family: ${FONT_FAMILY};
+  font-size: 0.875rem;
+  font-weight: ${fontWeights.semibold};
+  color: ${black[300]};
+`;
+
+export const SearchInputRow = styled.div`
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+`;
+
 export const SearchPreviewBox = styled.div`
   background: ${gray[50]};
   border: 1px solid ${gray[200]};
@@ -371,6 +409,26 @@ export const MemberItem = styled.div`
   align-items: center;
   justify-content: space-between;
   padding: 0.5rem 0;
+`;
+
+export const InvitationItem = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+`;
+
+export const InvitationInfo = styled.div`
+  min-width: 0;
+  flex: 1;
+`;
+
+export const InvitationMeta = styled.div`
+  margin-top: 0.25rem;
+  font-family: ${FONT_FAMILY};
+  font-size: 12px;
+  color: ${black[75]};
 `;
 
 export const MemberInfoWrapper = styled.div`
@@ -425,6 +483,11 @@ export const KickButton = styled.button`
   &:hover {
     background-color: #fef2f2; /* Red-50 */
   }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 `;
 
 export const MemberActionGroup = styled.div`
@@ -448,5 +511,9 @@ export const TransferButton = styled.button`
   &:hover {
     background-color: #eef2ff;
   }
-`;
 
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;

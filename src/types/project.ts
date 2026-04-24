@@ -108,7 +108,7 @@ export interface ProjectMemberResponse {
     user_id: string;
     username: string;
     profile_image: string | null;
-    role: 'OWNER' | 'VIEWER';
+    role: 'OWNER' | 'MEMBER';
     joined_at: string;
 }
 
@@ -133,4 +133,43 @@ export interface AddProjectMemberPayload {
 
 export interface ProjectOwnerTransferPayload {
     target_user_id: string;
+}
+
+export type ProjectInvitationStatus =
+    | 'PENDING'
+    | 'ACCEPTED'
+    | 'REJECTED'
+    | 'CANCELED'
+    | 'EXPIRED';
+
+export interface ProjectMemberInvitationResponse {
+    id: string;
+    project_id: string;
+    invitee_user_id: string;
+    invitee_email: string;
+    status: ProjectInvitationStatus;
+    created_at: string;
+    expires_at: string;
+    responded_at: string | null;
+}
+
+export interface CursorPageProjectMemberInvitationResponse {
+    items: ProjectMemberInvitationResponse[];
+    has_next: boolean;
+}
+
+export interface ProjectMemberInvitationsListResponse {
+    message: string;
+    data: CursorPageProjectMemberInvitationResponse;
+}
+
+export interface ProjectMemberInvitationsParams {
+    status?: ProjectInvitationStatus;
+    cursor?: string | null;
+    limit?: number;
+}
+
+export interface ProjectMemberInvitationSuccessResponse {
+    message: string;
+    data: ProjectMemberInvitationResponse;
 }
