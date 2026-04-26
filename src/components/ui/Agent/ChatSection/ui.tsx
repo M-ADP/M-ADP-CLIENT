@@ -1,6 +1,8 @@
-import { Fragment, ReactNode } from 'react';
+import { Fragment } from 'react';
 import Image from 'next/image';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import * as S from './style';
 import { ConversationMessage, TaskSnapshot, SSEEventRecord } from '@/types/chatops';
 import ThinkingPanel from '@/components/ui/Agent/ThinkingPanel/ui';
@@ -21,82 +23,34 @@ function toFieldLabel(key: string) {
   return FIELD_LABELS[key] || key.replace(/_/g, ' ');
 }
 
-function renderInlineMarkdown(text: string): ReactNode[] {
-  const tokens = text.split(/(`[^`]+`|\*\*[^*]+\*\*)/g).filter(Boolean);
-
-  return tokens.map((token, index) => {
-    if (token.startsWith('**') && token.endsWith('**')) {
-      return <strong key={`${token}-${index}`}>{token.slice(2, -2)}</strong>;
-    }
-
-    if (token.startsWith('`') && token.endsWith('`')) {
-      return <S.InlineCode key={`${token}-${index}`}>{token.slice(1, -1)}</S.InlineCode>;
-    }
-
-    return <Fragment key={`${token}-${index}`}>{token}</Fragment>;
-  });
-}
-
-function renderParagraph(text: string, key: string) {
-  const lines = text.split('\n');
-
+function MarkdownMessage({ children }: { children: string }) {
   return (
-    <S.MarkdownParagraph key={key}>
-      {lines.map((line, index) => (
-        <Fragment key={`${key}-${index}`}>
-          {index > 0 && <br />}
-          {renderInlineMarkdown(line)}
-        </Fragment>
-      ))}
-    </S.MarkdownParagraph>
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        p: ({ children }) => <S.MarkdownParagraph>{children}</S.MarkdownParagraph>,
+        ol: ({ children }) => <S.MarkdownOrderedList>{children}</S.MarkdownOrderedList>,
+        ul: ({ children }) => <S.MarkdownUnorderedList>{children}</S.MarkdownUnorderedList>,
+        blockquote: ({ children }) => <S.MarkdownBlockquote>{children}</S.MarkdownBlockquote>,
+        a: ({ children, href }) => (
+          <S.MarkdownLink href={href} target="_blank" rel="noreferrer noopener">
+            {children}
+          </S.MarkdownLink>
+        ),
+        code: ({ children, className }) => <code className={className}>{children}</code>,
+        pre: ({ children }) => <S.CodeBlock>{children}</S.CodeBlock>,
+        table: ({ children }) => (
+          <S.MarkdownTableScroll>
+            <S.MarkdownTable>{children}</S.MarkdownTable>
+          </S.MarkdownTableScroll>
+        ),
+        th: ({ children }) => <S.MarkdownTableHeader>{children}</S.MarkdownTableHeader>,
+        td: ({ children }) => <S.MarkdownTableCell>{children}</S.MarkdownTableCell>,
+      }}
+    >
+      {children}
+    </ReactMarkdown>
   );
-}
-
-function renderMarkdown(text: string): ReactNode[] {
-  const segments = text.split(/```([\s\S]*?)```/g);
-
-  return segments.flatMap((segment, segmentIndex) => {
-    if (segmentIndex % 2 === 1) {
-      const codeText = segment.replace(/^\n+|\n+$/g, '');
-      return (
-        <S.CodeBlock key={`code-${segmentIndex}`}>
-          <code>{codeText}</code>
-        </S.CodeBlock>
-      );
-    }
-
-    return segment
-      .split(/\n{2,}/)
-      .map((block) => block.trim())
-      .filter(Boolean)
-      .map((block, blockIndex) => {
-        const orderedLines = block.match(/^\d+\.\s+.+(?:\n\d+\.\s+.+)*$/);
-        if (orderedLines) {
-          const items = block.split('\n').map((line) => line.replace(/^\d+\.\s+/, ''));
-          return (
-            <S.MarkdownOrderedList key={`ol-${segmentIndex}-${blockIndex}`}>
-              {items.map((item, itemIndex) => (
-                <li key={`ol-item-${itemIndex}`}>{renderInlineMarkdown(item)}</li>
-              ))}
-            </S.MarkdownOrderedList>
-          );
-        }
-
-        const unorderedLines = block.match(/^[-*]\s+.+(?:\n[-*]\s+.+)*$/);
-        if (unorderedLines) {
-          const items = block.split('\n').map((line) => line.replace(/^[-*]\s+/, ''));
-          return (
-            <S.MarkdownUnorderedList key={`ul-${segmentIndex}-${blockIndex}`}>
-              {items.map((item, itemIndex) => (
-                <li key={`ul-item-${itemIndex}`}>{renderInlineMarkdown(item)}</li>
-              ))}
-            </S.MarkdownUnorderedList>
-          );
-        }
-
-        return renderParagraph(block, `p-${segmentIndex}-${blockIndex}`);
-      });
-  });
 }
 
 interface ChatSectionProps {
@@ -142,30 +96,87 @@ export default function ChatSection({
   onReject,
 }: ChatSectionProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const latestUserMessageRef = useRef<HTMLDivElement>(null);
+  // 마지막 AI 메시지 ref (스트리밍 추적용)
+  const latestMessageRef = useRef<HTMLDivElement>(null);
+  // 마지막 유저 메시지 ref (전송 시 상단 정렬용)
+  const lastUserMsgRef = useRef<HTMLDivElement>(null);
+  // 마운트 최초 실행 스킵용 — 기존 대화 로드 시 잘못된 스크롤 방지
+  const hasSentRef = useRef(false);
+  // 동적 spacer: 유저 메시지부터 콘텐츠 끝까지가 viewport보다 작을 때만 부족분만큼 추가
+  const [spacerHeight, setSpacerHeight] = useState(0);
 
   const pendingRequestId = messages
     .filter((m) => m.request_id !== null)
     .at(-1)?.request_id ?? null;
   const thinkingRequestId = sseEventLog.at(-1)?.event.request_id ?? null;
-  const latestUserMessageId = [...messages].reverse().find((message) => message.role === 'user')?.message_id ?? null;
-  const scrollLatestTurnIntoView = useCallback((behavior: ScrollBehavior) => {
-    latestUserMessageRef.current?.scrollIntoView({
+  const latestMessage = messages.at(-1);
+  const latestMessageId = latestMessage?.message_id ?? null;
+  const latestMessageText = latestMessage?.text;
+  const latestUserMessageId = messages.filter((m) => m.role === 'user').at(-1)?.message_id ?? null;
+
+  // spacer = max(0, viewport - (마지막 유저 메시지 ~ 마지막 콘텐츠 끝))
+  // → AI 응답이 짧으면 빈 공간 채워서 유저 메시지 상단 스크롤 가능
+  // → AI 응답이 길면 spacer = 0, 빈 공간 없음
+  useLayoutEffect(() => {
+    const container = scrollRef.current;
+    const userMsg = lastUserMsgRef.current;
+
+    if (!container || !userMsg) {
+      setSpacerHeight(0);
+      return;
+    }
+
+    const containerRect = container.getBoundingClientRect();
+    const scrollTop = container.scrollTop;
+
+    const userMsgRect = userMsg.getBoundingClientRect();
+    const userMsgTop = userMsgRect.top - containerRect.top + scrollTop;
+
+    // 유저 메시지 이후 마지막 콘텐츠 (AI 메시지 또는 유저 메시지 자체)
+    const lastEl = latestMessageRef.current ?? userMsg;
+    const lastElRect = lastEl.getBoundingClientRect();
+    const lastElBottom = lastElRect.top - containerRect.top + scrollTop + lastElRect.height;
+
+    const heightFromUserMsg = lastElBottom - userMsgTop;
+    const needed = container.clientHeight - heightFromUserMsg;
+
+    setSpacerHeight(Math.max(0, needed));
+  }, [latestMessageId, latestMessageText, latestUserMessageId]);
+
+  const scrollUserMsgToTop = useCallback((behavior: ScrollBehavior) => {
+    const container = scrollRef.current;
+    const element = lastUserMsgRef.current;
+    if (!container || !element) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const elementRect = element.getBoundingClientRect();
+    const elementTop = elementRect.top - containerRect.top + container.scrollTop;
+
+    container.scrollTo({
+      top: Math.max(0, elementTop - 24),
       behavior,
-      block: 'start',
-      inline: 'nearest',
     });
   }, []);
 
+  // 유저가 메시지 전송 시에만 → 유저 메시지 상단 정렬 (마운트 시 실행 안 함)
+  useEffect(() => {
+    if (!hasSentRef.current) {
+      hasSentRef.current = true;
+      return;
+    }
+    const frame = window.requestAnimationFrame(() => {
+      scrollUserMsgToTop('smooth');
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [scrollToLatestToken, scrollUserMsgToTop]);
+
+  // AI 응답 스트리밍 중 → 뷰포트 밖으로 나간 경우에만 스크롤 (초기 로드 포함)
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
-      scrollLatestTurnIntoView('smooth');
+      latestMessageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
-
-    return () => {
-      window.cancelAnimationFrame(frame);
-    };
-  }, [scrollToLatestToken, scrollLatestTurnIntoView]);
+    return () => window.cancelAnimationFrame(frame);
+  }, [latestMessageId, latestMessageText]);
 
   return (
     <S.ChatArea ref={scrollRef}>
@@ -174,7 +185,7 @@ export default function ChatSection({
             return (
               <S.UserMessageRow
                 key={message.message_id}
-                ref={message.message_id === latestUserMessageId ? latestUserMessageRef : null}
+                ref={message.message_id === latestUserMessageId ? lastUserMsgRef : null}
               >
               <S.UserMessageCard>{message.text}</S.UserMessageCard>
               </S.UserMessageRow>
@@ -208,11 +219,13 @@ export default function ChatSection({
             return (
               <Fragment key={message.message_id}>
                 {thinkingRow}
-                <S.MessageRow>
+                <S.MessageRow ref={message.message_id === latestMessageId ? latestMessageRef : null}>
                   <S.Avatar>
                     <Image src="/assets/logo.svg" alt="AI Avatar" width={24} height={24} />
                   </S.Avatar>
-                  <S.AIMessageCard>{renderMarkdown(message.text)}</S.AIMessageCard>
+                  <S.AIMessageCard>
+                    <MarkdownMessage>{message.text}</MarkdownMessage>
+                  </S.AIMessageCard>
                 </S.MessageRow>
               </Fragment>
             );
@@ -230,7 +243,7 @@ export default function ChatSection({
             return (
               <Fragment key={message.message_id}>
                 {thinkingRow}
-                <S.MessageRow>
+                <S.MessageRow ref={message.message_id === latestMessageId ? latestMessageRef : null}>
                   <S.Avatar>
                     <Image src="/assets/logo.svg" alt="AI Avatar" width={24} height={24} />
                   </S.Avatar>
@@ -362,7 +375,7 @@ export default function ChatSection({
         }
         return null;
       })}
-      <S.ScrollSpacer />
+      <S.ScrollSpacer style={{ height: `${spacerHeight}px` }} />
     </S.ChatArea>
   );
 }

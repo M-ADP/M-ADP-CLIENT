@@ -17,19 +17,12 @@ export const ChatArea = styled.div`
   min-height: 0;
   box-sizing: border-box;
   scroll-padding-top: 24px;
+  scroll-behavior: smooth;
+  overflow-anchor: none;
 `;
 
 export const ScrollSpacer = styled.div`
   flex-shrink: 0;
-  height: calc(100vh - 260px);
-  min-height: 360px;
-  max-height: 720px;
-
-  @media (max-width: 768px) {
-    height: calc(100vh - 220px);
-    min-height: 260px;
-    max-height: 520px;
-  }
 `;
 
 export const MessageRow = styled.div`
@@ -131,11 +124,36 @@ export const AIMessageCard = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
+
+  p code,
+  li code,
+  td code,
+  th code {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: #eef2ff;
+    color: #334155;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    font-size: 0.92em;
+  }
 `;
 
 export const MarkdownParagraph = styled.p`
   margin: 0;
   color: #1b2559;
+`;
+
+export const MarkdownBlockquote = styled.blockquote`
+  margin: 0;
+  padding: 10px 14px;
+  border-left: 3px solid #cbd5e1;
+  background: #f8fafc;
+  color: #475569;
+
+  p {
+    margin: 0;
+  }
 `;
 
 export const MarkdownOrderedList = styled.ol`
@@ -154,14 +172,10 @@ export const MarkdownUnorderedList = styled.ul`
   gap: 8px;
 `;
 
-export const InlineCode = styled.code`
-  display: inline-block;
-  padding: 1px 6px;
-  border-radius: 6px;
-  background: #eef2ff;
-  color: #334155;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-  font-size: 0.92em;
+export const MarkdownLink = styled.a`
+  color: ${colors.primary.default};
+  text-decoration: underline;
+  text-underline-offset: 3px;
 `;
 
 export const CodeBlock = styled.pre`
@@ -178,6 +192,34 @@ export const CodeBlock = styled.pre`
   code {
     font-family: inherit;
   }
+`;
+
+export const MarkdownTableScroll = styled.div`
+  width: 100%;
+  overflow-x: auto;
+`;
+
+export const MarkdownTable = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+  line-height: 1.5;
+`;
+
+export const MarkdownTableHeader = styled.th`
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #1b2559;
+  font-weight: 600;
+  text-align: left;
+`;
+
+export const MarkdownTableCell = styled.td`
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  vertical-align: top;
 `;
 
 export const TaskCard = styled.div`
