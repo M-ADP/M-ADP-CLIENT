@@ -226,21 +226,3 @@ export const StepMessage = styled.p<{ isActive?: boolean }>`
   font-weight: ${({ isActive }) => (isActive ? 600 : 400)};
   line-height: 1.4;
 `;
-
-export const ProgressBar = styled.div<{ value: number }>`
-  height: 3px;
-  border-radius: 999px;
-  margin: 0 12px 6px;
-  background: #e7eefb;
-  overflow: hidden;
-
-  &::after {
-    content: '';
-    display: block;
-    height: 100%;
-    width: ${({ value }) => value}%;
-    background: ${colors.gradient.primary};
-    transition: width 0.4s ease;
-    border-radius: 999px;
-  }
-`;

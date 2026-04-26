@@ -144,9 +144,6 @@ export default function ThinkingPanel({ events, isLive }: ThinkingPanelProps) {
 
   if (events.length === 0 && !isLive) return null;
 
-  const lastProgress =
-    lastEvent && 'progress' in lastEvent ? (lastEvent as { progress?: number }).progress ?? 0 : 0;
-
   return (
     <S.Panel data-state={panelTone}>
       <S.PanelHeader onClick={() => setIsOpen((value) => !value)}>
@@ -164,10 +161,6 @@ export default function ThinkingPanel({ events, isLive }: ThinkingPanelProps) {
           <S.ChevronIcon open={isOpen}>▼</S.ChevronIcon>
         </S.HeaderRight>
       </S.PanelHeader>
-
-      {panelTone === 'live' && lastProgress > 0 && lastProgress < 100 && (
-        <S.ProgressBar value={lastProgress} />
-      )}
 
       {isOpen && (
         <S.StepList ref={listRef}>
