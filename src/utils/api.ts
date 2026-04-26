@@ -44,9 +44,16 @@ const getRefreshedToken = async (): Promise<string | null> => {
 };
 
 const parseResponse = async <T>(response: Response): Promise<T> => {
+    // 204 No Content 또는 빈 body는 파싱하지 않고 빈 객체 반환
+    if (response.status === 204) {
+        return {} as T;
+    }
     const contentType = response.headers.get('content-type');
     if (contentType && contentType.includes('application/json')) {
         const text = await response.text();
+        if (!text) {
+            return {} as T;
+        }
         try {
             return JSON.parse(text) as T;
         } catch {
