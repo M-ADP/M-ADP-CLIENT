@@ -22,6 +22,7 @@ export const useStream = (sessionId: number, requestId: number | null) => {
   const abortRef = useRef<AbortController | null>(null);
   const activeRef = useRef(false);
   const terminalRef = useRef(false);
+  const requestStatusRef = useRef<string | null>(null);
 
   // store의 lastSequence와 동기화
   const storeLastSequence = useChatStore((s) => s.lastSequence);
@@ -33,6 +34,7 @@ export const useStream = (sessionId: number, requestId: number | null) => {
   }, [storeLastSequence]);
 
   useEffect(() => {
+    requestStatusRef.current = storeRequestStatus;
     if (storeRequestStatus && isTerminalStatus(storeRequestStatus)) {
       terminalRef.current = true;
       activeRef.current = false;
@@ -42,7 +44,7 @@ export const useStream = (sessionId: number, requestId: number | null) => {
 
   const connect = useCallback(async () => {
     if (!activeRef.current || !requestId) return;
-    if (storeRequestStatus && isTerminalStatus(storeRequestStatus)) {
+    if (requestStatusRef.current && isTerminalStatus(requestStatusRef.current)) {
       terminalRef.current = true;
       activeRef.current = false;
       return;
@@ -180,7 +182,7 @@ export const useStream = (sessionId: number, requestId: number | null) => {
         connect();
       }
     }
-  }, [sessionId, requestId, storeRequestStatus, updateFromSSE]);
+  }, [sessionId, requestId, updateFromSSE]);
 
   useEffect(() => {
     if (requestId === null) return;
