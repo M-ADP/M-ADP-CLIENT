@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, Suspense, useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthCodeMutation } from '@/services/login/login.mutation';
 import { useAuthStore } from '@/store/authStore';
 import { identifyClarity } from '@/utils/clarity';
@@ -10,10 +10,15 @@ import * as S from './style';
 
 function AuthCallbackContent() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const setStep = useAuthStore((state) => state.setStep);
     const authCodeMutation = useAuthCodeMutation();
     const [pageError, setPageError] = useState(false);
     const hasFetched = useRef(false);
+    const nextPath =
+        searchParams.get('next') ||
+        (typeof window !== 'undefined' ? window.sessionStorage.getItem('post_login_redirect') : null) ||
+        '/';
 
     useEffect(() => {
         if (hasFetched.current) return;
@@ -32,7 +37,7 @@ function AuthCallbackContent() {
 
         if (!code) {
             console.error('인가 코드가 없습니다. 현재 경로:', window.location.href);
-            setPageError(true);
+            queueMicrotask(() => setPageError(true));
             return;
         }
 
@@ -50,12 +55,18 @@ function AuthCallbackContent() {
 
                     if (!isAuthenticated) {
                         setStep('github');
-                        router.replace('/login');
+                        router.replace(`/login?next=${encodeURIComponent(nextPath)}`);
                     } else {
-                        router.replace('/');
+                        if (typeof window !== 'undefined') {
+                            window.sessionStorage.removeItem('post_login_redirect');
+                        }
+                        router.replace(nextPath);
                     }
                 } else {
-                    router.replace('/');
+                    if (typeof window !== 'undefined') {
+                        window.sessionStorage.removeItem('post_login_redirect');
+                    }
+                    router.replace(nextPath);
                 }
             } catch (error) {
                 console.error('인증 처리 중 에러가 발생했습니다:', error);
@@ -64,7 +75,7 @@ function AuthCallbackContent() {
         };
 
         processAuth();
-    }, []);
+    }, [authCodeMutation, nextPath, router, searchParams, setStep]);
 
     if (pageError) {
         return (

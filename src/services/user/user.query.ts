@@ -3,7 +3,7 @@ import { getMyUserProfile, getUserByNickname, UserProfile } from './user.api';
 import { useUserStore } from '@/store/userStore';
 import { useEffect } from 'react';
 
-export const useUserProfileQuery = () => {
+export const useUserProfileQuery = (enabled: boolean = true) => {
     const setUser = useUserStore((state) => state.setUser);
 
     const query = useQuery<UserProfile>({
@@ -15,6 +15,7 @@ export const useUserProfileQuery = () => {
             }
             return response.data;
         },
+        enabled,
         staleTime: 1000 * 60 * 5,
     });
 
