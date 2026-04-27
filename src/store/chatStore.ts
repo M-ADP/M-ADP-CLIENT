@@ -3,12 +3,13 @@ import {
   TaskSnapshot,
   SSEPhase,
   SSEEvent,
-  isTerminalStatus,
+  SSEEventRecord,
+  CreateSessionMessageResponse,
 } from '@/types/chatops';
 
 interface ChatState {
   // --- 기존 ---
-  activeSessionId: number | null;
+  hiddenDeletedSessionIds: number[];
   streamingText: string;
   isStreaming: boolean;
   pendingRequestId: number | null;
@@ -22,21 +23,25 @@ interface ChatState {
   supersededBy: number | null;
   isApprovalPending: boolean;
 
+  // --- SSE 이벤트 로그 (ThinkingPanel용) ---
+  sseEventLog: SSEEventRecord[];
+
   // --- 액션 ---
-  setActiveSessionId: (id: number | null) => void;
+  hideDeletedSession: (id: number) => void;
+  restoreDeletedSession: (id: number) => void;
   setPendingRequestId: (id: number | null) => void;
   appendStreamingText: (text: string) => void;
   clearStreamingText: () => void;
   setIsStreaming: (v: boolean) => void;
-  setLastSequence: (seq: number) => void;
   setIsApprovalPending: (v: boolean) => void;
-  updateFromSSE: (event: SSEEvent) => void;
+  bootstrapRequest: (payload: Pick<CreateSessionMessageResponse, 'request_id' | 'request_status' | 'final_response' | 'task'>) => void;
+  updateFromSSE: (event: SSEEvent, sequence?: number | null) => void;
   resetRequest: () => void;
 }
 
 export const useChatStore = create<ChatState>((set) => ({
   // --- 기존 ---
-  activeSessionId: null,
+  hiddenDeletedSessionIds: [],
   streamingText: '',
   isStreaming: false,
   pendingRequestId: null,
@@ -50,29 +55,77 @@ export const useChatStore = create<ChatState>((set) => ({
   supersededBy: null,
   isApprovalPending: false,
 
+  // --- SSE 이벤트 로그 ---
+  sseEventLog: [],
+
   // --- 기존 액션 ---
-  setActiveSessionId: (id) => set({ activeSessionId: id }),
+  hideDeletedSession: (id) =>
+    set((state) => ({
+      hiddenDeletedSessionIds: state.hiddenDeletedSessionIds.includes(id)
+        ? state.hiddenDeletedSessionIds
+        : [...state.hiddenDeletedSessionIds, id],
+    })),
+  restoreDeletedSession: (id) =>
+    set((state) => ({
+      hiddenDeletedSessionIds: state.hiddenDeletedSessionIds.filter((sessionId) => sessionId !== id),
+    })),
   setPendingRequestId: (id) => set({ pendingRequestId: id }),
   appendStreamingText: (text) =>
     set((state) => ({ streamingText: state.streamingText + text })),
   clearStreamingText: () => set({ streamingText: '' }),
   setIsStreaming: (v) => set({ isStreaming: v }),
-  setLastSequence: (seq) => set({ lastSequence: seq }),
   setIsApprovalPending: (v) => set({ isApprovalPending: v }),
+  bootstrapRequest: (payload) =>
+    set((state) => ({
+      pendingRequestId:
+        Object.prototype.hasOwnProperty.call(payload, 'request_id')
+          ? payload.request_id ?? null
+          : state.pendingRequestId,
+      requestStatus:
+        Object.prototype.hasOwnProperty.call(payload, 'request_status')
+          ? payload.request_status ?? null
+          : state.requestStatus,
+      finalResponse:
+        Object.prototype.hasOwnProperty.call(payload, 'final_response')
+          ? payload.final_response ?? null
+          : state.finalResponse,
+      currentTask:
+        Object.prototype.hasOwnProperty.call(payload, 'task')
+          ? payload.task ?? null
+          : state.currentTask,
+    })),
 
   // --- SSE 이벤트 기반 상태 갱신 ---
-  updateFromSSE: (event) =>
+  updateFromSSE: (event, sequence) =>
     set((state) => {
       const eventType = event.type;
+      const normalizedSequence =
+        typeof sequence === 'number' && Number.isFinite(sequence) ? sequence : null;
 
-      // response.delta: 텍스트 누적만
-      if (eventType === 'response.delta') {
+      if (
+        normalizedSequence !== null &&
+        state.lastSequence !== null &&
+        normalizedSequence <= state.lastSequence
+      ) {
+        return state;
+      }
+
+      const patch: Partial<ChatState> = {
+        lastSequence: normalizedSequence ?? state.lastSequence,
+      };
+
+      // response.delta: 텍스트만 누적하고 패널 로그에는 남기지 않는다.
+      if (eventType === 'response.delta' || eventType === 'response_delta') {
         return {
+          ...patch,
           streamingText: state.streamingText + (event as { text: string }).text,
         };
       }
 
-      const patch: Partial<ChatState> = {};
+      patch.sseEventLog = [
+        ...state.sseEventLog,
+        { sequence: normalizedSequence, event },
+      ];
 
       // task가 있으면 merge
       if ('task' in event && event.task) {
@@ -93,7 +146,18 @@ export const useChatStore = create<ChatState>((set) => ({
       // 이벤트별 특수 처리
       switch (eventType) {
         case 'response.started':
+        case 'response_stream_start':
           patch.isStreaming = true;
+          break;
+
+        case 'approval.required':
+        case 'request.ambiguous':
+        case 'request.input_required':
+          patch.isStreaming = false;
+          break;
+
+        case 'execution.started':
+          patch.isApprovalPending = true;
           break;
 
         case 'response.completed':
@@ -141,5 +205,6 @@ export const useChatStore = create<ChatState>((set) => ({
       lastSequence: null,
       supersededBy: null,
       isApprovalPending: false,
+      sseEventLog: [],
     }),
 }));

@@ -7,11 +7,22 @@ export const ChatArea = styled.div`
   flex-direction: column;
   width: 100%;
   max-width: 1240px;
-  height: 100%;
+  height: auto;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 20px;
   gap: 20px;
   flex: 1;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+  scroll-padding-top: 24px;
+  scroll-behavior: smooth;
+  overflow-anchor: none;
+`;
+
+export const ScrollSpacer = styled.div`
+  flex-shrink: 0;
 `;
 
 export const MessageRow = styled.div`
@@ -19,8 +30,35 @@ export const MessageRow = styled.div`
   gap: 16px;
   align-items: flex-start;
   width: 100%;
-  max-width: 800px;
+  max-width: 848px;
   margin: 0 auto;
+  min-width: 0;
+`;
+
+export const ThinkingRow = styled.div`
+  display: flex;
+  width: 100%;
+  max-width: 848px;
+  margin: -6px auto -4px;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    margin: -2px auto 0;
+  }
+`;
+
+export const ThinkingOffset = styled.div`
+  width: 48px;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    width: 0;
+  }
+`;
+
+export const ThinkingPanelWrap = styled.div`
+  flex: 1;
+  min-width: 0;
 `;
 
 export const UserMessageRow = styled.div`
@@ -29,6 +67,8 @@ export const UserMessageRow = styled.div`
   width: 100%;
   max-width: 800px;
   margin: 0 auto;
+  min-width: 0;
+  scroll-margin-top: 24px;
 `;
 
 export const Avatar = styled.div<{ color?: string }>`
@@ -60,14 +100,17 @@ export const UserMessageCard = styled.div`
   font-weight: ${typography.text16Regular.fontWeight};
   line-height: 1.5;
   word-break: break-word;
+  overflow-wrap: anywhere;
 `;
 
 export const AIMessageCard = styled.div`
   background: #ffffff;
   border-radius: 14px;
   padding: 22px;
-  width: 100%;
-  max-width: 800px;
+  flex: 1;
+  width: auto;
+  max-width: none;
+  min-width: 0;
   box-sizing: border-box;
   box-shadow: 14px 27px 45px 4px rgba(112, 144, 176, 0.2);
   color: #1b2559;
@@ -75,22 +118,125 @@ export const AIMessageCard = styled.div`
   font-size: ${typography.text18Regular.fontSize};
   font-weight: ${typography.text18Regular.fontWeight};
   line-height: ${typography.text18Regular.lineHeight};
-  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
   min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  p code,
+  li code,
+  td code,
+  th code {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: #eef2ff;
+    color: #334155;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    font-size: 0.92em;
+  }
+`;
+
+export const MarkdownParagraph = styled.p`
+  margin: 0;
+  color: #1b2559;
+`;
+
+export const MarkdownBlockquote = styled.blockquote`
+  margin: 0;
+  padding: 10px 14px;
+  border-left: 3px solid #cbd5e1;
+  background: #f8fafc;
+  color: #475569;
+
+  p {
+    margin: 0;
+  }
+`;
+
+export const MarkdownOrderedList = styled.ol`
+  margin: 0;
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+export const MarkdownUnorderedList = styled.ul`
+  margin: 0;
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+export const MarkdownLink = styled.a`
+  color: ${colors.primary.default};
+  text-decoration: underline;
+  text-underline-offset: 3px;
+`;
+
+export const CodeBlock = styled.pre`
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: #0f172a;
+  color: #e2e8f0;
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+
+  code {
+    font-family: inherit;
+  }
+`;
+
+export const MarkdownTableScroll = styled.div`
+  width: 100%;
+  overflow-x: auto;
+`;
+
+export const MarkdownTable = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+  line-height: 1.5;
+`;
+
+export const MarkdownTableHeader = styled.th`
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #1b2559;
+  font-weight: 600;
+  text-align: left;
+`;
+
+export const MarkdownTableCell = styled.td`
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  vertical-align: top;
 `;
 
 export const TaskCard = styled.div`
   background: #ffffff;
   border-radius: 14px;
   padding: 22px;
-  width: 100%;
-  max-width: 800px;
+  flex: 1;
+  width: auto;
+  max-width: none;
+  min-width: 0;
   box-sizing: border-box;
   box-shadow: 14px 27px 45px 4px rgba(112, 144, 176, 0.2);
   border: 1px solid #e2e8f0;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  font-family: ${typography.text16Regular.fontFamily};
 `;
 
 export const TaskCardHeader = styled.div`
@@ -149,10 +295,12 @@ export const StateBadge = styled.span<{ variant?: string }>`
 
 export const TaskCardSummary = styled.p`
   margin: 0;
+  font-family: ${typography.text16Regular.fontFamily};
   font-size: 16px;
   color: #475569;
   line-height: 1.5;
   white-space: pre-wrap;
+  word-break: break-word;
 `;
 
 export const TaskCardActions = styled.div`
@@ -160,12 +308,14 @@ export const TaskCardActions = styled.div`
   gap: 10px;
   margin-top: 8px;
   align-items: center;
+  flex-wrap: wrap;
 `;
 
 export const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
   padding: 8px 16px;
   border-radius: 8px;
   border: none;
+  font-family: ${typography.text14Medium.fontFamily};
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -189,6 +339,7 @@ export const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 
 `;
 
 export const TaskStatusText = styled.div<{ status?: string }>`
+  font-family: ${typography.text14Medium.fontFamily};
   font-size: 14px;
   font-weight: 600;
   color: ${({ status }) => {
@@ -199,6 +350,7 @@ export const TaskStatusText = styled.div<{ status?: string }>`
 `;
 
 export const PendingIndicator = styled.span`
+  font-family: ${typography.text12Regular.fontFamily};
   font-size: 13px;
   color: #64748b;
   animation: pulse 1.5s ease-in-out infinite;
@@ -219,6 +371,8 @@ export const FilledInputs = styled.div`
   background: #f8fafc;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
+  font-family: ${typography.text14Regular.fontFamily};
+  min-width: 0;
 `;
 
 export const FilledInputRow = styled.div`
@@ -226,16 +380,24 @@ export const FilledInputRow = styled.div`
   justify-content: space-between;
   align-items: center;
   font-size: 14px;
+  gap: 12px;
+  min-width: 0;
 `;
 
 export const FilledInputLabel = styled.span`
+  font-family: ${typography.text14Medium.fontFamily};
   color: #64748b;
   font-weight: 500;
+  min-width: 0;
 `;
 
 export const FilledInputValue = styled.span`
+  font-family: ${typography.text14Semibold.fontFamily};
   color: #1e293b;
   font-weight: 600;
+  min-width: 0;
+  text-align: right;
+  word-break: break-word;
 `;
 
 // --- missing_inputs 인라인 폼 ---
@@ -251,6 +413,7 @@ export const MissingInputs = styled.div`
 `;
 
 export const MissingInputsTitle = styled.span`
+  font-family: ${typography.text14Medium.fontFamily};
   font-size: 13px;
   font-weight: 600;
   color: #92400e;
@@ -293,4 +456,22 @@ export const ClarificationBadge = styled.span`
   background: #f0f9ff;
   color: #0369a1;
   border: 1px solid #bae6fd;
+`;
+
+// --- 스트리밍 커서 ---
+
+export const StreamingCursor = styled.span`
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background-color: #1b2559;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  border-radius: 1px;
+  animation: blink 1s step-start infinite;
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
 `;
