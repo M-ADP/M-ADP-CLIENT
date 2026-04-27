@@ -5,6 +5,7 @@ export function middleware(request: NextRequest) {
     const token = request.cookies.get('token')?.value;
     const { pathname } = request.nextUrl;
 
+    const isInvitationPage = /^\/projects\/[^/]+\/member-invitations\/[^/]+$/.test(pathname);
     const isAuthPage = pathname === '/login' || pathname.startsWith('/oauth2/callback');
     const isPublicPath =
         pathname.startsWith('/_next') ||
@@ -14,12 +15,14 @@ export function middleware(request: NextRequest) {
         pathname.startsWith('/system-error') ||
         pathname === '/favicon.ico';
 
-    if (isPublicPath) {
+    if (isPublicPath || isInvitationPage) {
         return NextResponse.next();
     }
 
     if (!token && !isAuthPage) {
-        return NextResponse.redirect(new URL('/login', request.url));
+        const loginUrl = new URL('/login', request.url);
+        loginUrl.searchParams.set('next', pathname + request.nextUrl.search);
+        return NextResponse.redirect(loginUrl);
     }
 
     return NextResponse.next();

@@ -113,6 +113,26 @@ export interface UpdateDnsEndpointPayload {
     subdomain: string;
 }
 
+export interface CreateSecretRequestPayload {
+    projectId: string;
+    appName: string;
+    data: Record<string, string>;
+}
+
+export interface CreateSecretResponse {
+    namespace: string;
+    app_name: string;
+    path: string;
+    policy_name: string;
+    role_name: string;
+}
+
+export interface DeleteSecretRequestPayload {
+    projectId: string;
+    appName: string;
+    secret_names: string[];
+}
+
 const buildQueryString = (params: Record<string, string | number | undefined>) => {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
@@ -194,5 +214,27 @@ export const putUpdateDnsEndpoint = (payload: UpdateDnsEndpointPayload) => {
     return api<ApiResponse<DnsEndpointItem> | DnsEndpointItem>(`/dns/${String(dnsId)}`, {
         method: 'PUT',
         body: JSON.stringify({ subdomain }),
+    });
+};
+
+export const getSecretNames = (projectId: string, appName: string) => {
+    return api<ApiResponse<string[]> | string[]>(`/apps/${projectId}/${encodeURIComponent(appName)}/secrets`, {
+        method: 'GET',
+    });
+};
+
+export const postCreateSecret = (payload: CreateSecretRequestPayload) => {
+    const { projectId, appName, data } = payload;
+    return api<ApiResponse<CreateSecretResponse> | CreateSecretResponse>(`/apps/${projectId}/${encodeURIComponent(appName)}/secrets`, {
+        method: 'POST',
+        body: JSON.stringify({ data }),
+    });
+};
+
+export const deleteSecret = (payload: DeleteSecretRequestPayload) => {
+    const { projectId, appName, secret_names } = payload;
+    return api(`/apps/${projectId}/${encodeURIComponent(appName)}/secrets`, {
+        method: 'DELETE',
+        body: JSON.stringify({ secret_names }),
     });
 };

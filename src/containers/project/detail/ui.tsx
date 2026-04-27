@@ -9,14 +9,20 @@ import Button from '@/components/ui/Button/ui';
 import Input from '@/components/ui/Input/ui';
 import ProgressRing from '@/components/ui/Charts/ProgressRing/ui';
 import * as S from './style';
-import { useProjectDetailQuery, useProjectMembersQuery } from '@/services/project/project.query';
+import {
+  useProjectDetailQuery,
+  useProjectMemberInvitationsQuery,
+  useProjectMembersQuery
+} from '@/services/project/project.query';
 import {
   useDeleteProjectMutation,
   useUpdateProjectNameMutation,
   useUpdateProjectResourceMutation,
   useAddProjectMemberMutation,
   useRemoveProjectMemberMutation,
-  useTransferOwnershipMutation
+  useTransferOwnershipMutation,
+  useCancelProjectMemberInvitationMutation,
+  useResendProjectMemberInvitationMutation
 } from '@/services/project/project.mutation';
 import { useSearchUserByNicknameQuery } from '@/services/user/user.query';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -25,24 +31,28 @@ interface ProjectDetailContainerProps {
   projectId: string;
 }
 
-
+type MemberManageTab = 'members' | 'invitations';
 
 export default function ProjectDetailContainer({ projectId }: ProjectDetailContainerProps) {
   const router = useRouter();
   const { data: project, isLoading, isError } = useProjectDetailQuery(projectId);
   const { data: membersData } = useProjectMembersQuery(projectId, { limit: 100 });
+  const { data: invitationsData } = useProjectMemberInvitationsQuery(projectId, { limit: 100 });
   const deleteProjectMutation = useDeleteProjectMutation();
   const updateNameMutation = useUpdateProjectNameMutation();
   const updateResourceMutation = useUpdateProjectResourceMutation();
   const addMemberMutation = useAddProjectMemberMutation();
   const removeMemberMutation = useRemoveProjectMemberMutation();
   const transferOwnershipMutation = useTransferOwnershipMutation();
+  const cancelInvitationMutation = useCancelProjectMemberInvitationMutation();
+  const resendInvitationMutation = useResendProjectMemberInvitationMutation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showLeftGradient, setShowLeftGradient] = useState(false);
   const [showRightGradient, setShowRightGradient] = useState(true);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [activeMemberTab, setActiveMemberTab] = useState<MemberManageTab>('members');
   const [inviteSearchQuery, setInviteSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(inviteSearchQuery, 500);
   const { data: searchResult, isLoading: isSearchLoading } = useSearchUserByNicknameQuery(debouncedSearchQuery);
@@ -150,6 +160,7 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
   };
 
   const handleInviteOpen = () => {
+    setActiveMemberTab('members');
     setInviteSearchQuery('');
     setIsInviteModalOpen(true);
   };
@@ -161,12 +172,47 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
         payload: { user_id: userId },
       });
       alert('사용자가 초대되었습니다.');
+      setActiveMemberTab('invitations');
       setInviteSearchQuery('');
     } catch (error) {
       if (error instanceof Error) {
         alert(error.message);
       } else {
         alert('사용자 초대에 실패했습니다.');
+      }
+    }
+  };
+
+  const handleCancelInvitation = async (invitationId: string) => {
+    if (!confirm('이 초대를 취소하시겠습니까?')) return;
+
+    try {
+      await cancelInvitationMutation.mutateAsync({
+        projectId,
+        invitationId,
+      });
+      alert('초대가 취소되었습니다.');
+    } catch (error) {
+      if (error instanceof Error) {
+        alert(error.message);
+      } else {
+        alert('초대 취소에 실패했습니다.');
+      }
+    }
+  };
+
+  const handleResendInvitation = async (invitationId: string) => {
+    try {
+      await resendInvitationMutation.mutateAsync({
+        projectId,
+        invitationId,
+      });
+      alert('초대를 재전송했습니다.');
+    } catch (error) {
+      if (error instanceof Error) {
+        alert(error.message);
+      } else {
+        alert('초대 재전송에 실패했습니다.');
       }
     }
   };
@@ -190,7 +236,7 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
 
   const handleOpenAppDetail = (appName: string, appId: string | number) => {
     const query = new URLSearchParams({ appName, appId: String(appId) });
-    router.push(`/project/manage/${projectId}/app?${query.toString()}`);
+    router.push(`/project/manage/${projectId}/application?${query.toString()}`);
   };
 
   if (isLoading) {
@@ -227,6 +273,28 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
   };
 
   const isEditPending = updateNameMutation.isPending || updateResourceMutation.isPending;
+  const members = membersData?.items ?? [];
+  const invitations = invitationsData?.items ?? [];
+  const searchResults = Array.isArray(searchResult) ? searchResult : searchResult ? [searchResult] : [];
+  const existingUserIds = new Set([
+    ...members.map((member) => String(member.user_id)),
+    ...invitations.filter((invitation) => invitation.status === 'PENDING').map((invitation) => String(invitation.invitee_user_id)),
+  ]);
+
+  const inviteCandidates = searchResults.filter((result) => !existingUserIds.has(String(result.id)));
+  const pendingInvitations = invitations
+    .filter((invitation) => invitation.status === 'PENDING')
+    .slice()
+    .sort((a, b) => Number(b.id) - Number(a.id));
+
+  const formatDateTime = (value: string) =>
+    new Date(value).toLocaleString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
 
   return (
     <S.PageWrapper>
@@ -416,45 +484,28 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
       <Modal open={isInviteModalOpen} onClose={() => setIsInviteModalOpen(false)} width={480} height="auto">
         <S.ModalContent>
           <S.ModalTitle>사용자 초대 / 관리</S.ModalTitle>
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%', marginBottom: '1rem' }}>
-            <Input
-              name="inviteSearch"
-              placeholder="닉네임을 검색해주세요..."
-              value={inviteSearchQuery}
-              onChange={(e) => setInviteSearchQuery(e.target.value)}
-              width="100%"
-            />
-          </div>
+          <S.MemberTabBar>
+            <S.MemberTabButton
+              type="button"
+              $active={activeMemberTab === 'members'}
+              onClick={() => setActiveMemberTab('members')}
+            >
+              참여 중인 멤버 {members.length}
+            </S.MemberTabButton>
+            <S.MemberTabButton
+              type="button"
+              $active={activeMemberTab === 'invitations'}
+              onClick={() => setActiveMemberTab('invitations')}
+            >
+              보낸 초대 {pendingInvitations.length}
+            </S.MemberTabButton>
+          </S.MemberTabBar>
 
-          {inviteSearchQuery && (
-            <S.SearchPreviewBox>
-              {isSearchLoading ? (
-                <p>검색 중...</p>
-              ) : searchResult && (Array.isArray(searchResult) ? searchResult.length > 0 : true) ? (
-                (Array.isArray(searchResult) ? searchResult : [searchResult]).map(result => (
-                  <S.MemberItem key={result.id}>
-                    <S.MemberInfoWrapper>
-                      <S.AvatarImage $imageUrl={result.profile || undefined} />
-                      <S.MemberName>{result.nickname} ({result.github_id})</S.MemberName>
-                    </S.MemberInfoWrapper>
-                    <Button
-                      variant="confirm"
-                      onClick={() => handleInviteUser(result.id)}
-                      disabled={addMemberMutation.isPending}
-                    >
-                      {addMemberMutation.isPending ? '초대 중...' : '초대'}
-                    </Button>
-                  </S.MemberItem>
-                ))
-              ) : (
-                <p>검색 결과가 없습니다.</p>
-              )}
-            </S.SearchPreviewBox>
-          )}
-
-          <S.ModalText style={{ marginTop: '1.5rem', marginBottom: '0.5rem', fontWeight: 600 }}>참여 중인 멤버</S.ModalText>
-          <S.MemberList>
-            {membersData?.items
+          {activeMemberTab === 'members' ? (
+            <>
+              <S.MemberSectionHeading>참여 중인 멤버</S.MemberSectionHeading>
+              <S.MemberList>
+                {members.length > 0 ? members
               .slice()
               .sort((a, b) => (a.role === 'OWNER' ? -1 : b.role === 'OWNER' ? 1 : 0))
               .map((member) => (
@@ -485,8 +536,85 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
                   </S.MemberActionGroup>
                 )}
               </S.MemberItem>
-            )) || <p>멤버를 불러오는 중입니다.</p>}
-          </S.MemberList>
+                )) : <p>멤버를 불러오는 중입니다.</p>}
+              </S.MemberList>
+            </>
+          ) : (
+            <>
+              <S.MemberSectionHeading>보낸 초대</S.MemberSectionHeading>
+              <S.SearchInputRow>
+                <Input
+                  name="inviteSearch"
+                  placeholder="닉네임을 검색해주세요..."
+                  value={inviteSearchQuery}
+                  onChange={(e) => setInviteSearchQuery(e.target.value)}
+                  width="100%"
+                />
+              </S.SearchInputRow>
+
+              {inviteSearchQuery && (
+                <S.SearchPreviewBox>
+                  {isSearchLoading ? (
+                    <p>검색 중...</p>
+                  ) : inviteCandidates.length > 0 ? (
+                    inviteCandidates.map(result => (
+                      <S.MemberItem key={result.id}>
+                        <S.MemberInfoWrapper>
+                          <S.AvatarImage $imageUrl={result.profile || undefined} />
+                          <S.MemberName>{result.nickname}</S.MemberName>
+                        </S.MemberInfoWrapper>
+                        <Button
+                          variant="confirm"
+                          onClick={() => handleInviteUser(result.id)}
+                          disabled={addMemberMutation.isPending}
+                        >
+                          {addMemberMutation.isPending ? '초대 중...' : '초대'}
+                        </Button>
+                      </S.MemberItem>
+                    ))
+                  ) : searchResults.length > 0 ? (
+                    <p>이미 멤버이거나 대기 중인 초대입니다.</p>
+                  ) : (
+                    <p>검색 결과가 없습니다.</p>
+                  )}
+                </S.SearchPreviewBox>
+              )}
+
+              <S.MemberList>
+                {pendingInvitations.length > 0 ? pendingInvitations.map((invitation) => (
+                  <S.InvitationItem key={invitation.id}>
+                    <S.InvitationInfo>
+                      <S.MemberInfoWrapper>
+                        <S.AvatarImage />
+                        <div>
+                          <S.MemberName>{invitation.invitee_email}</S.MemberName>
+                          <S.InvitationMeta>
+                            상태 {invitation.status} · 만료 {formatDateTime(invitation.expires_at)}
+                          </S.InvitationMeta>
+                        </div>
+                      </S.MemberInfoWrapper>
+                    </S.InvitationInfo>
+                    {project.my_role === 'OWNER' && invitation.status === 'PENDING' && (
+                      <S.MemberActionGroup>
+                        <S.TransferButton
+                          onClick={() => handleResendInvitation(invitation.id)}
+                          disabled={resendInvitationMutation.isPending}
+                        >
+                          {resendInvitationMutation.isPending ? '처리 중' : '재전송'}
+                        </S.TransferButton>
+                        <S.KickButton
+                          onClick={() => handleCancelInvitation(invitation.id)}
+                          disabled={cancelInvitationMutation.isPending}
+                        >
+                          {cancelInvitationMutation.isPending ? '처리 중' : '취소'}
+                        </S.KickButton>
+                      </S.MemberActionGroup>
+                    )}
+                  </S.InvitationItem>
+                )) : <p>대기 중인 초대가 없습니다.</p>}
+              </S.MemberList>
+            </>
+          )}
 
           <S.ModalButtonGroup>
             <Button variant="cancel" onClick={() => setIsInviteModalOpen(false)}>

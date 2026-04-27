@@ -9,19 +9,18 @@ export default function MainLayout({
     children: React.ReactNode;
 }) {
     const pathname = usePathname();
-    const isStandalonePage =
-        pathname === '/login' ||
-        pathname.startsWith('/oauth2/callback') ||
-        pathname.startsWith('/system-error');
+    const isAuthPage = pathname === '/login' || pathname.startsWith('/oauth2/callback');
+    const isStandalonePage = isAuthPage || pathname.startsWith('/system-error');
+    const isInvitationPage = /^\/projects\/[^/]+\/member-invitations\/[^/]+$/.test(pathname);
 
-    if (isStandalonePage) {
+    if (isStandalonePage || isInvitationPage) {
         return <>{children}</>;
     }
 
     return (
         <div style={{ display: 'flex', width: '100%' }}>
             <Sidebar />
-            <main style={{ flex: 1, minWidth: 0 }}>
+            <main style={{ flex: 1, minWidth: 0, height: '100vh', overflow: 'hidden' }}>
                 {children}
             </main>
         </div>

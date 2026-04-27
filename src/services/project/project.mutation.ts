@@ -7,6 +7,9 @@ import {
     addProjectMember,
     removeProjectMember,
     transferProjectOwnership,
+    acceptProjectMemberInvitation,
+    cancelProjectMemberInvitation,
+    resendProjectMemberInvitation,
 } from './project.api';
 import {
     ProjectCreatePayload,
@@ -66,6 +69,7 @@ export const useAddProjectMemberMutation = () => {
             addProjectMember(projectId, payload),
         onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: ['projectMembers', variables.projectId] });
+            queryClient.invalidateQueries({ queryKey: ['projectMemberInvitations', variables.projectId] });
         },
     });
 };
@@ -89,6 +93,42 @@ export const useTransferOwnershipMutation = () => {
         onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: ['projectMembers', variables.projectId] });
             queryClient.invalidateQueries({ queryKey: ['project', variables.projectId] });
+        },
+    });
+};
+
+export const useAcceptProjectMemberInvitationMutation = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ projectId, token }: { projectId: string; token: string }) =>
+            acceptProjectMemberInvitation(projectId, token),
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+            queryClient.invalidateQueries({ queryKey: ['project', variables.projectId] });
+            queryClient.invalidateQueries({ queryKey: ['projectMembers', variables.projectId] });
+            queryClient.invalidateQueries({ queryKey: ['projectMemberInvitations', variables.projectId] });
+        },
+    });
+};
+
+export const useCancelProjectMemberInvitationMutation = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ projectId, invitationId }: { projectId: string; invitationId: string }) =>
+            cancelProjectMemberInvitation(projectId, invitationId),
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['projectMemberInvitations', variables.projectId] });
+        },
+    });
+};
+
+export const useResendProjectMemberInvitationMutation = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ projectId, invitationId }: { projectId: string; invitationId: string }) =>
+            resendProjectMemberInvitation(projectId, invitationId),
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['projectMemberInvitations', variables.projectId] });
         },
     });
 };
