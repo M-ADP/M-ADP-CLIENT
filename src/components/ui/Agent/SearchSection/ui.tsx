@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import * as S from './style';
 import { TaskSnapshot } from '@/types/chatops';
 
@@ -47,6 +47,14 @@ export default function SearchSection({
   onDismissAssist,
   onRejectRequest,
 }: SearchSectionProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!disabled) {
+      inputRef.current?.focus();
+    }
+  }, [disabled]);
+
   const [assistValues, setAssistValues] = useState<Record<string, string>>(() => {
     const nextValues: Record<string, string> = {};
     const filledInputs = activeTask?.filled_inputs ?? {};
@@ -184,6 +192,7 @@ export default function SearchSection({
             </svg>
           </S.IconCircle>
           <S.SearchInput
+            ref={inputRef}
             placeholder="무엇을 원하시나요?"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
