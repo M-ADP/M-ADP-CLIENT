@@ -8,7 +8,7 @@ import ChatSection from '@/components/ui/Agent/ChatSection/ui';
 import SearchSection from '@/components/ui/Agent/SearchSection/ui';
 
 import { useChatStore } from '@/store/chatStore';
-import { useStream } from '@/hooks/useStream';
+import { useStream } from '@/hooks/chatops/useStream';
 import {
   useSession,
   useRequestEvents,
@@ -23,133 +23,10 @@ import {
 import {
   ConversationMessage,
   isTerminalStatus,
-  SSEEvent,
-  SSEEventRecord,
-  TaskSnapshot,
 } from '@/types/chatops';
-import { normalizeSSEEvent } from '@/services/chatops/chatops.sse';
-
-const PAUSE_EVENT_TYPES = new Set([
-  'approval.required',
-  'request.input_required',
-  'request.ambiguous',
-]);
-const ACTIONABLE_TASK_ACTIONS = new Set([
-  'approve',
-  'cancel',
-  'edit',
-  'fill_inputs',
-  'choose_option',
-]);
-const TERMINAL_APPROVAL_STATES = new Set([
-  'completed',
-  'failed',
-  'cancelled',
-  'expired',
-]);
-
-function createFallbackTask(
-  eventType: string | null,
-  eventMessage?: string | null
-): TaskSnapshot | null {
-  if (eventType === 'approval.required') {
-    return {
-      kind: 'approval',
-      title: '승인 필요',
-      status: 'interrupted',
-      request_type: null,
-      approval_state: 'pending',
-      operation_id: null,
-      risk_level: null,
-      target: null,
-      filled_inputs: null,
-      missing_inputs: null,
-      next_actions: ['approve', 'cancel'],
-      summary: eventMessage || '이 작업을 실행하려면 승인이 필요합니다.',
-      clarification_type: null,
-      is_ambiguous: false,
-    };
-  }
-
-  return null;
-}
-
-function getLatestTaskFromEvents(
-  events: SSEEventRecord[],
-  requestId: number | null
-): TaskSnapshot | null {
-  for (let index = events.length - 1; index >= 0; index -= 1) {
-    const event = events[index].event;
-
-    if (requestId !== null && event.request_id !== requestId) {
-      continue;
-    }
-
-    if ('task' in event && event.task) {
-      return event.task;
-    }
-  }
-
-  return null;
-}
-
-function getLatestTaskFromMessages(
-  messages: ConversationMessage[],
-  requestId: number | null
-): TaskSnapshot | null {
-  for (let index = messages.length - 1; index >= 0; index -= 1) {
-    const message = messages[index];
-
-    if (requestId !== null && message.request_id !== requestId) {
-      continue;
-    }
-
-    if (message.task) {
-      return message.task;
-    }
-  }
-
-  return null;
-}
-
-function getLatestAssistantMessage(
-  messages: ConversationMessage[],
-  requestId: number | null
-): ConversationMessage | null {
-  for (let index = messages.length - 1; index >= 0; index -= 1) {
-    const message = messages[index];
-
-    if (requestId !== null && message.request_id !== requestId) {
-      continue;
-    }
-
-    if (message.role === 'assistant') {
-      return message;
-    }
-  }
-
-  return null;
-}
-
-function taskNeedsUserAction(task: TaskSnapshot | null | undefined): boolean {
-  if (!task) {
-    return false;
-  }
-
-  if (task.approval_state === 'pending' || task.approval_state === 'not_ready') {
-    return true;
-  }
-
-  return task.next_actions.some((action) => ACTIONABLE_TASK_ACTIONS.has(action));
-}
-
-function isTerminalApprovalState(task: TaskSnapshot | null | undefined): boolean {
-  if (!task) {
-    return false;
-  }
-
-  return TERMINAL_APPROVAL_STATES.has(task.approval_state);
-}
+import { PAUSE_EVENT_TYPES } from '@/utils/chatops';
+import { useTypingAnimation } from '@/hooks/chatops/useTypingAnimation';
+import { useChatMessages } from '@/hooks/chatops/useChatMessages';
 
 export default function AgentPage() {
   const queryClient = useQueryClient();
@@ -162,7 +39,6 @@ export default function AgentPage() {
     streamingText,
     clearStreamingText,
     resetRequest,
-    // SSE 계약 추가 상태
     currentTask,
     requestStatus,
     finalResponse,
@@ -175,7 +51,6 @@ export default function AgentPage() {
 
   const [inputValue, setInputValue] = useState("");
   const [optimisticMessage, setOptimisticMessage] = useState<ConversationMessage | null>(null);
-  const [displayedStreamingText, setDisplayedStreamingText] = useState('');
   const [composerAssistMode, setComposerAssistMode] = useState<'default' | 'edit'>('default');
   const [scrollToLatestToken, setScrollToLatestToken] = useState(0);
   const { data: sessionDetail } = useSession(activeSessionId);
@@ -191,8 +66,34 @@ export default function AgentPage() {
     isSubmittingMessage ||
     pendingRequestId !== null;
 
-  // SSE Stream 훅
   useStream(activeSessionId || 0, pendingRequestId);
+
+  const displayedStreamingText = useTypingAnimation({
+    pendingRequestId,
+    finalResponse,
+    streamingText,
+  });
+
+  const { data: requestEvents } = useRequestEvents(activeSessionId, pendingRequestId);
+
+  const {
+    messages,
+    effectiveTask,
+    thinkingEventLog,
+    hasServerSettledMessage,
+    lastThinkingEventType,
+  } = useChatMessages({
+    rawServerMessages: sessionDetail?.messages || [],
+    pendingRequestId,
+    sseEventLog,
+    requestEvents,
+    currentTask,
+    requestStatus,
+    finalResponse,
+    displayedStreamingText,
+    optimisticMessage,
+    isCreatingOrPosting: createSessionMutation.isPending || postMessageMutation.isPending,
+  });
 
   const sendUserMessage = async (rawMessage: string, options?: { clearComposer?: boolean }) => {
     const inputText = rawMessage.trim();
@@ -293,38 +194,30 @@ export default function AgentPage() {
     return () => window.clearInterval(intervalId);
   }, [activeSessionId, pendingRequestId, queryClient]);
 
-  // 텍스트 타이핑 애니메이션
   useEffect(() => {
-    const targetText = finalResponse ?? streamingText ?? '';
-
-    // 애니메이션이 이미 목표에 도달했거나 진행할 텍스트가 없는 경우
-    if (!pendingRequestId || displayedStreamingText === targetText) {
+    if (!pendingRequestId || !hasServerSettledMessage) {
       return;
     }
 
-    const timeoutId = window.setTimeout(() => {
-      setDisplayedStreamingText((current) => {
-        if (!targetText.startsWith(current)) {
-          // 동기화가 깨졌을 때 (예: SSE 이벤트 재연결 등으로 인한 재시작)
-          // 혹은 \r\n 차이 등. 바로 targetText로 맞춘다.
-          return targetText;
-        }
+    setIsApprovalPending(false);
+    setPendingRequestId(null);
+  }, [hasServerSettledMessage, pendingRequestId, setIsApprovalPending, setPendingRequestId]);
 
-        const remaining = targetText.length - current.length;
-        if (remaining <= 0) {
-          return current;
-        }
+  useEffect(() => {
+    if (activeSessionId === null || pendingRequestId === null || !lastThinkingEventType) {
+      return;
+    }
 
-        // 남은 텍스트가 많으면 한 번에 여러 글자를 추가하여 속도 향상
-        const advance = Math.max(1, Math.floor(remaining / 10));
-        return targetText.slice(0, current.length + advance);
-      });
-    }, 15);
+    if (!PAUSE_EVENT_TYPES.has(lastThinkingEventType)) {
+      return;
+    }
 
-    return () => window.clearTimeout(timeoutId);
-  }, [displayedStreamingText, finalResponse, pendingRequestId, streamingText]);
+    void queryClient.invalidateQueries({ queryKey: chatopsKeys.sessionDetail(activeSessionId) });
+    void queryClient.invalidateQueries({
+      queryKey: chatopsKeys.requestEvents(activeSessionId, pendingRequestId),
+    });
+  }, [activeSessionId, lastThinkingEventType, pendingRequestId, queryClient]);
 
-  // 전송 핸들러
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
     await sendUserMessage(inputValue, { clearComposer: true });
@@ -393,127 +286,6 @@ export default function AgentPage() {
     if (!pendingRequestId || requestId !== pendingRequestId) return;
     setComposerAssistMode('edit');
   };
-
-  // --- 메시지 리스트 조합 ---
-  const rawServerMessages = sessionDetail?.messages || [];
-  const latestServerAssistantMessage =
-    pendingRequestId !== null
-      ? getLatestAssistantMessage(rawServerMessages, pendingRequestId)
-      : null;
-  const hasServerSettledMessage =
-    latestServerAssistantMessage !== null &&
-    !taskNeedsUserAction(latestServerAssistantMessage.task) &&
-    (
-      Boolean(latestServerAssistantMessage.text?.trim()) ||
-      isTerminalApprovalState(latestServerAssistantMessage.task)
-    );
-  const serverMessages =
-    pendingRequestId !== null
-      ? rawServerMessages.filter(
-          (message) => !(message.request_id === pendingRequestId && message.role === 'assistant')
-        )
-      : rawServerMessages;
-  const messages = [...serverMessages];
-  const { data: requestEvents } = useRequestEvents(activeSessionId, pendingRequestId);
-
-  const historyEventLog: SSEEventRecord[] =
-    requestEvents?.items
-      .reduce<SSEEventRecord[]>((acc, item) => {
-        const event = normalizeSSEEvent(item.data, item.type);
-        if (!event || event.type === 'response.delta') {
-          return acc;
-        }
-
-        acc.push({
-          sequence: item.sequence,
-          event: event as SSEEvent,
-        });
-
-        return acc;
-      }, []) ?? [];
-
-  const thinkingEventLog =
-    pendingRequestId !== null
-      ? (sseEventLog.length > 0 ? sseEventLog : historyEventLog)
-      : [];
-  const lastThinkingEvent = thinkingEventLog.at(-1)?.event ?? null;
-  const lastThinkingEventType = lastThinkingEvent?.type ?? null;
-  const shouldPreferAssistantMessage =
-    requestStatus === 'interrupted' &&
-    Boolean(finalResponse) &&
-    currentTask === null;
-  const taskFromSources =
-    shouldPreferAssistantMessage
-      ? null
-      : currentTask
-        ?? getLatestTaskFromEvents(sseEventLog, pendingRequestId)
-        ?? getLatestTaskFromEvents(historyEventLog, pendingRequestId)
-        ?? getLatestTaskFromMessages(rawServerMessages, pendingRequestId);
-  const effectiveTask =
-    taskFromSources
-    ?? createFallbackTask(
-      lastThinkingEventType,
-      lastThinkingEvent && 'message' in lastThinkingEvent ? lastThinkingEvent.message ?? null : null
-    );
-
-  useEffect(() => {
-    if (!pendingRequestId || !hasServerSettledMessage) {
-      return;
-    }
-
-    setIsApprovalPending(false);
-    setPendingRequestId(null);
-  }, [hasServerSettledMessage, pendingRequestId, setIsApprovalPending, setPendingRequestId]);
-
-  useEffect(() => {
-    if (activeSessionId === null || pendingRequestId === null || !lastThinkingEventType) {
-      return;
-    }
-
-    if (!PAUSE_EVENT_TYPES.has(lastThinkingEventType)) {
-      return;
-    }
-
-    void queryClient.invalidateQueries({ queryKey: chatopsKeys.sessionDetail(activeSessionId) });
-    void queryClient.invalidateQueries({
-      queryKey: chatopsKeys.requestEvents(activeSessionId, pendingRequestId),
-    });
-  }, [activeSessionId, lastThinkingEventType, pendingRequestId, queryClient]);
-
-  // 1. optimistic user message (전송 중)
-  if (optimisticMessage) {
-    messages.push(optimisticMessage);
-  }
-
-  // 2. SSE 실시간 응답 합성 메시지
-  //    서버 refetch 전에도 응답이 바로 보이게 한다
-  if (pendingRequestId) {
-    const liveText = displayedStreamingText;
-
-    messages.push({
-      message_id: `sse-live-${pendingRequestId}`,
-      request_id: pendingRequestId,
-      role: 'assistant' as const,
-      type: (effectiveTask ? 'task' : 'text') as 'text' | 'task',
-      text: liveText || null,
-      task: effectiveTask,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    });
-  }
-
-  if ((createSessionMutation.isPending || postMessageMutation.isPending) && pendingRequestId === null) {
-    messages.push({
-      message_id: 'sse-live-pending',
-      request_id: null,
-      role: 'assistant',
-      type: 'text',
-      text: null,
-      task: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    });
-  }
 
   const hasMessages = messages.length > 0;
 
