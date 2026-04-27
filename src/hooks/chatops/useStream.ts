@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useChatStore } from '@/store/chatStore';
-import { isTerminalStatus, SSEEvent } from '@/types/chatops';
+import { isTerminalSSEEvent, isTerminalStatus, SSEEvent } from '@/types/chatops';
+import { normalizeSSEEvent } from '@/services/chatops/chatops.sse';
 import Cookies from 'js-cookie';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
@@ -15,27 +16,46 @@ const INITIAL_BACKOFF_MS = 1000;
  * - keep-alive(`: keep-alive\n`) 코멘트는 무시한다.
  */
 export const useStream = (sessionId: number, requestId: number | null) => {
-  const { updateFromSSE, setLastSequence } = useChatStore();
+  const { updateFromSSE } = useChatStore();
   const lastSequenceRef = useRef<string | null>(null);
   const retryCountRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
   const activeRef = useRef(false);
+  const terminalRef = useRef(false);
+  const requestStatusRef = useRef<string | null>(null);
 
   // store의 lastSequence와 동기화
   const storeLastSequence = useChatStore((s) => s.lastSequence);
+  const storeRequestStatus = useChatStore((s) => s.requestStatus);
   useEffect(() => {
     if (storeLastSequence !== null) {
       lastSequenceRef.current = String(storeLastSequence);
     }
   }, [storeLastSequence]);
 
+  useEffect(() => {
+    requestStatusRef.current = storeRequestStatus;
+    if (storeRequestStatus && isTerminalStatus(storeRequestStatus)) {
+      terminalRef.current = true;
+      activeRef.current = false;
+      abortRef.current?.abort();
+    }
+  }, [storeRequestStatus]);
+
   const connect = useCallback(async () => {
     if (!activeRef.current || !requestId) return;
+    if (requestStatusRef.current && isTerminalStatus(requestStatusRef.current)) {
+      terminalRef.current = true;
+      activeRef.current = false;
+      return;
+    }
 
     const abortController = new AbortController();
     abortRef.current = abortController;
 
     try {
+      terminalRef.current = false;
+
       const token = Cookies.get('token');
       const headers: Record<string, string> = {
         Accept: 'text/event-stream',
@@ -45,9 +65,9 @@ export const useStream = (sessionId: number, requestId: number | null) => {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      // Last-Event-ID를 헤더로 보내면 CORS preflight에서 차단되므로 쿼리 파라미터로 전달
       const params = new URLSearchParams({ follow: 'true' });
       if (lastSequenceRef.current) {
+        headers['Last-Event-ID'] = lastSequenceRef.current;
         params.set('last_event_id', lastSequenceRef.current);
       }
       const url = `${BASE_URL}/chatops/sessions/${sessionId}/requests/${requestId}/stream?${params.toString()}`;
@@ -80,7 +100,7 @@ export const useStream = (sessionId: number, requestId: number | null) => {
         const { done, value } = await reader.read();
         if (done) break;
 
-        buffer += decoder.decode(value, { stream: true });
+        buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, '\n');
 
         let boundaryIdx: number;
         while ((boundaryIdx = buffer.indexOf('\n\n')) !== -1) {
@@ -95,9 +115,9 @@ export const useStream = (sessionId: number, requestId: number | null) => {
           );
           if (isKeepAlive) continue;
 
-          let eventType = 'message';
           let dataStr = '';
           let eventId: string | null = null;
+          let eventType: string | null = null;
 
           for (const line of lines) {
             if (line.startsWith('event:')) {
@@ -111,29 +131,34 @@ export const useStream = (sessionId: number, requestId: number | null) => {
             // `:` 로 시작하는 코멘트 라인은 무시
           }
 
-          // sequence 기록
-          if (eventId) {
-            lastSequenceRef.current = eventId;
-            setLastSequence(Number(eventId));
-          }
-
           // data가 없으면 skip
           if (!dataStr) continue;
 
           // JSON 파싱
           let parsed: SSEEvent;
           try {
-            parsed = JSON.parse(dataStr);
+            const normalized = normalizeSSEEvent(JSON.parse(dataStr), eventType ?? undefined);
+            if (!normalized) {
+              continue;
+            }
+            parsed = normalized;
           } catch {
             console.warn('[SSE] JSON parse failed:', dataStr);
             continue;
           }
 
-          // store 갱신 (모든 이벤트 타입 일괄 처리)
-          updateFromSSE(parsed);
+          const sequence =
+            eventId && Number.isFinite(Number(eventId)) ? Number(eventId) : null;
+          if (sequence !== null) {
+            lastSequenceRef.current = String(sequence);
+          }
 
-          // terminal status 감지 → 스트림 종료
-          if ('status' in parsed && parsed.status && isTerminalStatus(parsed.status)) {
+          // store 갱신 (모든 이벤트 타입 일괄 처리)
+          updateFromSSE(parsed, sequence);
+
+          // terminal 이벤트/상태 감지 → 스트림 종료
+          if (isTerminalSSEEvent(parsed)) {
+            terminalRef.current = true;
             activeRef.current = false;
             reader.cancel();
             return;
@@ -148,7 +173,7 @@ export const useStream = (sessionId: number, requestId: number | null) => {
     }
 
     // 비정상 종료 → 재연결 시도
-    if (activeRef.current && retryCountRef.current < MAX_RETRIES) {
+    if (activeRef.current && !terminalRef.current && retryCountRef.current < MAX_RETRIES) {
       const delay = INITIAL_BACKOFF_MS * Math.pow(2, retryCountRef.current);
       retryCountRef.current += 1;
       console.log(`[SSE] Reconnecting in ${delay}ms (attempt ${retryCountRef.current}/${MAX_RETRIES})`);
@@ -157,7 +182,7 @@ export const useStream = (sessionId: number, requestId: number | null) => {
         connect();
       }
     }
-  }, [sessionId, requestId, updateFromSSE, setLastSequence]);
+  }, [sessionId, requestId, updateFromSSE]);
 
   useEffect(() => {
     if (requestId === null) return;
@@ -168,6 +193,7 @@ export const useStream = (sessionId: number, requestId: number | null) => {
 
     return () => {
       activeRef.current = false;
+      terminalRef.current = false;
       abortRef.current?.abort();
     };
   }, [sessionId, requestId, connect]);

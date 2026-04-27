@@ -1,5 +1,5 @@
-import ComingSoonPage from '@/components/ui/ComingSoonPage/ui';
+import AgentClient from './AgentClient';
 
 export default function AgentPage() {
-  return <ComingSoonPage featureName="ChatOps" />;
+  return <AgentClient key="new" sessionId={null} />;
 }

@@ -18,7 +18,7 @@ export default function MainLayout({
     return (
         <div style={{ display: 'flex', width: '100%' }}>
             <Sidebar />
-            <main style={{ flex: 1, minWidth: 0 }}>
+            <main style={{ flex: 1, minWidth: 0, height: '100vh', overflow: 'hidden' }}>
                 {children}
             </main>
         </div>
