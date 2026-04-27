@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import AgentClient from '../../AgentClient';
+import AgentClient from '../AgentClient';
 
 interface PageProps {
   params: Promise<{ sessionId: string }>;

@@ -128,7 +128,7 @@ export default function AgentClient({ sessionId }: AgentClientProps) {
       if (!targetSessionId) {
         const newSession = await createSessionMutation.mutateAsync({ title: inputText.slice(0, 20) });
         targetSessionId = newSession.session_id;
-        router.replace(`/agent/c/${targetSessionId}`);
+        router.replace(`/agent/${targetSessionId}`);
       }
 
       postMessageMutation.mutate(

@@ -100,7 +100,7 @@ export default function Sidebar() {
   const { data: projectListData } = useProjectListQuery();
   const { hiddenDeletedSessionIds, resetRequest } = useChatStore();
   const activeSessionId = (() => {
-    const match = pathname?.match(/^\/agent\/c\/(\d+)/);
+    const match = pathname?.match(/^\/agent\/(\d+)/);
     return match ? Number(match[1]) : null;
   })();
   const {
@@ -365,7 +365,7 @@ export default function Sidebar() {
                       return (
                         <S.SessionRow key={session.session_id}>
                           <S.SubNavItem onClick={() => {
-                            handleNavigation(`/agent/c/${session.session_id}`);
+                            handleNavigation(`/agent/${session.session_id}`);
                           }}>
                             <S.NavLabel $active={isThisSession}>{sessionLabel}</S.NavLabel>
                           </S.SubNavItem>
