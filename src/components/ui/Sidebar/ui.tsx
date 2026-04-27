@@ -98,7 +98,11 @@ export default function Sidebar() {
 
   useUserProfileQuery();
   const { data: projectListData } = useProjectListQuery();
-  const { activeSessionId, hiddenDeletedSessionIds, setActiveSessionId, resetRequest } = useChatStore();
+  const { hiddenDeletedSessionIds, resetRequest } = useChatStore();
+  const activeSessionId = (() => {
+    const match = pathname?.match(/^\/agent\/c\/(\d+)/);
+    return match ? Number(match[1]) : null;
+  })();
   const {
     data: sessionListData,
     isPending: isSessionsPending,
@@ -177,7 +181,6 @@ export default function Sidebar() {
           const isDeletingActiveSession = activeSessionId === sessionId;
 
           if (isDeletingActiveSession) {
-            setActiveSessionId(null);
             resetRequest();
             router.replace('/agent');
           }
@@ -333,7 +336,6 @@ export default function Sidebar() {
                     })}
                     {item.key === 'agent' && (
                       <S.SubNavItem onClick={() => {
-                        setActiveSessionId(null);
                         handleNavigation('/agent');
                       }}>
                         <S.NavLabel $active={!activeSessionId && pathname === '/agent'}>+ 새 채팅</S.NavLabel>
@@ -358,13 +360,12 @@ export default function Sidebar() {
                       <S.SubNavLabel />
                     )}
                     {item.key === 'agent' && sessions.map((session) => {
-                      const isThisSession = activeSessionId === session.session_id && pathname === '/agent';
+                      const isThisSession = activeSessionId === session.session_id;
                       const sessionLabel = session.title || session.last_message_preview || '새 채팅';
                       return (
                         <S.SessionRow key={session.session_id}>
                           <S.SubNavItem onClick={() => {
-                            setActiveSessionId(session.session_id);
-                            handleNavigation('/agent');
+                            handleNavigation(`/agent/c/${session.session_id}`);
                           }}>
                             <S.NavLabel $active={isThisSession}>{sessionLabel}</S.NavLabel>
                           </S.SubNavItem>

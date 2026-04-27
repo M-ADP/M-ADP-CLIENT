@@ -9,7 +9,6 @@ import {
 
 interface ChatState {
   // --- 기존 ---
-  activeSessionId: number | null;
   hiddenDeletedSessionIds: number[];
   streamingText: string;
   isStreaming: boolean;
@@ -28,7 +27,6 @@ interface ChatState {
   sseEventLog: SSEEventRecord[];
 
   // --- 액션 ---
-  setActiveSessionId: (id: number | null) => void;
   hideDeletedSession: (id: number) => void;
   restoreDeletedSession: (id: number) => void;
   setPendingRequestId: (id: number | null) => void;
@@ -43,7 +41,6 @@ interface ChatState {
 
 export const useChatStore = create<ChatState>((set) => ({
   // --- 기존 ---
-  activeSessionId: null,
   hiddenDeletedSessionIds: [],
   streamingText: '',
   isStreaming: false,
@@ -62,7 +59,6 @@ export const useChatStore = create<ChatState>((set) => ({
   sseEventLog: [],
 
   // --- 기존 액션 ---
-  setActiveSessionId: (id) => set({ activeSessionId: id }),
   hideDeletedSession: (id) =>
     set((state) => ({
       hiddenDeletedSessionIds: state.hiddenDeletedSessionIds.includes(id)
