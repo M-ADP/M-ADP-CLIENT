@@ -170,6 +170,8 @@ export const SendButton = styled.button`
   width: 28px;
   height: 28px;
   border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
   background: ${colors.primary.default};
   cursor: pointer;
   border: 1px solid ${colors.primary.default};
