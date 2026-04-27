@@ -184,21 +184,6 @@ export default function AgentClient({ sessionId }: AgentClientProps) {
   }, [requestStatus, pendingRequestId, sessionId, queryClient, setPendingRequestId, displayedStreamingText, finalResponse, streamingText, currentTask]);
 
   useEffect(() => {
-    if (sessionId === null || pendingRequestId === null) {
-      return;
-    }
-
-    const intervalId = window.setInterval(() => {
-      void queryClient.invalidateQueries({ queryKey: chatopsKeys.sessionDetail(sessionId) });
-      void queryClient.invalidateQueries({
-        queryKey: chatopsKeys.requestEvents(sessionId, pendingRequestId),
-      });
-    }, 2500);
-
-    return () => window.clearInterval(intervalId);
-  }, [sessionId, pendingRequestId, queryClient]);
-
-  useEffect(() => {
     if (!pendingRequestId || !hasServerSettledMessage) {
       return;
     }
