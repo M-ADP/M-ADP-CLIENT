@@ -76,7 +76,13 @@ function AuthCallbackContent() {
     }, []);
 
     if (error) {
-        return <ErrorView error={error} onRetry={() => router.replace('/login')} />;
+        return (
+            <ErrorView
+                error={error}
+                onRetry={() => router.replace('/login')}
+                onSupport={() => router.push('/support')}
+            />
+        );
     }
 
     return (
@@ -109,7 +115,15 @@ const ERROR_COPY: Record<CallbackError['kind'], { title: string; description: st
     },
 };
 
-function ErrorView({ error, onRetry }: { error: CallbackError; onRetry: () => void }) {
+function ErrorView({
+    error,
+    onRetry,
+    onSupport,
+}: {
+    error: CallbackError;
+    onRetry: () => void;
+    onSupport: () => void;
+}) {
     const copy = ERROR_COPY[error.kind];
     const detail = 'detail' in error ? error.detail : undefined;
 
@@ -140,10 +154,7 @@ function ErrorView({ error, onRetry }: { error: CallbackError; onRetry: () => vo
                     <S.PrimaryButton type="button" onClick={onRetry}>
                         다시 로그인하기
                     </S.PrimaryButton>
-                    <S.SecondaryButton
-                        type="button"
-                        onClick={() => router.push('/support')}
-                    >
+                    <S.SecondaryButton type="button" onClick={onSupport}>
                         도움말 보기
                     </S.SecondaryButton>
                 </S.Actions>
