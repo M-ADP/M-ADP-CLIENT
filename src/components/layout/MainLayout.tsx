@@ -2,6 +2,8 @@
 
 import { usePathname } from 'next/navigation';
 import Sidebar from "@/components/ui/Sidebar/ui";
+import PageTransition from "@/components/layout/PageTransition";
+import TopProgressBar from "@/components/layout/TopProgressBar";
 
 export default function MainLayout({
     children,
@@ -10,17 +12,26 @@ export default function MainLayout({
 }) {
     const pathname = usePathname();
     const isAuthPage = pathname === '/login' || pathname.startsWith('/oauth2/callback');
+    const sectionKey = pathname.split('/').filter(Boolean)[0] ?? 'root';
 
     if (isAuthPage) {
-        return <>{children}</>;
+        return (
+            <>
+                <TopProgressBar />
+                <PageTransition routeKey={sectionKey}>{children}</PageTransition>
+            </>
+        );
     }
 
     return (
-        <div style={{ display: 'flex', width: '100%' }}>
-            <Sidebar />
-            <main style={{ flex: 1, minWidth: 0, height: '100vh', overflow: 'hidden' }}>
-                {children}
-            </main>
-        </div>
+        <>
+            <TopProgressBar />
+            <div style={{ display: 'flex', width: '100%' }}>
+                <Sidebar />
+                <main style={{ flex: 1, minWidth: 0, height: '100vh', overflow: 'hidden' }}>
+                    <PageTransition routeKey={sectionKey}>{children}</PageTransition>
+                </main>
+            </div>
+        </>
     );
 }
