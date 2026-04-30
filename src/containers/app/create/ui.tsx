@@ -14,7 +14,6 @@ export default function AppCreateContainer() {
   const createAppMutation = useCreateAppMutation();
   const [formData, setFormData] = useState({
     appName: '',
-    port: '',
     cpu: '',
     memory: '',
     disk: '',
@@ -22,6 +21,13 @@ export default function AppCreateContainer() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    if (name === 'appName') {
+      const sanitizedName = value
+        .toLowerCase()
+        .replace(/[ㄱ-ㅎㅏ-ㅣ가-힣]/g, '');
+      setFormData((prev) => ({ ...prev, [name]: sanitizedName }));
+      return;
+    }
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -33,6 +39,11 @@ export default function AppCreateContainer() {
       return;
     }
 
+    if (/[A-Z]/.test(formData.appName) || /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(formData.appName)) {
+      alert('앱 이름에는 대문자와 한글을 사용할 수 없습니다.');
+      return;
+    }
+
     if (!projectId) {
       alert('프로젝트 정보가 없습니다.');
       return;
@@ -41,8 +52,7 @@ export default function AppCreateContainer() {
     try {
       const result = await createAppMutation.mutateAsync({
         name: formData.appName.trim(),
-        project_id: Number(projectId),
-        ...(formData.port && { port: Number(formData.port) }),
+        project_id: projectId,
         ...(formData.cpu && { cpu: Number(formData.cpu) }),
         ...(formData.memory && { memory: Number(formData.memory) }),
         ...(formData.disk && { disk: Number(formData.disk) }),
@@ -50,7 +60,12 @@ export default function AppCreateContainer() {
 
       alert(result.message || '애플리케이션이 생성되었습니다.');
       if (result.data) {
-        router.push(`/app/manage/${result.data}`);
+        const nextQuery = new URLSearchParams({
+          appId: result.data,
+          projectId,
+          appName: formData.appName.trim(),
+        });
+        router.push(`/app/github-connect?${nextQuery.toString()}`);
       } else {
         alert("애플리케이션 생성에 실패했습니다.")
       }
@@ -77,13 +92,7 @@ export default function AppCreateContainer() {
           value={formData.appName}
           onChange={handleChange}
           placeholder="예: Kill Black"
-        />
-        <Input
-          label="PORT"
-          name="port"
-          value={formData.port}
-          onChange={handleChange}
-          placeholder="예: 8000"
+          autoComplete="off"
         />
         <Input
           label="CPU (0.1v ~ 4.0v)"
@@ -93,21 +102,21 @@ export default function AppCreateContainer() {
           placeholder="예: 0.3"
         />
         <Input
-          label="MEMORY (32MB ~ 4096MB)"
+          label="MEMORY (0.25GB ~ 1GB)"
           name="memory"
           value={formData.memory}
           onChange={handleChange}
-          placeholder="예: 4096"
+          placeholder="예: 1"
         />
         <Input
-          label="DISK (32MB ~ 50GB)"
+          label="DISK (2GB ~ 50GB)"
           name="disk"
           value={formData.disk}
           onChange={handleChange}
           placeholder="예: 4"
         />
         <S.NoticeText>
-          {`※ MEMORY는 MB 단위, DISK는 GB 단위로 입력해주세요.\n※ 이후 DISK는 증가만 가능하며 감소는 불가합니다.`}
+          {`※ 앱 이름에는 대문자와 한글을 사용할 수 없습니다.\n※ 메모리와 디스크는 모두 GB 단위로 입력해 주세요.\n※ 주의: 디스크 용량은 이후 확장만 가능하며, 축소는 불가능합니다.`}
         </S.NoticeText>
         <S.ButtonGroup>
           <Button variant="confirm" type="submit" disabled={createAppMutation.isPending}>

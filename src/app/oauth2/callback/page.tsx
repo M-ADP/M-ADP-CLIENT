@@ -4,6 +4,7 @@ import { useEffect, Suspense, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthCodeMutation } from '@/services/login/login.mutation';
 import { useAuthStore } from '@/store/authStore';
+import { identifyClarity } from '@/utils/clarity';
 import Cookies from 'js-cookie';
 import * as S from './style';
 
@@ -41,6 +42,8 @@ function AuthCallbackContent() {
 
                 if (response.access_token) {
                     Cookies.set('token', response.access_token, { path: '/' });
+
+                    identifyClarity(response.access_token);
 
                     // is_authenticated가 'true' 문자열인 경우만 참으로 인정
                     const isAuthenticated = response.is_authenticated === 'true';

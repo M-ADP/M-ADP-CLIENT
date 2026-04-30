@@ -119,9 +119,22 @@ export const SubNavContainer = styled.div`
   transition: max-height 0.3s ease, opacity 0.3s ease;
 
   &[data-open='true'] {
-    max-height: 200px;
+    max-height: 600px;
     opacity: 1;
   }
+`;
+
+export const SubNavLabel = styled.div`
+  padding: 12px 16px 4px 48px;
+  font-family: ${typography.text14Medium.fontFamily};
+  font-size: 11px;
+  font-weight: ${typography.text14Medium.fontWeight};
+  color: ${colors.black[75]};
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-top: 1px solid ${colors.black[50]};
+  margin: 4px 16px 0 16px;
+  padding-left: 32px;
 `;
 
 export const SubNavItem = styled.div`
@@ -151,6 +164,40 @@ export const SubNavItem = styled.div`
 
   &:hover {
     background: ${colors.black[50]};
+  }
+`;
+
+export const SessionRow = styled.div`
+  position: relative;
+
+  &:hover button {
+    opacity: 1;
+  }
+`;
+
+export const SessionDeleteButton = styled.button`
+  position: absolute;
+  top: 50%;
+  right: 22px;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: ${colors.primary.default};
+  font-size: 16px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.18s ease, background 0.18s ease;
+  z-index: 1;
+
+  &:hover {
+    background: #dbe4ff;
   }
 `;
 

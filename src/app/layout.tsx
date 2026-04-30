@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
+import { IBM_Plex_Sans_KR } from "next/font/google";
 import MainLayout from "@/components/layout/MainLayout";
 import QueryProvider from "@/components/providers/QueryProvider";
+import ClarityProvider from "@/components/providers/ClarityProvider";
+
+const ibmPlexSansKr = IBM_Plex_Sans_KR({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "M-ADP",
@@ -14,7 +22,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body style={{ margin: 0 }}>
+      <body
+        className={ibmPlexSansKr.className}
+        style={{ margin: 0, fontFamily: ibmPlexSansKr.style.fontFamily, overflowX: "hidden" }}
+      >
+        <ClarityProvider />
         <QueryProvider>
           <MainLayout>
             {children}
