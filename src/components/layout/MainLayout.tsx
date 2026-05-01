@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import Sidebar from "@/components/ui/Sidebar/ui";
+import Cloudedu from "@/components/ui/Cloudedu/ui";
 
 export default function MainLayout({
     children,
@@ -21,6 +22,7 @@ export default function MainLayout({
             <main style={{ flex: 1, minWidth: 0, height: '100vh', overflow: 'hidden' }}>
                 {children}
             </main>
+            <Cloudedu />
         </div>
     );
 }
