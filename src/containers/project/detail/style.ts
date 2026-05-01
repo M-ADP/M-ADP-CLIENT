@@ -450,3 +450,41 @@ export const TransferButton = styled.button`
   }
 `;
 
+
+export const CreateDropdownWrapper = styled.div`
+  position: relative;
+  display: inline-block;
+`;
+
+export const CreateDropdownMenu = styled.div`
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  right: 0;
+  min-width: 180px;
+  background: white;
+  border: 1px solid ${black[50]};
+  border-radius: 0.375rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  z-index: 10;
+  overflow: hidden;
+`;
+
+export const CreateDropdownItem = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: white;
+  border: none;
+  font-family: ${FONT_FAMILY};
+  font-weight: ${fontWeights.regular};
+  font-size: 0.875rem;
+  color: ${black[300]};
+  cursor: pointer;
+  text-align: left;
+
+  &:hover {
+    background: #f3f4f6;
+  }
+`;

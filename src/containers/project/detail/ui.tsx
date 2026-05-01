@@ -19,7 +19,28 @@ import {
   useTransferOwnershipMutation
 } from '@/services/project/project.mutation';
 import { useSearchUserByNicknameQuery } from '@/services/user/user.query';
+import { useCloudDbsQuery } from '@/services/cloud-database/cloudDb.query';
+import { useDeleteCloudDbMutation } from '@/services/cloud-database/cloudDb.mutation';
+import { CloudDbInner } from '@/types/cloudDatabase';
 import { useDebounce } from '@/hooks/useDebounce';
+
+const inferDbType = (image: string | undefined): string => {
+  if (!image) return 'Unknown';
+  const lower = image.toLowerCase();
+  if (lower.includes('postgres')) return 'PostgreSQL';
+  if (lower.includes('mysql')) return 'MySQL';
+  if (lower.includes('mariadb')) return 'MariaDB';
+  if (lower.includes('mongo')) return 'MongoDB';
+  if (lower.includes('redis')) return 'Redis';
+  return image.split(':')[0] || 'Unknown';
+};
+
+const inferDbStatus = (item: CloudDbInner): 'healthy' | 'warning' | 'stopped' => {
+  const { replicas, status } = item.data;
+  if (!status || status.ready_replicas === 0) return 'stopped';
+  if (status.ready_replicas < replicas) return 'warning';
+  return 'healthy';
+};
 
 interface ProjectDetailContainerProps {
   projectId: string;
@@ -31,6 +52,8 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
   const router = useRouter();
   const { data: project, isLoading, isError } = useProjectDetailQuery(projectId);
   const { data: membersData } = useProjectMembersQuery(projectId, { limit: 100 });
+  const { data: cloudDbs = [], isPending: isCloudDbsPending } = useCloudDbsQuery(projectId);
+  const deleteCloudDbMutation = useDeleteCloudDbMutation();
   const deleteProjectMutation = useDeleteProjectMutation();
   const updateNameMutation = useUpdateProjectNameMutation();
   const updateResourceMutation = useUpdateProjectResourceMutation();
@@ -43,6 +66,8 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
+  const createMenuRef = useRef<HTMLDivElement>(null);
   const [inviteSearchQuery, setInviteSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(inviteSearchQuery, 500);
   const { data: searchResult, isLoading: isSearchLoading } = useSearchUserByNicknameQuery(debouncedSearchQuery);
@@ -193,6 +218,28 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
     router.push(`/project/manage/${projectId}/app?${query.toString()}`);
   };
 
+  const handleOpenCloudDb = (cloudDbName: string) => {
+    router.push(`/project/manage/${projectId}/cloud-database/${cloudDbName}`);
+  };
+
+  const handleDeleteCloudDb = (cloudDbName: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (deleteCloudDbMutation.isPending) return;
+    if (!window.confirm(`'${cloudDbName}' 데이터베이스를 삭제할까요?`)) return;
+    deleteCloudDbMutation.mutate({ cloudDbId: cloudDbName, projectId });
+  };
+
+  useEffect(() => {
+    if (!isCreateMenuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (createMenuRef.current && !createMenuRef.current.contains(e.target as Node)) {
+        setIsCreateMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isCreateMenuOpen]);
+
   if (isLoading) {
     return (
       <S.PageWrapper>
@@ -252,9 +299,33 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
 
       <S.SectionRow>
         <S.SectionTitle>앱 배포 목록</S.SectionTitle>
-        <Button variant="confirm" onClick={() => router.push(`/app/create?projectId=${projectId}`)}>
-          새 앱
-        </Button>
+        <S.CreateDropdownWrapper ref={createMenuRef}>
+          <Button variant="confirm" onClick={() => setIsCreateMenuOpen((v) => !v)}>
+            + 생성 ▾
+          </Button>
+          {isCreateMenuOpen && (
+            <S.CreateDropdownMenu>
+              <S.CreateDropdownItem
+                onClick={() => {
+                  setIsCreateMenuOpen(false);
+                  router.push(`/app/create?projectId=${projectId}`);
+                }}
+              >
+                <Image src="/icons/sidebar/dashboard.svg" alt="" width={16} height={16} />
+                일반 앱
+              </S.CreateDropdownItem>
+              <S.CreateDropdownItem
+                onClick={() => {
+                  setIsCreateMenuOpen(false);
+                  router.push(`/project/manage/${projectId}/cloud-database/create`);
+                }}
+              >
+                <Image src="/icons/sidebar/cloud-db.svg" alt="" width={16} height={16} />
+                클라우드 DB
+              </S.CreateDropdownItem>
+            </S.CreateDropdownMenu>
+          )}
+        </S.CreateDropdownWrapper>
       </S.SectionRow>
       <S.AppGridWrapper $showLeftGradient={showLeftGradient} $showRightGradient={showRightGradient}>
         <S.AppGrid ref={scrollRef}>
@@ -307,6 +378,62 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
                     CPU: {app.cpu_usage_percent}% · RAM: {app.ram_usage_percent}%
                   </MetaItem>
                 </Card>
+              );
+            })
+          )}
+        </S.AppGrid>
+      </S.AppGridWrapper>
+
+      <S.SectionRow>
+        <S.SectionTitle>클라우드 DB 목록</S.SectionTitle>
+      </S.SectionRow>
+      <S.AppGridWrapper $showLeftGradient={false} $showRightGradient={false}>
+        <S.AppGrid>
+          {isCloudDbsPending ? (
+            <p>불러오는 중...</p>
+          ) : cloudDbs.length === 0 ? (
+            <p>생성된 데이터베이스가 없습니다.</p>
+          ) : (
+            cloudDbs.map((item) => {
+              const dbName = item.data.name;
+              const type = inferDbType(item.data.containers?.[0]?.image);
+              const status = inferDbStatus(item);
+              const ready = item.data.status?.ready_replicas ?? 0;
+              return (
+                <div key={dbName} style={{ position: 'relative' }}>
+                  <Card
+                    title={dbName}
+                    onClick={() => handleOpenCloudDb(dbName)}
+                    status={status}
+                  >
+                    <MetaItem>
+                      <Image src="/icons/sidebar/cloud-db.svg" alt="type" width={14} height={14} />
+                      {type}
+                    </MetaItem>
+                    <MetaItem>
+                      <Image src="/icons/project/pods.svg" alt="replicas" width={14} height={14} />
+                      {ready} / {item.data.replicas}
+                    </MetaItem>
+                  </Card>
+                  <button
+                    type="button"
+                    onClick={(e) => handleDeleteCloudDb(dbName, e)}
+                    style={{
+                      position: 'absolute',
+                      top: '0.75rem',
+                      right: '2.75rem',
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '0.875rem',
+                      color: '#dc2626',
+                      padding: '0.25rem 0.5rem',
+                    }}
+                    disabled={deleteCloudDbMutation.isPending}
+                  >
+                    삭제
+                  </button>
+                </div>
               );
             })
           )}
