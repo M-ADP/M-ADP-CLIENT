@@ -7,6 +7,7 @@ import * as S from './style';
 import { useUserStore } from '@/store/userStore';
 import { useUserProfileQuery } from '@/services/user/user.query';
 import { useProjectListQuery, useProjectDetailQuery } from '@/services/project/project.query';
+import { useCloudDbsQuery } from '@/services/cloud-database/cloudDb.query';
 import { useAuthStore } from '@/store/authStore';
 import { useChatStore } from '@/store/chatStore';
 import { useSessions } from '@/services/chatops/chatops.query';
@@ -48,7 +49,6 @@ const PRIMARY_NAV: SidebarItem[] = [
       { key: 'project-create', label: '프로젝트 생성', path: '/project/create' },
     ],
   },
-  { key: 'cloud-database', label: '클라우드 데이터베이스', icon: '/icons/sidebar/cloud-db.svg', path: '/cloud-database' },
   { key: 'report', label: '분석', icon: '/icons/sidebar/analytics.svg', path: '/report' },
   { key: 'agent', label: 'ChatOps', icon: '/icons/sidebar/chat.svg', path: '/agent', children: [] },
 ];
@@ -202,6 +202,9 @@ export default function Sidebar() {
   const inAppManage = Boolean(pathname?.match(/^\/project\/manage\/[^/]+\/app(?:\/|$)/));
   const { data: currentProjectDetail, isPending: isAppsPending } = useProjectDetailQuery(currentProjectId || '');
   const currentProjectApps = currentProjectDetail?.deployments ?? [];
+  const { data: currentProjectCloudDbs = [], isPending: isCloudDbsPending } = useCloudDbsQuery(currentProjectId || '');
+  const inCloudDb = Boolean(pathname?.match(/^\/project\/manage\/[^/]+\/cloud-database(?:\/|$)/));
+  const currentCloudDbId = pathname?.match(/^\/project\/manage\/[^/]+\/cloud-database\/([^/]+)/)?.[1] ?? null;
 
   if (pathname?.startsWith('/login') || pathname?.startsWith('/oauth2/callback')) {
     return null;
@@ -324,6 +327,35 @@ export default function Sidebar() {
                                           }}
                                         >
                                           <S.NavLabel $active={isAppActive}>{displayName}</S.NavLabel>
+                                        </S.DeepNavItem>
+                                      );
+                                    })
+                                  )}
+
+                                  <S.DeepNavItem>
+                                    <S.NavLabel>클라우드 DB</S.NavLabel>
+                                  </S.DeepNavItem>
+                                  {isCloudDbsPending ? (
+                                    <S.DeepNavItem>
+                                      <S.NavLabel>DB 불러오는 중...</S.NavLabel>
+                                    </S.DeepNavItem>
+                                  ) : currentProjectCloudDbs.length === 0 ? (
+                                    <S.DeepNavItem>
+                                      <S.NavLabel>DB 없음</S.NavLabel>
+                                    </S.DeepNavItem>
+                                  ) : (
+                                    currentProjectCloudDbs.map((item) => {
+                                      const dbName = item.data.name;
+                                      const isDbActive = inCloudDb && currentCloudDbId === dbName;
+                                      return (
+                                        <S.DeepNavItem
+                                          key={`${project.id}-db-${dbName}`}
+                                          $clickable
+                                          onClick={() => {
+                                            handleNavigation(`/project/manage/${project.id}/cloud-database/${dbName}`);
+                                          }}
+                                        >
+                                          <S.NavLabel $active={isDbActive}>{dbName}</S.NavLabel>
                                         </S.DeepNavItem>
                                       );
                                     })
