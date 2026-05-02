@@ -154,6 +154,7 @@ export default function AgentClient({ sessionId }: AgentClientProps) {
             await queryClient.invalidateQueries({ queryKey: chatopsKeys.sessionDetail(targetSessionId) });
             setOptimisticMessage(null);
             queryClient.invalidateQueries({ queryKey: chatopsKeys.sessions() });
+            queryClient.invalidateQueries({ queryKey: chatopsKeys.dailyUsage() });
           },
           onError: (error) => {
             console.error('[ChatOps] POST message error:', error);
