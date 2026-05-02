@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as S from './style';
 import { TaskSnapshot } from '@/types/chatops';
+import { useDailyUsage } from '@/services/chatops/chatops.query';
 
 const FIELD_LABELS: Record<string, string> = {
   name: '프로젝트 이름',
@@ -48,6 +49,23 @@ export default function SearchSection({
   onRejectRequest,
 }: SearchSectionProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const { data: usage } = useDailyUsage();
+
+  const usageRatio = usage && usage.daily_limit > 0
+    ? Math.min(usage.daily_usage / usage.daily_limit, 1)
+    : 0;
+  const usageExhausted = !!usage && usage.daily_limit > 0 && usage.daily_usage >= usage.daily_limit;
+  const resetsAtLabel = useMemo(() => {
+    if (!usage?.resets_at) return '';
+    const date = new Date(usage.resets_at);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleString('ko-KR', {
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }, [usage?.resets_at]);
 
   useEffect(() => {
     if (!disabled) {
@@ -201,12 +219,24 @@ export default function SearchSection({
           />
         </S.InputWrapper>
 
-        <S.SendButton type="submit" disabled={disabled} aria-label="메시지 전송">
+        <S.SendButton type="submit" disabled={disabled || usageExhausted} aria-label="메시지 전송">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 19V5M12 5L5 12M12 5L19 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </S.SendButton>
       </S.SearchContainer>
+
+      {usage && (
+        <S.UsageRow>
+          <S.UsageText exhausted={usageExhausted}>
+            오늘 사용량 {usage.daily_usage.toLocaleString()} / {usage.daily_limit.toLocaleString()} 토큰
+            {resetsAtLabel && <S.UsageReset> · {resetsAtLabel} 초기화</S.UsageReset>}
+          </S.UsageText>
+          <S.UsageBar>
+            <S.UsageBarFill ratio={usageRatio} exhausted={usageExhausted} />
+          </S.UsageBar>
+        </S.UsageRow>
+      )}
     </S.Dock>
   );
 }

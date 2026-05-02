@@ -184,6 +184,45 @@ export const SendButton = styled.button`
   }
 `;
 
+export const UsageRow = styled.div`
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 6px;
+  box-sizing: border-box;
+`;
+
+export const UsageText = styled.div<{ exhausted?: boolean }>`
+  font-family: ${typography.text12Regular.fontFamily};
+  font-size: 12px;
+  line-height: 1.4;
+  color: ${({ exhausted }) => (exhausted ? '#dc2626' : colors.black[75])};
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+`;
+
+export const UsageReset = styled.span`
+  color: ${colors.black[50]};
+`;
+
+export const UsageBar = styled.div`
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  overflow: hidden;
+`;
+
+export const UsageBarFill = styled.div<{ ratio: number; exhausted?: boolean }>`
+  width: ${({ ratio }) => `${Math.max(0, Math.min(1, ratio)) * 100}%`};
+  height: 100%;
+  background: ${({ exhausted }) => (exhausted ? '#dc2626' : colors.primary.default)};
+  transition: width 0.3s ease;
+`;
+
 export const SearchInput = styled.input`
   border: none;
   background: transparent;
