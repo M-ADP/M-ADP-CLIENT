@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getSessions, getSession, getSessionMessages, getRequestEvents } from './chatops.api';
+import { getSessions, getSession, getSessionMessages, getRequestEvents, getDailyUsage } from './chatops.api';
 
 export const chatopsKeys = {
   all: ['chatops'] as const,
@@ -9,6 +9,16 @@ export const chatopsKeys = {
   sessionMessages: (id: number | null) => [...chatopsKeys.sessionDetails(), id, 'messages'] as const,
   requestEvents: (sessionId: number | null, requestId: number | null) =>
     [...chatopsKeys.all, 'request-events', sessionId, requestId] as const,
+  dailyUsage: () => [...chatopsKeys.all, 'usage', 'daily'] as const,
+};
+
+export const useDailyUsage = () => {
+  return useQuery({
+    queryKey: chatopsKeys.dailyUsage(),
+    queryFn: () => getDailyUsage(),
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
 };
 
 export const useSessions = () => {

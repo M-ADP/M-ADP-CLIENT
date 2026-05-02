@@ -6,6 +6,7 @@ import {
   ApproveRequestResponse,
   RejectRequestResponse,
   RequestEventsResponse,
+  DailyUsageResponse,
 } from '@/types/chatops';
 
 export const getSessions = async (limit?: number, cursor?: string) => {
@@ -65,6 +66,10 @@ export const rejectRequest = async (sessionId: number, requestId: number) => {
   return api<RejectRequestResponse>(`/chatops/sessions/${sessionId}/requests/${requestId}/reject`, {
     method: 'POST',
   });
+};
+
+export const getDailyUsage = async () => {
+  return api<DailyUsageResponse>(`/chatops/usage/tokens`, { method: 'GET' });
 };
 
 export const getRequestEvents = async (

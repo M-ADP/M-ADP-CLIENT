@@ -212,3 +212,11 @@ export interface RequestEventsResponse {
   limit: number;
   offset: number;
 }
+
+// ----- Usage API -----
+
+export interface DailyUsageResponse {
+  daily_usage: number;
+  daily_limit: number;
+  resets_at: string;
+}
