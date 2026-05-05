@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { useTransitionRouter } from '@/hooks/useTransitionRouter';
 import Image from 'next/image';
 import * as S from './style';
 import { useUserStore } from '@/store/userStore';
@@ -30,6 +31,7 @@ interface SidebarItem {
   label: string;
   icon: string;
   path: string;
+  matchPrefix?: string;
   children?: SidebarChildItem[];
 }
 
@@ -42,8 +44,9 @@ const PRIMARY_NAV: SidebarItem[] = [
   {
     key: 'project',
     label: '프로젝트',
-    icon: '/icons/sidebar/dashboard.svg',
-    path: '/project',
+    icon: '/icons/sidebar/project.svg',
+    path: '/project/manage',
+    matchPrefix: '/project',
     children: [
       { key: 'project-create', label: '프로젝트 생성', path: '/project/create' },
     ],
@@ -89,6 +92,7 @@ const extractAppId = (app: Record<string, unknown>) => {
 
 export default function Sidebar() {
   const router = useRouter();
+  const navigate = useTransitionRouter();
   const pathname = usePathname();
   const { step, setStep } = useAuthStore();
   const { user, setUser } = useUserStore();
@@ -96,7 +100,7 @@ export default function Sidebar() {
   const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
   const [currentAppName, setCurrentAppName] = useState('');
 
-  useUserProfileQuery();
+  const { isLoading: isUserLoading } = useUserProfileQuery();
   const { data: projectListData } = useProjectListQuery();
   const { hiddenDeletedSessionIds, resetRequest } = useChatStore();
   const activeSessionId = (() => {
@@ -166,8 +170,12 @@ export default function Sidebar() {
 
   const handleNavigation = (path: string, hasChildren?: boolean) => {
     if (!hasChildren) {
-      router.push(path);
+      navigate.push(path);
     }
+  };
+
+  const prefetchPath = (path: string) => {
+    navigate.prefetch(path);
   };
 
   const handleDeleteSession = (sessionId: number) => {
@@ -189,11 +197,14 @@ export default function Sidebar() {
     );
   };
 
-  const isActive = (path: string, hasChildren?: boolean) => {
-    if (hasChildren) {
-      return pathname?.startsWith(path);
+  const isActive = (item: SidebarItem) => {
+    if (item.matchPrefix) {
+      return pathname?.startsWith(item.matchPrefix) ?? false;
     }
-    return pathname === path;
+    if (item.children) {
+      return pathname?.startsWith(item.path) ?? false;
+    }
+    return pathname === item.path;
   };
 
   const currentProjectId = pathname?.match(/^\/project\/manage\/([^/]+)/)?.[1] ?? null;
@@ -209,7 +220,7 @@ export default function Sidebar() {
   return (
     <S.Container $collapsed={isCollapsed}>
       <S.Header>
-        <S.Logo>
+        <S.Logo onClick={() => handleNavigation('/')} aria-label="대시보드로 이동">
           <Image src="/assets/logo.svg" alt="M-ADP Logo" width={32} height={32} />
           {!isCollapsed && <S.Brand>M-ADP</S.Brand>}
         </S.Logo>
@@ -222,14 +233,20 @@ export default function Sidebar() {
       <S.Main>
         <S.Section>
           {PRIMARY_NAV.map((item) => {
-            const active = isActive(item.path, !!item.children);
+            const active = isActive(item);
             const isSubNavOpen = expandedMenu === item.key || active;
             return (
               <div key={item.key}>
                 <S.NavItem
                   $active={active}
                   $collapsed={isCollapsed}
+                  title={isCollapsed ? item.label : undefined}
+                  onMouseEnter={() => prefetchPath(item.path)}
                   onClick={() => {
+                    if (isCollapsed) {
+                      handleNavigation(item.path);
+                      return;
+                    }
                     if (item.children) {
                       toggleMenu(item.key);
                     } else {
@@ -293,6 +310,7 @@ export default function Sidebar() {
 
                               {currentProjectId === project.id && (
                                 <>
+                                  <S.DeepDivider />
                                   {isAppsPending ? (
                                     <S.DeepNavItem>
                                       <S.NavLabel>앱 불러오는 중...</S.NavLabel>
@@ -403,28 +421,32 @@ export default function Sidebar() {
         </S.Section>
       </S.Main>
 
-      {!isCollapsed && (
+      {!isCollapsed && (isUserLoading || user) && (
         <S.Footer>
           <S.ProfileInner>
             <S.Avatar>
-              {user?.profile ? (
+              {isUserLoading ? (
+                <S.SkeletonPulse $width="2.5rem" $height="2.5rem" $rounded />
+              ) : user?.profile ? (
                 <Image src={user.profile} alt="profile" width={32} height={32} style={{ borderRadius: '50%' }} />
               ) : (
-                user?.nickname?.[0] || 'N'
+                user?.nickname?.[0] ?? 'N'
               )}
             </S.Avatar>
             <S.ProfileText>
-              <S.ProfileName>{user?.nickname || '류승찬'}</S.ProfileName>
-              {user ? (
-                <S.LogoutButton onClick={handleLogout}>로그아웃</S.LogoutButton>
+              {isUserLoading ? (
+                <>
+                  <S.SkeletonPulse $width="80px" $height="18px" />
+                  <S.SkeletonPulse $width="56px" $height="14px" />
+                </>
               ) : (
-                <S.ProfileSub>부산소프트웨어마이스터고</S.ProfileSub>
+                <>
+                  <S.ProfileName>{user?.nickname}</S.ProfileName>
+                  <S.LogoutButton onClick={handleLogout}>로그아웃</S.LogoutButton>
+                </>
               )}
             </S.ProfileText>
           </S.ProfileInner>
-          <S.Caret>
-            <Image src="/icons/sidebar/chevron-right.svg" alt="profile" width={20} height={20} />
-          </S.Caret>
         </S.Footer>
       )}
     </S.Container>

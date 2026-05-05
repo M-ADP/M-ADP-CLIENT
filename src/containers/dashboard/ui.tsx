@@ -14,11 +14,12 @@ import { useUserStore } from '@/store/userStore';
 import { average, clampPercent, parseNumeric, toResourceRatioPercent } from './utils';
 
 export default function DashboardContainer() {
-  const { data: userProfile } = useUserProfileQuery();
+  const { data: userProfile, isLoading: isUserLoading } = useUserProfileQuery();
   const user = useUserStore((state) => state.user);
   const projectListQuery = useProjectListQuery({ limit: 20 });
   const projectItems = projectListQuery.data?.items ?? [];
-  const userName = userProfile?.nickname || userProfile?.github_id || user?.nickname || user?.github_id || '류승찬';
+  const userName = userProfile?.nickname || userProfile?.github_id || user?.nickname || user?.github_id || '';
+  const isUserNameLoading = isUserLoading && !userName;
 
   const projectDetailsQuery = useQuery({
     queryKey: ['dashboardProjectDetails', projectItems.map((item) => String(item.id)).join(',')],
@@ -163,7 +164,7 @@ export default function DashboardContainer() {
     <S.DashboardLayout>
 
       <S.TopSection>
-        <WelcomeHeroCard userName={userName} />
+        <WelcomeHeroCard userName={userName} isLoading={isUserNameLoading} />
         <SummaryMetricsCard title={summaryTitle} metrics={summaryMetrics} />
       </S.TopSection>
 

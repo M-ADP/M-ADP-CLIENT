@@ -73,6 +73,22 @@ export const GreetingName = styled.span`
   white-space: nowrap;
 `;
 
+export const GreetingNameSkeleton = styled.span`
+  display: inline-block;
+  width: 140px;
+  height: 1em;
+  border-radius: 6px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.28) 50%, rgba(255,255,255,0.12) 100%);
+  background-size: 200% 100%;
+  animation: heroShimmer 1.4s ease-in-out infinite;
+  vertical-align: middle;
+
+  @keyframes heroShimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+`;
+
 export const GreetingSuffix = styled.span`
   flex-shrink: 0;
   white-space: nowrap;
