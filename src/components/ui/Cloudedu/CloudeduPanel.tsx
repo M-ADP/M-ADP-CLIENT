@@ -1,7 +1,8 @@
 'use client';
 
-import { forwardRef, useState, useMemo } from 'react';
+import { forwardRef, useState, useMemo, useEffect } from 'react';
 import * as S from './style';
+import { useCloudComparison } from '@/services/cloudedu/cloudedu.mutation';
 
 interface Anchor {
   left?: number;
@@ -15,20 +16,56 @@ interface Props {
   selectedText?: string;
 }
 
-const MOCK_INTRO = (text?: string) =>
-  text
-    ? `${text}는\n인프라 설정 없이 원클릭 배포가 되는 서비스입니다.\n\n유사 서비스\nAWS: Elastic Beanstalk\nGCP: App Engine\nAzure: App Service\n\n해당 기능 추천 클라우드 서비스: AWS > GCP > Azure`
-    : '무엇이든 물어보세요. 클라우드 개념부터 우리 플랫폼 사용법까지 도와드릴게요.';
+const INTRO_DEFAULT =
+  '무엇이든 물어보세요. 클라우드 개념부터 우리 플랫폼 사용법까지 도와드릴게요.';
+
+const formatResponse = (data: unknown): string => {
+  if (data == null) return '';
+  if (typeof data === 'string') return data;
+  if (typeof data === 'object') {
+    const obj = data as Record<string, unknown>;
+    const candidate = obj.message ?? obj.result ?? obj.data ?? obj.answer ?? obj.content;
+    if (typeof candidate === 'string') return candidate;
+    try {
+      return JSON.stringify(candidate ?? data, null, 2);
+    } catch {
+      return String(data);
+    }
+  }
+  return String(data);
+};
 
 const CloudeduPanel = forwardRef<HTMLDivElement, Props>(function CloudeduPanel(
   { anchor, selectedText },
   ref,
 ) {
   const [input, setInput] = useState('');
-  const message = useMemo(() => MOCK_INTRO(selectedText), [selectedText]);
+  const { mutate, data, error, isPending, reset } = useCloudComparison();
+
+  useEffect(() => {
+    if (!selectedText) return;
+    reset();
+    mutate({ function_type: selectedText });
+  }, [selectedText, mutate, reset]);
+
+  const introMessage = useMemo(() => {
+    if (selectedText) return `"${selectedText}"에 대해 알아보고 있어요...`;
+    return INTRO_DEFAULT;
+  }, [selectedText]);
+
+  const message = useMemo(() => {
+    if (isPending) return '클라우드 EDU에게 물어보는 중...';
+    if (error) return `요청 중 오류가 발생했어요. ${error instanceof Error ? error.message : ''}`.trim();
+    if (data) return formatResponse(data);
+    return introMessage;
+  }, [isPending, error, data, introMessage]);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmed = input.trim();
+    if (!trimmed || isPending) return;
+    reset();
+    mutate({ function_type: trimmed });
     setInput('');
   };
 
@@ -60,7 +97,11 @@ const CloudeduPanel = forwardRef<HTMLDivElement, Props>(function CloudeduPanel(
           onChange={(e) => setInput(e.target.value)}
           autoFocus
         />
-        <S.SendButton type="submit" disabled={!input.trim()} aria-label="보내기">
+        <S.SendButton
+          type="submit"
+          disabled={!input.trim() || isPending}
+          aria-label="보내기"
+        >
           ➤
         </S.SendButton>
       </S.InputRow>
