@@ -7,7 +7,13 @@ export function middleware(request: NextRequest) {
 
     const isInvitationPage = /^\/projects\/[^/]+\/member-invitations\/[^/]+$/.test(pathname);
     const isAuthPage = pathname === '/login' || pathname.startsWith('/oauth2/callback');
-    const isPublicPath = pathname.startsWith('/_next') || pathname.startsWith('/api') || pathname.startsWith('/assets') || pathname.startsWith('/icons') || pathname === '/favicon.ico';
+    const isPublicPath =
+        pathname.startsWith('/_next') ||
+        pathname.startsWith('/api') ||
+        pathname.startsWith('/assets') ||
+        pathname.startsWith('/icons') ||
+        pathname.startsWith('/system-error') ||
+        pathname === '/favicon.ico';
 
     if (isPublicPath || isInvitationPage) {
         return NextResponse.next();

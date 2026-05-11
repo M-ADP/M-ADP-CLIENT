@@ -1,0 +1,11 @@
+This directory contains Chromium T-Rex runner sprite assets.
+
+Source repository:
+https://github.com/wayou/t-rex-runner
+
+Asset used:
+- assets/default_100_percent/100-offline-sprite.png
+
+License:
+- BSD 3-Clause
+- See ./LICENSE

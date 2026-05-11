@@ -10,9 +10,10 @@ export default function MainLayout({
 }) {
     const pathname = usePathname();
     const isAuthPage = pathname === '/login' || pathname.startsWith('/oauth2/callback');
+    const isStandalonePage = isAuthPage || pathname.startsWith('/system-error');
     const isInvitationPage = /^\/projects\/[^/]+\/member-invitations\/[^/]+$/.test(pathname);
 
-    if (isAuthPage || isInvitationPage) {
+    if (isStandalonePage || isInvitationPage) {
         return <>{children}</>;
     }
 
