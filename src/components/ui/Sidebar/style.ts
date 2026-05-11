@@ -24,10 +24,19 @@ export const Header = styled.header`
   flex-shrink: 0;
 `;
 
-export const Logo = styled.div`
+export const Logo = styled.button`
   display: flex;
   align-items: center;
   gap: 12px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+
+  &:hover {
+    opacity: 0.8;
+  }
 `;
 
 export const Brand = styled.span`
@@ -208,7 +217,7 @@ export const DeepNavContainer = styled.div`
   transition: max-height 0.3s ease, opacity 0.3s ease;
 
   &[data-open='true'] {
-    max-height: 280px;
+    max-height: 600px;
     opacity: 1;
   }
 `;
@@ -241,6 +250,12 @@ export const NavLabel = styled.span<{ $active?: boolean }>`
 export const Divider = styled.div`
   height: 1px;
   margin: 12px 0;
+  background: ${colors.black[50]};
+`;
+
+export const DeepDivider = styled.div`
+  height: 1px;
+  margin: 8px 16px 8px 68px;
   background: ${colors.black[50]};
 `;
 
@@ -306,6 +321,20 @@ export const ProfileName = styled.span`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+`;
+
+export const SkeletonPulse = styled.div<{ $width?: string; $height?: string; $rounded?: boolean }>`
+  width: ${({ $width }) => $width ?? '100%'};
+  height: ${({ $height }) => $height ?? '14px'};
+  border-radius: ${({ $rounded }) => ($rounded ? '50%' : '6px')};
+  background: linear-gradient(90deg, ${colors.black[50]} 0%, #f4f4f4 50%, ${colors.black[50]} 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
 `;
 
 export const Caret = styled.span`

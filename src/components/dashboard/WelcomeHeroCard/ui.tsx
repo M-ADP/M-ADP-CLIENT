@@ -3,9 +3,10 @@ import { normalizeDisplayName } from '@/utils/userDisplay';
 
 interface WelcomeHeroCardProps {
   userName: string;
+  isLoading?: boolean;
 }
 
-export const WelcomeHeroCard = ({ userName }: WelcomeHeroCardProps) => {
+export const WelcomeHeroCard = ({ userName, isLoading = false }: WelcomeHeroCardProps) => {
   const normalizedUserName = normalizeDisplayName(userName);
 
   return (
@@ -15,7 +16,11 @@ export const WelcomeHeroCard = ({ userName }: WelcomeHeroCardProps) => {
       <S.ContentWrapper>
         <S.GreetingSub>환영합니다!</S.GreetingSub>
         <S.GreetingMain>
-          <S.GreetingName title={normalizedUserName}>{normalizedUserName}</S.GreetingName>
+          {isLoading ? (
+            <S.GreetingNameSkeleton aria-label="이름 불러오는 중" />
+          ) : (
+            <S.GreetingName title={normalizedUserName}>{normalizedUserName}</S.GreetingName>
+          )}
           <S.GreetingSuffix>님!</S.GreetingSuffix>
         </S.GreetingMain>
         <S.QuestionText>무엇을 원하시나요?</S.QuestionText>
