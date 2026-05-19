@@ -23,6 +23,8 @@ export interface TaskSnapshot {
 
 export interface ConversationMessage {
   message_id: string;
+
+
   request_id: string | null;
   role: 'user' | 'assistant';
   type: 'text' | 'task';
@@ -200,7 +202,7 @@ export interface SSEEventRecord {
 // ----- History API -----
 
 export interface RequestEventItem {
-  sequence: number;
+  sequence: string;
   type: string;
   data: Record<string, unknown>;
   timestamp: string;
