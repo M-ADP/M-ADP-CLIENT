@@ -54,15 +54,11 @@ const parseResponse = async <T>(response: Response): Promise<T> => {
         if (!text) {
             return {} as T;
         }
-        try {
-            return JSON.parse(text) as T;
-        } catch {
-            const safeParsed = text.replace(
-                /(?<=[:{[,])\s*(\d{16,})\s*(?=[,}\]])/g,
-                '"$1"'
-            );
-            return JSON.parse(safeParsed) as T;
-        }
+        const safeParsed = text.replace(
+            /(?<=[:{[,])\s*(\d{16,})\s*(?=[,}\]])/g,
+            '"$1"'
+        );
+        return JSON.parse(safeParsed) as T;
     }
     return response.text() as T;
 };

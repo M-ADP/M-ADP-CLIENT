@@ -6,7 +6,7 @@ import { useChatStore } from '@/store/chatStore';
 
 const removeSessionFromList = (
   previous: SessionListResponse | undefined,
-  sessionId: number
+  sessionId: string
 ): SessionListResponse | undefined => {
   if (!previous) return previous;
 
@@ -18,21 +18,21 @@ const removeSessionFromList = (
 
 export const usePostMessage = () => {
   return useMutation({
-    mutationFn: ({ sessionId, message }: { sessionId: number; message: string }) =>
+    mutationFn: ({ sessionId, message }: { sessionId: string; message: string }) =>
       postSessionMessage(sessionId, message),
   });
 };
 
 export const useApproveRequest = () => {
   return useMutation({
-    mutationFn: ({ sessionId, requestId, confirmationText }: { sessionId: number; requestId: number; confirmationText?: string }) =>
+    mutationFn: ({ sessionId, requestId, confirmationText }: { sessionId: string; requestId: string; confirmationText?: string }) =>
       approveRequest(sessionId, requestId, confirmationText),
   });
 };
 
 export const useRejectRequest = () => {
   return useMutation({
-    mutationFn: ({ sessionId, requestId }: { sessionId: number; requestId: number }) =>
+    mutationFn: ({ sessionId, requestId }: { sessionId: string; requestId: string }) =>
       rejectRequest(sessionId, requestId),
   });
 };
@@ -49,7 +49,7 @@ export const useDeleteSession = () => {
   const restoreDeletedSession = useChatStore((state) => state.restoreDeletedSession);
 
   return useMutation({
-    mutationFn: ({ sessionId }: { sessionId: number }) => deleteSession(sessionId),
+    mutationFn: ({ sessionId }: { sessionId: string }) => deleteSession(sessionId),
     onMutate: async ({ sessionId }) => {
       await queryClient.cancelQueries({ queryKey: chatopsKeys.sessions() });
       hideDeletedSession(sessionId);

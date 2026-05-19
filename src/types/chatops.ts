@@ -23,7 +23,7 @@ export interface TaskSnapshot {
 
 export interface ConversationMessage {
   message_id: string;
-  request_id: number | null;
+  request_id: string | null;
   role: 'user' | 'assistant';
   type: 'text' | 'task';
   text: string | null;
@@ -33,7 +33,7 @@ export interface ConversationMessage {
 }
 
 export interface SessionListItem {
-  session_id: number;
+  session_id: string;
   title: string | null;
   status: string;
   last_message_preview: string | null;
@@ -42,7 +42,7 @@ export interface SessionListItem {
 }
 
 export interface SessionInfo {
-  session_id: number;
+  session_id: string;
   user_id: string;
   title: string | null;
   status: string;
@@ -64,7 +64,7 @@ export interface SessionDetailResponse {
 }
 
 export interface CreateSessionMessageResponse {
-  request_id?: number | null;
+  request_id?: string | null;
   request_status?: string | null;
   request_type?: string | null;
   final_response?: string | null;
@@ -73,14 +73,14 @@ export interface CreateSessionMessageResponse {
 }
 
 export interface ApproveRequestResponse {
-  request_id: number;
+  request_id: string;
   status: string;
   assistant_message: string | null;
   task: TaskSnapshot | null;
 }
 
 export interface RejectRequestResponse {
-  request_id: number;
+  request_id: string;
   status: string;
   assistant_message: string | null;
   task: TaskSnapshot | null;
@@ -128,8 +128,8 @@ export interface SSEBaseEvent {
   phase?: SSEPhase;
   step?: string;
   message?: string;
-  request_id: number;
-  session_id: number;
+  request_id: string;
+  session_id: string;
   status?: string;
   progress?: number;
 }
@@ -164,8 +164,8 @@ export interface SSETaskEvent extends SSEBaseEvent, Partial<SSEAuditMeta> {
 /** response.delta 청크 이벤트 (구조화 필드 없음) */
 export interface SSEDeltaEvent {
   type: 'response.delta';
-  request_id: number;
-  session_id: number;
+  request_id: string;
+  session_id: string;
   text: string;
   source?: 'model_stream' | 'final_response' | 'execution_summary';
   synthetic?: boolean;
@@ -174,18 +174,18 @@ export interface SSEDeltaEvent {
 /** approval.superseded 이벤트 */
 export interface SSESupersededEvent {
   type: 'approval.superseded';
-  request_id: number;
-  session_id: number;
+  request_id: string;
+  session_id: string;
   status: 'superseded';
-  superseded_by: number;
+  superseded_by: string;
   task?: TaskSnapshot | null;
 }
 
 /** approval.rejected 이벤트 (구조화 형식 아님) */
 export interface SSERejectedEvent extends Partial<SSEAuditMeta> {
   type: 'approval.rejected';
-  request_id: number;
-  session_id: number;
+  request_id: string;
+  session_id: string;
   status: 'rejected';
   task?: TaskSnapshot | null;
 }
@@ -193,7 +193,7 @@ export interface SSERejectedEvent extends Partial<SSEAuditMeta> {
 export type SSEEvent = SSETaskEvent | SSEDeltaEvent | SSESupersededEvent | SSERejectedEvent;
 
 export interface SSEEventRecord {
-  sequence: number | null;
+  sequence: string | null;
   event: SSEEvent;
 }
 

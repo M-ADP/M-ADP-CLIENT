@@ -285,7 +285,7 @@ export default function ProjectDetailContainer({ projectId }: ProjectDetailConta
   const pendingInvitations = invitations
     .filter((invitation) => invitation.status === 'PENDING')
     .slice()
-    .sort((a, b) => Number(b.id) - Number(a.id));
+    .sort((a, b) => (BigInt(String(b.id)) > BigInt(String(a.id)) ? 1 : -1));
 
   const formatDateTime = (value: string) =>
     new Date(value).toLocaleString('ko-KR', {

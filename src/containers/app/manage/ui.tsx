@@ -454,8 +454,7 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
       return;
     }
 
-    const parsedProjectId = Number.parseInt(projectId, 10);
-    if (Number.isNaN(parsedProjectId)) {
+    if (!projectId) {
       alert('프로젝트 ID를 확인할 수 없습니다.');
       return;
     }
@@ -463,7 +462,7 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
     try {
       const result = await createDnsMutation.mutateAsync({
         deploymentId: applicationId,
-        project_id: parsedProjectId,
+        project_id: projectId,
         deployment_type: 'App Deployment',
       });
       alert(('message' in result && result.message) ? result.message : 'DNS Endpoint가 생성되었습니다.');

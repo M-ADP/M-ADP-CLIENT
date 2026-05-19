@@ -18,7 +18,7 @@ import {
 
 interface UseChatMessagesParams {
   rawServerMessages: ConversationMessage[];
-  pendingRequestId: number | null;
+  pendingRequestId: string | null;
   sseEventLog: SSEEventRecord[];
   requestEvents: RequestEventsResponse | undefined;
   currentTask: TaskSnapshot | null;

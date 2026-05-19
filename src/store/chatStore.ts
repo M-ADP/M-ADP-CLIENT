@@ -9,33 +9,33 @@ import {
 
 interface ChatState {
   // --- 기존 ---
-  hiddenDeletedSessionIds: number[];
+  hiddenDeletedSessionIds: string[];
   streamingText: string;
   isStreaming: boolean;
-  pendingRequestId: number | null;
+  pendingRequestId: string | null;
 
   // --- SSE 계약 추가 ---
   currentTask: TaskSnapshot | null;
   requestStatus: string | null;
   phase: SSEPhase | null;
   finalResponse: string | null;
-  lastSequence: number | null;
-  supersededBy: number | null;
+  lastSequence: string | null;
+  supersededBy: string | null;
   isApprovalPending: boolean;
 
   // --- SSE 이벤트 로그 (ThinkingPanel용) ---
   sseEventLog: SSEEventRecord[];
 
   // --- 액션 ---
-  hideDeletedSession: (id: number) => void;
-  restoreDeletedSession: (id: number) => void;
-  setPendingRequestId: (id: number | null) => void;
+  hideDeletedSession: (id: string) => void;
+  restoreDeletedSession: (id: string) => void;
+  setPendingRequestId: (id: string | null) => void;
   appendStreamingText: (text: string) => void;
   clearStreamingText: () => void;
   setIsStreaming: (v: boolean) => void;
   setIsApprovalPending: (v: boolean) => void;
   bootstrapRequest: (payload: Pick<CreateSessionMessageResponse, 'request_id' | 'request_status' | 'final_response' | 'task'>) => void;
-  updateFromSSE: (event: SSEEvent, sequence?: number | null) => void;
+  updateFromSSE: (event: SSEEvent, sequence?: string | null) => void;
   resetRequest: () => void;
 }
 
@@ -99,13 +99,12 @@ export const useChatStore = create<ChatState>((set) => ({
   updateFromSSE: (event, sequence) =>
     set((state) => {
       const eventType = event.type;
-      const normalizedSequence =
-        typeof sequence === 'number' && Number.isFinite(sequence) ? sequence : null;
+      const normalizedSequence = sequence ?? null;
 
       if (
         normalizedSequence !== null &&
         state.lastSequence !== null &&
-        normalizedSequence <= state.lastSequence
+        BigInt(normalizedSequence) <= BigInt(state.lastSequence)
       ) {
         return state;
       }
@@ -184,7 +183,7 @@ export const useChatStore = create<ChatState>((set) => ({
 
         case 'approval.superseded':
           if ('superseded_by' in event) {
-            patch.supersededBy = (event as { superseded_by: number }).superseded_by;
+            patch.supersededBy = String((event as { superseded_by: string }).superseded_by);
           }
           break;
       }

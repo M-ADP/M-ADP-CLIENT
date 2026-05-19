@@ -5,9 +5,9 @@ export const chatopsKeys = {
   all: ['chatops'] as const,
   sessions: () => [...chatopsKeys.all, 'sessions'] as const,
   sessionDetails: () => [...chatopsKeys.all, 'session'] as const,
-  sessionDetail: (id: number | null) => [...chatopsKeys.sessionDetails(), id] as const,
-  sessionMessages: (id: number | null) => [...chatopsKeys.sessionDetails(), id, 'messages'] as const,
-  requestEvents: (sessionId: number | null, requestId: number | null) =>
+  sessionDetail: (id: string | null) => [...chatopsKeys.sessionDetails(), id] as const,
+  sessionMessages: (id: string | null) => [...chatopsKeys.sessionDetails(), id, 'messages'] as const,
+  requestEvents: (sessionId: string | null, requestId: string | null) =>
     [...chatopsKeys.all, 'request-events', sessionId, requestId] as const,
 };
 
@@ -20,7 +20,7 @@ export const useSessions = () => {
   });
 };
 
-export const useSession = (sessionId: number | null) => {
+export const useSession = (sessionId: string | null) => {
   return useQuery({
     queryKey: chatopsKeys.sessionDetail(sessionId),
     queryFn: () => {
@@ -31,7 +31,7 @@ export const useSession = (sessionId: number | null) => {
   });
 };
 
-export const useSessionMessages = (sessionId: number | null, before?: string) => {
+export const useSessionMessages = (sessionId: string | null, before?: string) => {
   return useQuery({
     queryKey: [...chatopsKeys.sessionMessages(sessionId), { before }],
     queryFn: () => {
@@ -42,7 +42,7 @@ export const useSessionMessages = (sessionId: number | null, before?: string) =>
   });
 };
 
-export const useRequestEvents = (sessionId: number | null, requestId: number | null) => {
+export const useRequestEvents = (sessionId: string | null, requestId: string | null) => {
   return useQuery({
     queryKey: chatopsKeys.requestEvents(sessionId, requestId),
     queryFn: () => {
