@@ -7,6 +7,9 @@ import Button from '@/components/ui/Button/ui';
 import { useRouter } from 'next/navigation';
 import { useCreateProjectMutation } from '@/services/project/project.mutation';
 
+const HARD_MIN = { cpu: 0.1, memory: 0.5, disk: 2 } as const;
+const HARD_MAX = { cpu: 4, memory: 2, disk: 50 } as const;
+
 export default function ProjectCreateContainer() {
   const router = useRouter();
   const createProjectMutation = useCreateProjectMutation();
@@ -81,13 +84,21 @@ export default function ProjectCreateContainer() {
         <Input
           label="CPU (0.1v ~ 4.0v)"
           name="cpu"
+          type="number"
+          step="0.1"
+          min={HARD_MIN.cpu}
+          max={HARD_MAX.cpu}
           value={formData.cpu}
           onChange={handleChange}
           placeholder="예: 0.3"
         />
         <Input
-          label="MEMORY (0.5GB ~ 1GB)"
+          label="MEMORY (0.5GB ~ 2GB)"
           name="memory"
+          type="number"
+          step="0.25"
+          min={HARD_MIN.memory}
+          max={HARD_MAX.memory}
           value={formData.memory}
           onChange={handleChange}
           placeholder="예: 1"
@@ -95,6 +106,10 @@ export default function ProjectCreateContainer() {
         <Input
           label="DISK (2GB ~ 50GB)"
           name="disk"
+          type="number"
+          step="1"
+          min={HARD_MIN.disk}
+          max={HARD_MAX.disk}
           value={formData.disk}
           onChange={handleChange}
           placeholder="예: 4"
