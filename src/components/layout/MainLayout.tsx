@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import Sidebar from "@/components/ui/Sidebar/ui";
 import PageTransition from "@/components/layout/PageTransition";
 import TopProgressBar from "@/components/layout/TopProgressBar";
+import FirstVisitGuide from "@/components/ui/FirstVisitGuide/ui";
 
 export default function MainLayout({
     children,
@@ -32,6 +33,7 @@ export default function MainLayout({
                     <PageTransition routeKey={sectionKey}>{children}</PageTransition>
                 </main>
             </div>
+            <FirstVisitGuide />
         </>
     );
 }
