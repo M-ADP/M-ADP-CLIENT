@@ -33,7 +33,7 @@ export default function MainLayout({
                     <PageTransition routeKey={sectionKey}>{children}</PageTransition>
                 </main>
             </div>
-            <FirstVisitGuide />
+            {pathname !=='/docs' && <FirstVisitGuide />}
         </>
     );
 }
