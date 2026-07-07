@@ -13,6 +13,10 @@ import {
     deleteDnsEndpoint,
     putUpdateDnsEndpoint,
     UpdateDnsEndpointPayload,
+    postCreateSecret,
+    CreateSecretRequestPayload,
+    deleteSecret,
+    DeleteSecretRequestPayload,
 } from './app.api';
 
 export const useCreateAppMutation = () => {
@@ -89,6 +93,26 @@ export const useUpdateDnsEndpointMutation = () => {
         mutationFn: (payload: UpdateDnsEndpointPayload) => putUpdateDnsEndpoint(payload),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['dnsEndpoints'] });
+        },
+    });
+};
+
+export const useCreateSecretMutation = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (payload: CreateSecretRequestPayload) => postCreateSecret(payload),
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['secretNames', variables.projectId, variables.appName] });
+        },
+    });
+};
+
+export const useDeleteSecretMutation = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (payload: DeleteSecretRequestPayload) => deleteSecret(payload),
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['secretNames', variables.projectId, variables.appName] });
         },
     });
 };

@@ -15,7 +15,7 @@ const INITIAL_BACKOFF_MS = 1000;
  * - terminal status 수신 시 자동 종료한다.
  * - keep-alive(`: keep-alive\n`) 코멘트는 무시한다.
  */
-export const useStream = (sessionId: number, requestId: number | null) => {
+export const useStream = (sessionId: string, requestId: string | null) => {
   const { updateFromSSE } = useChatStore();
   const lastSequenceRef = useRef<string | null>(null);
   const retryCountRef = useRef(0);
@@ -137,7 +137,11 @@ export const useStream = (sessionId: number, requestId: number | null) => {
           // JSON 파싱
           let parsed: SSEEvent;
           try {
-            const normalized = normalizeSSEEvent(JSON.parse(dataStr), eventType ?? undefined);
+            const safeData = dataStr.replace(
+              /(?<=[:{[,])\s*(\d{16,})\s*(?=[,}\]])/g,
+              '"$1"'
+            );
+            const normalized = normalizeSSEEvent(JSON.parse(safeData), eventType ?? undefined);
             if (!normalized) {
               continue;
             }
@@ -147,10 +151,9 @@ export const useStream = (sessionId: number, requestId: number | null) => {
             continue;
           }
 
-          const sequence =
-            eventId && Number.isFinite(Number(eventId)) ? Number(eventId) : null;
+          const sequence = eventId || null;
           if (sequence !== null) {
-            lastSequenceRef.current = String(sequence);
+            lastSequenceRef.current = sequence;
           }
 
           // store 갱신 (모든 이벤트 타입 일괄 처리)

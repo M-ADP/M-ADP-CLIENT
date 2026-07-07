@@ -27,11 +27,11 @@ interface SearchSectionProps {
   handleKeyDown: (e: React.KeyboardEvent) => void;
   disabled?: boolean;
   activeTask?: TaskSnapshot | null;
-  activeRequestId?: number | null;
+  activeRequestId?: string | null;
   assistMode?: AssistMode;
-  onSubmitMissingInputs?: (requestId: number, message: string) => void;
+  onSubmitMissingInputs?: (requestId: string, message: string) => void;
   onDismissAssist?: () => void;
-  onRejectRequest?: (requestId: number) => void;
+  onRejectRequest?: (requestId: string) => void;
 }
 
 export default function SearchSection({

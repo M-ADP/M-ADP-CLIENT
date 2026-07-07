@@ -7,11 +7,10 @@ interface PageProps {
 
 export default async function AgentSessionPage({ params }: PageProps) {
   const { sessionId } = await params;
-  const numericId = Number(sessionId);
 
-  if (!Number.isFinite(numericId) || numericId <= 0) {
+  if (!sessionId || !/^\d+$/.test(sessionId)) {
     notFound();
   }
 
-  return <AgentClient key={numericId} sessionId={numericId} />;
+  return <AgentClient key={sessionId} sessionId={sessionId} />;
 }

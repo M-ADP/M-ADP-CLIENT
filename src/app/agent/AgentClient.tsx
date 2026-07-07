@@ -30,7 +30,7 @@ import { useTypingAnimation } from '@/hooks/chatops/useTypingAnimation';
 import { useChatMessages } from '@/hooks/chatops/useChatMessages';
 
 interface AgentClientProps {
-  sessionId: number | null;
+  sessionId: string | null;
 }
 
 export default function AgentClient({ sessionId }: AgentClientProps) {
@@ -70,7 +70,7 @@ export default function AgentClient({ sessionId }: AgentClientProps) {
     isSubmittingMessage ||
     pendingRequestId !== null;
 
-  useStream(sessionId || 0, pendingRequestId);
+  useStream(sessionId ?? '', pendingRequestId);
 
   const displayedStreamingText = useTypingAnimation({
     pendingRequestId,
@@ -218,7 +218,7 @@ export default function AgentClient({ sessionId }: AgentClientProps) {
     }
   };
 
-  const handleApprove = (requestId: number) => {
+  const handleApprove = (requestId: string) => {
     if (sessionId === null) return;
     setComposerAssistMode('default');
     setIsApprovalPending(true);
@@ -252,7 +252,7 @@ export default function AgentClient({ sessionId }: AgentClientProps) {
     );
   };
 
-  const handleReject = (requestId: number) => {
+  const handleReject = (requestId: string) => {
     if (sessionId === null) return;
     setComposerAssistMode('default');
     rejectMutation.mutate(
@@ -265,13 +265,13 @@ export default function AgentClient({ sessionId }: AgentClientProps) {
     );
   };
 
-  const handleSubmitMissingInputs = (requestId: number, message: string) => {
-    if (requestId <= 0) return;
+  const handleSubmitMissingInputs = (requestId: string, message: string) => {
+    if (!requestId) return;
     setComposerAssistMode('default');
     void sendUserMessage(message);
   };
 
-  const handleEditTask = (requestId: number) => {
+  const handleEditTask = (requestId: string) => {
     if (!pendingRequestId || requestId !== pendingRequestId) return;
     setComposerAssistMode('edit');
   };

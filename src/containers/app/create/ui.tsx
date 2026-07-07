@@ -9,7 +9,7 @@ import { useCreateAppMutation } from '@/services/app/app.mutation';
 import { useProjectDetailQuery } from '@/services/project/project.query';
 
 const HARD_MIN = { cpu: 0.1, memory: 0.25, disk: 2 } as const;
-const HARD_MAX = { cpu: 4, memory: 1, disk: 50 } as const;
+const HARD_MAX = { cpu: 4, memory: 2, disk: 50 } as const;
 
 const toNum = (value: string | number | undefined): number => {
   if (value === undefined || value === null || value === '') return 0;

@@ -13,7 +13,13 @@ export default function MainLayout({
 }) {
     const pathname = usePathname();
     const isAuthPage = pathname === '/login' || pathname.startsWith('/oauth2/callback');
+    const isStandalonePage = pathname.startsWith('/system-error');
+    const isInvitationPage = /^\/projects\/[^/]+\/member-invitations\/[^/]+$/.test(pathname);
     const sectionKey = pathname.split('/').filter(Boolean)[0] ?? 'root';
+
+    if (isStandalonePage || isInvitationPage) {
+        return <>{children}</>;
+    }
 
     if (isAuthPage) {
         return (

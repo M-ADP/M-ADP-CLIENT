@@ -53,7 +53,7 @@ export function createFallbackTask(
 
 export function getLatestTaskFromEvents(
   events: SSEEventRecord[],
-  requestId: number | null
+  requestId: string | null
 ): TaskSnapshot | null {
   for (let index = events.length - 1; index >= 0; index -= 1) {
     const event = events[index].event;
@@ -72,7 +72,7 @@ export function getLatestTaskFromEvents(
 
 export function getLatestTaskFromMessages(
   messages: ConversationMessage[],
-  requestId: number | null
+  requestId: string | null
 ): TaskSnapshot | null {
   for (let index = messages.length - 1; index >= 0; index -= 1) {
     const message = messages[index];
@@ -91,7 +91,7 @@ export function getLatestTaskFromMessages(
 
 export function getLatestAssistantMessage(
   messages: ConversationMessage[],
-  requestId: number | null
+  requestId: string | null
 ): ConversationMessage | null {
   for (let index = messages.length - 1; index >= 0; index -= 1) {
     const message = messages[index];

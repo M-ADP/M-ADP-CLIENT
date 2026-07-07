@@ -12,21 +12,21 @@ interface ChatSectionProps {
   isThinking: boolean;
   currentTask: TaskSnapshot | null;
   isApprovalPending: boolean;
-  supersededBy: number | null;
+  supersededBy: string | null;
   sseEventLog: SSEEventRecord[];
-  activeRequestId: number | null;
+  activeRequestId: string | null;
   scrollToLatestToken: number;
-  onEditTask: (requestId: number) => void;
-  onApprove: (requestId: number) => void;
-  onReject: (requestId: number) => void;
+  onEditTask: (requestId: string) => void;
+  onApprove: (requestId: string) => void;
+  onReject: (requestId: string) => void;
 }
 
 /** task 카드에서 실제로 사용할 task를 결정한다: SSE live task > message.task */
 function resolveTask(
   messageTask: TaskSnapshot | null,
-  messageRequestId: number | null,
+  messageRequestId: string | null,
   liveTask: TaskSnapshot | null,
-  pendingRequestId: number | null
+  pendingRequestId: string | null
 ): TaskSnapshot | null {
   if (liveTask && pendingRequestId && messageRequestId === pendingRequestId) {
     return liveTask;

@@ -89,7 +89,7 @@ export default function GithubConnectContainer() {
       if (projectId) {
         const nextQuery = new URLSearchParams();
         if (appName) nextQuery.set('appName', appName);
-        router.push(`/project/manage/${projectId}/app${nextQuery.toString() ? `?${nextQuery.toString()}` : ''}`);
+        router.push(`/project/manage/${projectId}/application${nextQuery.toString() ? `?${nextQuery.toString()}` : ''}`);
         return;
       }
       router.push('/project/manage');

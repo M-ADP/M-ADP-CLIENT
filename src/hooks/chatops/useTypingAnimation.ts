@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 interface UseTypingAnimationParams {
-  pendingRequestId: number | null;
+  pendingRequestId: string | null;
   finalResponse: string | null;
   streamingText: string | null;
 }

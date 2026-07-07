@@ -105,7 +105,7 @@ export default function Sidebar() {
   const { hiddenDeletedSessionIds, resetRequest } = useChatStore();
   const activeSessionId = (() => {
     const match = pathname?.match(/^\/agent\/(\d+)/);
-    return match ? Number(match[1]) : null;
+    return match ? match[1] : null;
   })();
   const {
     data: sessionListData,
@@ -178,7 +178,7 @@ export default function Sidebar() {
     navigate.prefetch(path);
   };
 
-  const handleDeleteSession = (sessionId: number) => {
+  const handleDeleteSession = (sessionId: string) => {
     if (deleteSessionMutation.isPending) return;
     if (!window.confirm('이 대화를 삭제할까요?')) return;
 
@@ -209,7 +209,7 @@ export default function Sidebar() {
 
   const currentProjectId = pathname?.match(/^\/project\/manage\/([^/]+)/)?.[1] ?? null;
   const inProjectDetail = Boolean(currentProjectId);
-  const inAppManage = Boolean(pathname?.match(/^\/project\/manage\/[^/]+\/app(?:\/|$)/));
+  const inAppManage = Boolean(pathname?.match(/^\/project\/manage\/[^/]+\/application(?:\/|$)/));
   const { data: currentProjectDetail, isPending: isAppsPending } = useProjectDetailQuery(currentProjectId || '');
   const currentProjectApps = currentProjectDetail?.deployments ?? [];
 
@@ -328,7 +328,7 @@ export default function Sidebar() {
                                       if (appId) {
                                         query.set('appId', appId);
                                       }
-                                      const appPath = `/project/manage/${project.id}/app?${query.toString()}`;
+                                      const appPath = `/project/manage/${project.id}/application?${query.toString()}`;
                                       const isAppActive = inAppManage
                                         && (currentAppName ? currentAppName === displayName : index === 0);
                                       return (

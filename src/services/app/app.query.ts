@@ -12,6 +12,7 @@ import {
     ApiResponse,
     getDnsEndpoints,
     DnsEndpointPage,
+    getSecretNames,
 } from './app.api';
 
 const unwrap = <T>(response: ApiResponse<T> | T | undefined, fallback: T): T => {
@@ -91,5 +92,16 @@ export const useDnsEndpointsQuery = (projectId: string, cursor?: number, limit: 
             return unwrap<DnsEndpointPage>(response, { cursor: null, items: [] });
         },
         enabled: !!projectId,
+    });
+};
+
+export const useSecretNamesQuery = (projectId: string, appName: string | null) => {
+    return useQuery<string[]>({
+        queryKey: ['secretNames', projectId, appName],
+        queryFn: async () => {
+            const response = await getSecretNames(projectId, appName as string);
+            return unwrap<string[]>(response, []);
+        },
+        enabled: !!projectId && !!appName,
     });
 };

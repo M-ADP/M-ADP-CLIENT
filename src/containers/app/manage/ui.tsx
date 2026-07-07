@@ -14,7 +14,9 @@ import {
   useDeleteAppMutation,
   useDeleteDnsEndpointMutation,
   useUpdateDnsEndpointMutation,
-  usePatchAppResourcesMutation
+  usePatchAppResourcesMutation,
+  useCreateSecretMutation,
+  useDeleteSecretMutation,
 } from '@/services/app/app.mutation';
 import {
   useAppDeploymentsQuery,
@@ -22,10 +24,16 @@ import {
   useDnsEndpointsQuery,
   useAppLogsQuery,
   useAppResourceStatusQuery,
+  useSecretNamesQuery,
 } from '@/services/app/app.query';
 
 interface AppManageContainerProps {
   projectId: string;
+}
+
+interface EnvVariableItem {
+  key: string;
+  value: string;
 }
 
 const clampPercent = (value: number) => {
@@ -133,6 +141,51 @@ const toPublicDnsUrl = (subdomain: string) => {
   return `https://${normalized}.${DNS_HOST_SUFFIX}`;
 };
 
+const isValidEnvKey = (value: string) => /^[A-Z_][A-Z0-9_]*$/.test(value);
+
+const parseEnvInput = (value: string) => {
+  const lines = value
+    .split('\n')
+    .map((line) => line.replace(/\r$/, ''));
+  const items: EnvVariableItem[] = [];
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const rawLine = lines[index];
+    const trimmedLine = rawLine.trim();
+
+    if (!trimmedLine || trimmedLine.startsWith('#')) continue;
+
+    const separatorIndex = rawLine.indexOf('=');
+    if (separatorIndex === -1) {
+      return {
+        error: `${index + 1}번째 줄 형식이 올바르지 않습니다. KEY=VALUE 형태로 입력하세요.`,
+        items: [],
+      };
+    }
+
+    const key = rawLine.slice(0, separatorIndex).trim();
+    const valuePart = rawLine.slice(separatorIndex + 1);
+    const normalizedValue = valuePart.trim();
+
+    if (!isValidEnvKey(key)) {
+      return {
+        error: `${index + 1}번째 줄의 KEY가 올바르지 않습니다. 영문 대문자, 숫자, 언더스코어만 사용할 수 있습니다.`,
+        items: [],
+      };
+    }
+
+    items.push({
+      key,
+      value: normalizedValue,
+    });
+  }
+
+  return {
+    error: '',
+    items,
+  };
+};
+
 export default function AppManageContainer({ projectId }: AppManageContainerProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -140,7 +193,7 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
   const appIdFromQuery = (searchParams.get('appId') || '').trim();
   const hasQueryTarget = Boolean(appNameFromQuery || appIdFromQuery);
   const appDeploymentsQuery = useAppDeploymentsQuery(projectId);
-  const deployments = appDeploymentsQuery.data ?? [];
+  const deployments = useMemo(() => appDeploymentsQuery.data ?? [], [appDeploymentsQuery.data]);
   const appName = useMemo(() => {
     if (appNameFromQuery) return appNameFromQuery;
     return deployments[0]?.name ?? '';
@@ -151,12 +204,15 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
   const appLogsQuery = useAppLogsQuery(projectId, appName || null);
   const appStatusQuery = useAppResourceStatusQuery(projectId, appName || null);
   const dnsQuery = useDnsEndpointsQuery(projectId, undefined, 20);
+  const secretNamesQuery = useSecretNamesQuery(projectId, appName || null);
   const appStatus = appStatusQuery.data;
   const patchResourcesMutation = usePatchAppResourcesMutation();
   const deleteAppMutation = useDeleteAppMutation();
   const createDnsMutation = useCreateDnsEndpointMutation();
   const deleteDnsMutation = useDeleteDnsEndpointMutation();
   const updateDnsMutation = useUpdateDnsEndpointMutation();
+  const createSecretMutation = useCreateSecretMutation();
+  const deleteSecretMutation = useDeleteSecretMutation();
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
   const isDetailsLoading = appDetailsQuery.isPending;
   const isDetailsError = appDetailsQuery.isError;
@@ -282,8 +338,13 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
   const [dnsEditInitialValue, setDnsEditInitialValue] = useState('');
   const [dnsEditValue, setDnsEditValue] = useState('');
   const [dnsEditError, setDnsEditError] = useState('');
+  const [isEnvModalOpen, setIsEnvModalOpen] = useState(false);
+  const [envDraft, setEnvDraft] = useState('');
+  const [envError, setEnvError] = useState('');
   const canCreateDns = Boolean(effectiveApplicationId) && !dnsQuery.isPending && !dnsQuery.isError && relatedDnsItems.length === 0;
   const isSubdomainFormatValid = (value: string) => /^[a-z0-9-]{1,63}$/.test(value);
+  const secretNames = secretNamesQuery.data ?? [];
+  const isSecretActionPending = createSecretMutation.isPending || deleteSecretMutation.isPending;
 
   const handlePatchResources = async () => {
     if (patchResourcesMutation.isPending) return;
@@ -393,8 +454,7 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
       return;
     }
 
-    const parsedProjectId = Number.parseInt(projectId, 10);
-    if (Number.isNaN(parsedProjectId)) {
+    if (!projectId) {
       alert('프로젝트 ID를 확인할 수 없습니다.');
       return;
     }
@@ -402,7 +462,7 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
     try {
       const result = await createDnsMutation.mutateAsync({
         deploymentId: applicationId,
-        project_id: parsedProjectId,
+        project_id: projectId,
         deployment_type: 'App Deployment',
       });
       alert(('message' in result && result.message) ? result.message : 'DNS Endpoint가 생성되었습니다.');
@@ -482,6 +542,89 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
         return;
       }
       alert('DNS Endpoint 수정에 실패했습니다.');
+    }
+  };
+
+  const closeEnvModal = () => {
+    if (isSecretActionPending) return;
+    setIsEnvModalOpen(false);
+    setEnvError('');
+    setEnvDraft('');
+  };
+
+  const openEnvModal = () => {
+    if (!appName) {
+      alert('조회 가능한 애플리케이션이 없습니다.');
+      return;
+    }
+    setEnvDraft('');
+    setEnvError('');
+    setIsEnvModalOpen(true);
+  };
+
+  const handleInjectEnv = async () => {
+    if (!appName || isSecretActionPending) {
+      if (!appName) {
+        alert('앱 이름을 확인할 수 없습니다.');
+      }
+      return;
+    }
+
+    const parsed = parseEnvInput(envDraft);
+
+    if (parsed.error) {
+      setEnvError(parsed.error);
+      return;
+    }
+
+    if (parsed.items.length === 0) {
+      setEnvError('최소 1개 이상의 환경 변수를 입력하세요.');
+      return;
+    }
+
+    const data = parsed.items.reduce<Record<string, string>>((acc, item) => {
+      acc[item.key] = item.value;
+      return acc;
+    }, {});
+
+    try {
+      const result = await createSecretMutation.mutateAsync({
+        projectId,
+        appName,
+        data,
+      });
+      setEnvError('');
+      setIsEnvModalOpen(false);
+      setEnvDraft('');
+      alert(('message' in result && result.message) ? result.message || '환경 변수가 저장되었습니다.' : '환경 변수가 저장되었습니다.');
+    } catch (error) {
+      if (error instanceof Error) {
+        setEnvError(error.message);
+        return;
+      }
+      setEnvError('환경 변수 저장에 실패했습니다.');
+    }
+  };
+
+  const handleDeleteSecret = async (secretName: string) => {
+    if (!appName || isSecretActionPending) return;
+
+    const confirmed = window.confirm(`"${secretName}" secret를 삭제하시겠습니까?`);
+    if (!confirmed) return;
+
+    try {
+      await deleteSecretMutation.mutateAsync({
+        projectId,
+        appName,
+        secret_names: [secretName],
+      });
+      alert('환경 변수가 삭제되었습니다.');
+    } catch (error) {
+      if (error instanceof Error) {
+        alert(error.message);
+        return;
+      }
+      alert('환경 변수 삭제에 실패했습니다.');
     }
   };
 
@@ -660,11 +803,46 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
       <S.BottomSection>
         <S.TrafficCard>
           <S.SectionHeader>
-            <S.SectionTitle>트래픽</S.SectionTitle>
+            <S.SectionTitle>Environment Variables</S.SectionTitle>
+            <S.DnsActionButton onClick={openEnvModal} disabled={!appName || isSecretActionPending}>
+              {createSecretMutation.isPending ? '주입 중...' : '주입하기'}
+            </S.DnsActionButton>
           </S.SectionHeader>
-          <S.FeaturePlaceholder>
-            추후에 추가될 기능입니다.
-          </S.FeaturePlaceholder>
+          <S.EnvSummaryRow>
+            <S.EnvSummaryItem>
+              <S.EnvSummaryLabel>등록 수</S.EnvSummaryLabel>
+              <S.EnvSummaryValue>{secretNames.length}</S.EnvSummaryValue>
+            </S.EnvSummaryItem>
+            <S.EnvSummaryItem>
+              <S.EnvSummaryLabel>주입 대상</S.EnvSummaryLabel>
+              <S.EnvSummaryValue>{appName || '선택된 앱'}</S.EnvSummaryValue>
+            </S.EnvSummaryItem>
+          </S.EnvSummaryRow>
+          {secretNamesQuery.isPending ? (
+            <S.FeaturePlaceholder>환경 변수 목록을 불러오는 중입니다.</S.FeaturePlaceholder>
+          ) : secretNamesQuery.isError ? (
+            <S.FeaturePlaceholder>환경 변수 목록 조회에 실패했습니다.</S.FeaturePlaceholder>
+          ) : secretNames.length === 0 ? (
+            <S.FeaturePlaceholder>
+              아직 등록된 환경 변수가 없습니다.
+              <br />
+              `KEY=VALUE` 형식으로 입력하면 secret API에 바로 저장됩니다.
+            </S.FeaturePlaceholder>
+          ) : (
+            <S.EnvList>
+              {secretNames.map((secretName) => (
+                <S.EnvItem key={secretName}>
+                  <S.EnvKey>{secretName}</S.EnvKey>
+                  <S.EnvValue>저장된 secret 값은 보안상 다시 조회되지 않습니다.</S.EnvValue>
+                  <S.DnsActions>
+                    <S.DnsDeleteButton onClick={() => void handleDeleteSecret(secretName)} disabled={isSecretActionPending}>
+                      {deleteSecretMutation.isPending ? '삭제 중...' : '삭제'}
+                    </S.DnsDeleteButton>
+                  </S.DnsActions>
+                </S.EnvItem>
+              ))}
+            </S.EnvList>
+          )}
         </S.TrafficCard>
 
         <S.RiskCard>
@@ -730,6 +908,41 @@ export default function AppManageContainer({ projectId }: AppManageContainerProp
             </Button>
           </S.DnsModalButtonGroup>
         </S.DnsModalContent>
+      </Modal>
+
+      <Modal open={isEnvModalOpen} onClose={closeEnvModal} width={720} height="auto">
+        <S.EnvModalContent>
+          <S.DnsModalTitle>환경 변수 주입</S.DnsModalTitle>
+          <S.DnsModalDescription>
+            한 줄에 하나씩 `KEY=VALUE` 형식으로 입력하세요. 빈 줄과 `#` 주석은 무시됩니다.
+          </S.DnsModalDescription>
+          <S.EnvExampleBox>
+            <span>예시</span>
+            <pre>{`NEXT_PUBLIC_API_URL=https://api.example.com
+NODE_ENV=production
+OPENAI_API_KEY=sk-...`}</pre>
+          </S.EnvExampleBox>
+          <S.EnvTextarea
+            value={envDraft}
+            onChange={(event) => {
+              setEnvDraft(event.target.value);
+              if (envError) {
+                setEnvError('');
+              }
+            }}
+            placeholder={`NEXT_PUBLIC_API_URL=https://api.example.com\nNODE_ENV=production`}
+            spellCheck={false}
+          />
+          {envError ? <S.DnsModalError>{envError}</S.DnsModalError> : null}
+          <S.DnsModalButtonGroup>
+            <Button variant="cancel" onClick={closeEnvModal} disabled={isSecretActionPending}>
+              취소
+            </Button>
+            <Button variant="confirm" onClick={() => void handleInjectEnv()} disabled={isSecretActionPending}>
+              {createSecretMutation.isPending ? '주입 중...' : '주입'}
+            </Button>
+          </S.DnsModalButtonGroup>
+        </S.EnvModalContent>
       </Modal>
     </S.PageWrapper>
   );

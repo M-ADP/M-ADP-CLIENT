@@ -30,13 +30,13 @@ const TERMINAL_LABEL: Record<string, string> = {
 
 interface TaskMessageProps {
   task: TaskSnapshot;
-  requestId: number | null;
-  activeRequestId: number | null;
+  requestId: string | null;
+  activeRequestId: string | null;
   isApprovalPending: boolean;
   isSuperseded: boolean;
-  onApprove: (requestId: number) => void;
-  onReject: (requestId: number) => void;
-  onEditTask: (requestId: number) => void;
+  onApprove: (requestId: string) => void;
+  onReject: (requestId: string) => void;
+  onEditTask: (requestId: string) => void;
 }
 
 const TaskMessage = forwardRef<HTMLDivElement, TaskMessageProps>(function TaskMessage(

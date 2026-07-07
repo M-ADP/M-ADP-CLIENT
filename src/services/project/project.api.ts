@@ -11,6 +11,10 @@ import {
     ProjectMembersListResponse,
     AddProjectMemberPayload,
     ProjectOwnerTransferPayload,
+    ProjectMemberInvitationsParams,
+    ProjectMemberInvitationsListResponse,
+    ProjectMemberInvitationSuccessResponse,
+    ProjectMemberResponse,
 } from '@/types/project';
 
 export const postCreateProject = (payload: ProjectCreatePayload) => {
@@ -63,7 +67,7 @@ export const getProjectMembers = (projectId: string, params?: ProjectMembersPara
 };
 
 export const addProjectMember = (projectId: string, payload: AddProjectMemberPayload) => {
-    return api(`/projects/${projectId}/members`, {
+    return api<ProjectMemberInvitationSuccessResponse>(`/projects/${projectId}/members`, {
         method: 'POST',
         body: JSON.stringify(payload),
     });
@@ -80,4 +84,43 @@ export const transferProjectOwnership = (projectId: string, payload: ProjectOwne
         method: 'PATCH',
         body: JSON.stringify(payload),
     });
+};
+
+export const getProjectMemberInvitations = (projectId: string, params?: ProjectMemberInvitationsParams) => {
+    const searchParams = new URLSearchParams();
+    if (params?.status) searchParams.set('status', params.status);
+    if (params?.cursor) searchParams.set('cursor', params.cursor);
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+
+    const query = searchParams.toString();
+    return api<ProjectMemberInvitationsListResponse>(
+        `/projects/${projectId}/member-invitations${query ? `?${query}` : ''}`
+    );
+};
+
+export const acceptProjectMemberInvitation = (projectId: string, token: string) => {
+    return api<{ message: string; data: ProjectMemberResponse }>(
+        `/projects/${projectId}/member-invitations/${encodeURIComponent(token)}/accept`,
+        {
+            method: 'POST',
+        }
+    );
+};
+
+export const cancelProjectMemberInvitation = (projectId: string, invitationId: string) => {
+    return api<ProjectMemberInvitationSuccessResponse>(
+        `/projects/${projectId}/member-invitations/${invitationId}`,
+        {
+            method: 'DELETE',
+        }
+    );
+};
+
+export const resendProjectMemberInvitation = (projectId: string, invitationId: string) => {
+    return api<ProjectMemberInvitationSuccessResponse>(
+        `/projects/${projectId}/member-invitations/${invitationId}/resend`,
+        {
+            method: 'POST',
+        }
+    );
 };

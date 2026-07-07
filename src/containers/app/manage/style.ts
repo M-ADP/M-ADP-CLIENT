@@ -576,6 +576,137 @@ export const FeaturePlaceholder = styled.div`
   padding: 16px;
 `;
 
+export const EnvSummaryRow = styled.div`
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+`;
+
+export const EnvSummaryItem = styled.div`
+  border-radius: 12px;
+  background: #f8faff;
+  border: 1px solid #e2e8f2;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+`;
+
+export const EnvSummaryLabel = styled.span`
+  color: ${colors.black[75]};
+  font-family: ${typography.text12Medium.fontFamily};
+  font-size: ${typography.text12Medium.fontSize};
+  font-weight: ${typography.text12Medium.fontWeight};
+  line-height: ${typography.text12Medium.lineHeight};
+`;
+
+export const EnvSummaryValue = styled.span`
+  color: ${colors.black[300]};
+  font-family: ${typography.text18Bold.fontFamily};
+  font-size: ${typography.text18Bold.fontSize};
+  font-weight: ${typography.text18Bold.fontWeight};
+  line-height: ${typography.text18Bold.lineHeight};
+  word-break: break-all;
+`;
+
+export const EnvList = styled.ul`
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+`;
+
+export const EnvItem = styled.li`
+  border-radius: 14px;
+  border: 1px solid #dbe3ef;
+  background: linear-gradient(180deg, #fbfdff 0%, #f4f8ff 100%);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+`;
+
+export const EnvKey = styled.span`
+  color: ${colors.black[300]};
+  font-family: ${typography.text14Semibold.fontFamily};
+  font-size: ${typography.text14Semibold.fontSize};
+  font-weight: ${typography.text14Semibold.fontWeight};
+  line-height: ${typography.text14Semibold.lineHeight};
+  word-break: break-all;
+`;
+
+export const EnvValue = styled.span`
+  color: ${colors.black[100]};
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  word-break: break-all;
+`;
+
+export const EnvModalContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+`;
+
+export const EnvExampleBox = styled.div`
+  border-radius: 12px;
+  background: #f6f8fc;
+  border: 1px solid #e2e8f2;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  > span {
+    color: ${colors.black[100]};
+    font-family: ${typography.text12Semibold.fontFamily};
+    font-size: ${typography.text12Semibold.fontSize};
+    font-weight: ${typography.text12Semibold.fontWeight};
+    line-height: ${typography.text12Semibold.lineHeight};
+  }
+
+  > pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: ${colors.black[200]};
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+`;
+
+export const EnvTextarea = styled.textarea`
+  width: 100%;
+  min-height: 260px;
+  resize: vertical;
+  border-radius: 14px;
+  border: 1px solid #d4dce9;
+  background: #ffffff;
+  padding: 14px 16px;
+  box-sizing: border-box;
+  color: ${colors.black[300]};
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  outline: none;
+
+  &:focus {
+    border-color: ${colors.primary.default};
+    box-shadow: 0 0 0 3px rgba(17, 116, 247, 0.12);
+  }
+
+  &::placeholder {
+    color: #9aa6b8;
+  }
+`;
+
 export const UserChartArea = styled.div`
   margin-top: 8px;
 `;

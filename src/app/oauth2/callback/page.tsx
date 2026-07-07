@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, Suspense, useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { useAuthCodeMutation } from '@/services/login/login.mutation';
 import { useAuthStore } from '@/store/authStore';
@@ -17,10 +17,15 @@ type CallbackError =
 
 function AuthCallbackContent() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const setStep = useAuthStore((state) => state.setStep);
     const authCodeMutation = useAuthCodeMutation();
     const [error, setError] = useState<CallbackError | null>(null);
     const hasFetched = useRef(false);
+    const nextPath =
+        searchParams.get('next') ||
+        (typeof window !== 'undefined' ? window.sessionStorage.getItem('post_login_redirect') : null) ||
+        '/';
 
     useEffect(() => {
         if (hasFetched.current) return;
@@ -54,9 +59,12 @@ function AuthCallbackContent() {
 
                     if (!isAuthenticated) {
                         setStep('github');
-                        router.replace('/login');
+                        router.replace(`/login?next=${encodeURIComponent(nextPath)}`);
                     } else {
-                        router.replace('/');
+                        if (typeof window !== 'undefined') {
+                            window.sessionStorage.removeItem('post_login_redirect');
+                        }
+                        router.replace(nextPath);
                     }
                 } else {
                     setError({ kind: 'auth_failed' });
@@ -73,7 +81,7 @@ function AuthCallbackContent() {
         };
 
         processAuth();
-    }, []);
+    }, [authCodeMutation, nextPath, router, searchParams, setStep]);
 
     if (error) {
         return (
